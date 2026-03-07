@@ -1,4 +1,4 @@
-import { User } from "../models/User.js";
+import { User } from "../models/user.js";
 import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
 import { generateVerificationToken } from "../utils/generateVerificationToken.js";
 import {
