@@ -1,0 +1,29 @@
+{
+  "name": "prescripta",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "backend/server.js",
+  "scripts": {
+    "dev": "nodemon backend/server.js",
+    "start": "node backend/server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "framer-motion": "^12.34.3",
+    "jsonwebtoken": "^9.0.3",
+    "mailtrap": "^4.4.0",
+    "mongodb": "^7.1.0",
+    "mongoose": "^9.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.2",
+    "nodemon": "^3.1.14"
+  }
+}
