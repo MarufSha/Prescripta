@@ -12,22 +12,23 @@ type ResetPasswordFormProps = {
 };
 
 export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
-  const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [success, setSuccess] = useState(false);
-  const { resetPassword, isLoading, error, clearError } = useAuthStore();
+  const { resetPassword, isLoading, error, clearError, fieldErrors } =
+    useAuthStore();
   const router = useRouter();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
 
-    if (password !== confirmPassword) {
+    if (newPassword !== confirmPassword) {
       toast.error("Passwords do not match");
       return;
     }
 
     try {
-      await resetPassword(token, password);
+      await resetPassword(token, newPassword);
       setSuccess(true);
       toast.success("Password reset successful. Please login.");
 
@@ -59,11 +60,15 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
             icon={Lock}
             type="password"
             placeholder="New Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
             required
           />
-
+          {fieldErrors.newPassword && (
+            <p className="text-red-500 text-sm mt-1">
+              {fieldErrors.newPassword}
+            </p>
+          )}
           <Input
             icon={Lock}
             type="password"
@@ -72,7 +77,11 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
           />
-
+          {fieldErrors.confirmPassword && (
+            <p className="text-red-500 text-sm mt-1">
+              {fieldErrors.confirmPassword}
+            </p>
+          )}
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}

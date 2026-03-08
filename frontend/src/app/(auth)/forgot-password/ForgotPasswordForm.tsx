@@ -45,7 +45,7 @@ const ForgotPasswordPage: React.FC = () => {
 
             <Input
               icon={Mail}
-              type="email"
+              type="text"
               placeholder="Email Address"
               value={email}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>

@@ -15,7 +15,7 @@ export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const { login, isLoading, error, clearError } = useAuthStore();
+  const { login, isLoading, clearError, fieldErrors, error } = useAuthStore();
   useEffect(() => {
     clearError();
   }, [clearError]);
@@ -47,13 +47,15 @@ export default function LoginForm() {
         <form onSubmit={handleLogin} className="space-y-2">
           <Input
             icon={Mail}
-            type="email"
+            type="text"
             placeholder="Email Address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
           />
-
+          {fieldErrors.email && (
+            <p className="text-red-500 text-sm mt-1">{fieldErrors.email}</p>
+          )}
           <Input
             icon={Lock}
             type="password"
@@ -62,7 +64,9 @@ export default function LoginForm() {
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
           />
-
+          {fieldErrors.password && (
+            <p className="text-red-500 text-sm mt-1">{fieldErrors.password}</p>
+          )}
           <div className="flex items-center mb-2">
             <Link
               href="/forgot-password"

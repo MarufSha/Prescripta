@@ -6,7 +6,7 @@ type PasswordCriteriaProps = {
 
 const PasswordCriteria = ({ password }: PasswordCriteriaProps) => {
   const criteria: Array<{ label: string; met: boolean }> = [
-    { label: "At least 6 characters", met: password.length >= 6 },
+    { label: "At least 8 characters", met: password.length >= 8 },
     { label: "Contains uppercase letter", met: /[A-Z]/.test(password) },
     { label: "Contains lowercase letter", met: /[a-z]/.test(password) },
     { label: "Contains a number", met: /\d/.test(password) },
@@ -41,7 +41,7 @@ const PasswordStrengthMeter = ({ password = "" }: PasswordStrengthMeterProps) =>
   const getStrength = (pass: string): Strength => {
     let strength: Strength = 0;
 
-    if (pass.length >= 6) strength = (strength + 1) as Strength;
+    if (pass.length >= 8) strength = (strength + 1) as Strength;
     if (/[a-z]/.test(pass) && /[A-Z]/.test(pass)) strength = (strength + 1) as Strength;
     if (/\d/.test(pass)) strength = (strength + 1) as Strength;
     if (/[^a-zA-Z\d]/.test(pass)) strength = (strength + 1) as Strength;

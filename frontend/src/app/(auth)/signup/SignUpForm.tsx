@@ -17,7 +17,7 @@ export default function SignUpForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const { signUp, error, isLoading, clearError } = useAuthStore();
+  const { signUp, error, isLoading, clearError, fieldErrors} = useAuthStore();
   useEffect(() => {
     clearError();
   }, [clearError]);
@@ -57,16 +57,20 @@ export default function SignUpForm() {
             onChange={(e) => setName(e.target.value)}
             autoComplete="name"
           />
-
+          {fieldErrors.name && (
+            <p className="text-red-500 text-sm mt-1">{fieldErrors.name}</p>
+          )}
           <Input
             icon={Mail}
-            type="email"
+            type="text"
             placeholder="Email Address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
           />
-
+          {fieldErrors.email && (
+            <p className="text-red-500 text-sm mt-1">{fieldErrors.email}</p>
+          )}
           <Input
             icon={Lock}
             type="password"
@@ -75,7 +79,9 @@ export default function SignUpForm() {
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="new-password"
           />
-
+          {fieldErrors.password && (
+            <p className="text-red-500 text-sm mt-1">{fieldErrors.password}</p>
+          )}
           {error && <p className="text-red-500 font-semibold mt-2">{error}</p>}
 
           <PasswordStrengthMeter password={password} />
