@@ -16,7 +16,8 @@ export default function VerifyEmailForm() {
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const hasSubmitted = useRef(false);
 
-  const { error, isLoading, verifyEmail, clearError } = useAuthStore();
+  const { error, fieldErrors, isLoading, verifyEmail, clearError } = useAuthStore();
+
   useEffect(() => {
     clearError();
   }, [clearError]);
@@ -35,6 +36,7 @@ export default function VerifyEmailForm() {
 
   const handleChange = (index: number, value: string) => {
     hasSubmitted.current = false;
+    clearError();
 
     const sanitized = value.replace(/\D/g, "");
     const newCode = [...code];
@@ -74,6 +76,7 @@ export default function VerifyEmailForm() {
   ) => {
     e.preventDefault();
     hasSubmitted.current = false;
+    clearError();
 
     const pasted = e.clipboardData.getData("text").replace(/\D/g, "");
     if (!pasted) return;
@@ -158,10 +161,14 @@ export default function VerifyEmailForm() {
                 onClick={(e) => moveCaretToEnd(e.currentTarget)}
                 className="w-12 h-12 text-center text-2xl font-bold bg-gray-700 text-white border-2 border-gray-600 rounded-lg focus:border-green-500 focus:outline-none"
                 aria-label={`Verification digit ${index + 1}`}
-                aria-invalid={Boolean(error)}
+                aria-invalid={Boolean(error || fieldErrors.code)}
               />
             ))}
           </div>
+
+          {fieldErrors.code && (
+            <p className="text-red-500 text-sm text-center">{fieldErrors.code}</p>
+          )}
 
           {error && <p className="text-red-500 font-semibold mt-2">{error}</p>}
 

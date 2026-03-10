@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Lock, Loader } from "lucide-react";
 import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 import Input from "@/app/components/Input";
 import { useAuthStore } from "@/store/authStore";
-import { useRouter } from "next/navigation";
+
 type ResetPasswordFormProps = {
   token: string;
 };
@@ -17,8 +18,14 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const [success, setSuccess] = useState(false);
   const { resetPassword, isLoading, error, clearError, fieldErrors } =
     useAuthStore();
+
   const router = useRouter();
-  const handleSubmit = async (e: React.FormEvent) => {
+
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     clearError();
 
@@ -36,7 +43,6 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         router.replace("/login");
       }, 2000);
     } catch (err) {
-      toast.error("Could not reset password");
       console.error(err);
     }
   };
@@ -55,33 +61,40 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-        <form onSubmit={handleSubmit}>
-          <Input
-            icon={Lock}
-            type="password"
-            placeholder="New Password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            required
-          />
-          {fieldErrors.newPassword && (
-            <p className="text-red-500 text-sm mt-1">
-              {fieldErrors.newPassword}
-            </p>
-          )}
-          <Input
-            icon={Lock}
-            type="password"
-            placeholder="Confirm New Password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
-          {fieldErrors.confirmPassword && (
-            <p className="text-red-500 text-sm mt-1">
-              {fieldErrors.confirmPassword}
-            </p>
-          )}
+        <form onSubmit={handleSubmit} className="space-y-2">
+          <div>
+            <Input
+              icon={Lock}
+              type="password"
+              placeholder="New Password"
+              value={newPassword}
+              onChange={(e) => {
+                clearError();
+                setNewPassword(e.target.value);
+              }}
+              required
+            />
+            {fieldErrors.newPassword && (
+              <p className="text-red-500 text-sm mt-1">
+                {fieldErrors.newPassword}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Input
+              icon={Lock}
+              type="password"
+              placeholder="Confirm New Password"
+              value={confirmPassword}
+              onChange={(e) => {
+                clearError();
+                setConfirmPassword(e.target.value);
+              }}
+              required
+            />
+          </div>
+
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}

@@ -21,13 +21,13 @@ export default function SignUpForm() {
   useEffect(() => {
     clearError();
   }, [clearError]);
-  const handleSignUp = async (e: React.FormEvent) => {
+
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     try {
       await signUp(email, password, name);
-      const isVerified = useAuthStore.getState().user?.isVerified;
-      router.replace(isVerified ? "/" : "/verify-email");
+      router.replace("/verify-email");
     } catch (err) {
       console.error("Sign up failed:", err);
     }
@@ -41,56 +41,68 @@ export default function SignUpForm() {
       className="max-w-md w-full bg-gray-800/50 backdrop-blur-xl rounded-2xl shadow-xl overflow-hidden"
     >
       <div className="p-8">
-        <h2
-          className="text-3xl font-bold mb-6 text-center bg-gradient-to-r 
-          from-green-400 to-emerald-500 text-transparent bg-clip-text"
-        >
+        <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-green-400 to-emerald-500 text-transparent bg-clip-text">
           Create Account
         </h2>
 
         <form onSubmit={handleSignUp} className="space-y-2">
-          <Input
-            icon={User}
-            type="text"
-            placeholder="Full Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoComplete="name"
-          />
-          {fieldErrors.name && (
-            <p className="text-red-500 text-sm mt-1">{fieldErrors.name}</p>
-          )}
-          <Input
-            icon={Mail}
-            type="text"
-            placeholder="Email Address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-          />
-          {fieldErrors.email && (
-            <p className="text-red-500 text-sm mt-1">{fieldErrors.email}</p>
-          )}
-          <Input
-            icon={Lock}
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="new-password"
-          />
-          {fieldErrors.password && (
-            <p className="text-red-500 text-sm mt-1">{fieldErrors.password}</p>
-          )}
+          <div>
+            <Input
+              icon={User}
+              type="text"
+              placeholder="Full Name"
+              value={name}
+              onChange={(e) => {
+                clearError();
+                setName(e.target.value);
+              }}
+              autoComplete="name"
+            />
+            {fieldErrors.name && (
+              <p className="text-red-500 text-sm mt-1">{fieldErrors.name}</p>
+            )}
+          </div>
+
+          <div>
+            <Input
+              icon={Mail}
+              type="text"
+              placeholder="Email Address"
+              value={email}
+              onChange={(e) => {
+                clearError();
+                setEmail(e.target.value);
+              }}
+              autoComplete="email"
+            />
+            {fieldErrors.email && (
+              <p className="text-red-500 text-sm mt-1">{fieldErrors.email}</p>
+            )}
+          </div>
+
+          <div>
+            <Input
+              icon={Lock}
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => {
+                clearError();
+                setPassword(e.target.value);
+              }}
+              autoComplete="new-password"
+            />
+            {fieldErrors.password && (
+              <p className="text-red-500 text-sm mt-1">{fieldErrors.password}</p>
+            )}
+          </div>
+
           {error && <p className="text-red-500 font-semibold mt-2">{error}</p>}
 
           <PasswordStrengthMeter password={password} />
 
           <motion.button
-            className="mt-5 w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white 
-              font-bold rounded-lg shadow-lg hover:from-green-600 hover:to-emerald-700 
-              focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900
-              transition duration-200 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="mt-5 w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-lg shadow-lg hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition duration-200 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             type="submit"

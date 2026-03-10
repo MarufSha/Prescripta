@@ -1,27 +1,32 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { useAuthStore } from "../../../store/authStore";
-import Input from "../../components/Input";
 import { ArrowLeft, Loader, Mail } from "lucide-react";
 import Link from "next/link";
 
-const ForgotPasswordPage: React.FC = () => {
-  const [email, setEmail] = useState<string>("");
-  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+import Input from "@/app/components/Input";
+import { useAuthStore } from "@/store/authStore";
 
-  const { isLoading, forgotPassword } = useAuthStore();
+const ForgotPasswordForm: React.FC = () => {
+  const [email, setEmail] = useState("");
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const { isLoading, forgotPassword, error, fieldErrors, clearError } = useAuthStore();
+
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     try {
       await forgotPassword(email);
-    } catch {
-      // ignore errors to prevent email enumeration
+      setIsSubmitted(true);
+    } catch (err) {
+      console.error("Forgot password failed:", err);
     }
-    setIsSubmitted(true);
   };
 
   return (
@@ -37,22 +42,30 @@ const ForgotPasswordPage: React.FC = () => {
         </h2>
 
         {!isSubmitted ? (
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className="space-y-2">
             <p className="text-gray-300 mb-6 text-center">
               Enter your email address and we&apos;ll send you a link to reset
               your password.
             </p>
 
-            <Input
-              icon={Mail}
-              type="text"
-              placeholder="Email Address"
-              value={email}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setEmail(e.target.value)
-              }
-              required
-            />
+            <div>
+              <Input
+                icon={Mail}
+                type="text"
+                placeholder="Email Address"
+                value={email}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  clearError();
+                  setEmail(e.target.value);
+                }}
+                required
+              />
+              {fieldErrors.email && (
+                <p className="text-red-500 text-sm mt-1">{fieldErrors.email}</p>
+              )}
+            </div>
+
+            {error && <p className="text-red-500 font-semibold mt-2">{error}</p>}
 
             <motion.button
               whileHover={{ scale: 1.02 }}
@@ -99,4 +112,4 @@ const ForgotPasswordPage: React.FC = () => {
   );
 };
 
-export default ForgotPasswordPage;
+export default ForgotPasswordForm;

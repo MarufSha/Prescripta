@@ -19,12 +19,12 @@ export default function LoginForm() {
   useEffect(() => {
     clearError();
   }, [clearError]);
-  const handleLogin = async (e: React.FormEvent) => {
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     try {
       await login(email, password);
-
       const isVerified = useAuthStore.getState().user?.isVerified;
       router.replace(isVerified ? "/" : "/verify-email");
     } catch (err) {
@@ -45,28 +45,40 @@ export default function LoginForm() {
         </h2>
 
         <form onSubmit={handleLogin} className="space-y-2">
-          <Input
-            icon={Mail}
-            type="text"
-            placeholder="Email Address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-          />
-          {fieldErrors.email && (
-            <p className="text-red-500 text-sm mt-1">{fieldErrors.email}</p>
-          )}
-          <Input
-            icon={Lock}
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-          />
-          {fieldErrors.password && (
-            <p className="text-red-500 text-sm mt-1">{fieldErrors.password}</p>
-          )}
+          <div>
+            <Input
+              icon={Mail}
+              type="text"
+              placeholder="Email Address"
+              value={email}
+              onChange={(e) => {
+                clearError();
+                setEmail(e.target.value);
+              }}
+              autoComplete="email"
+            />
+            {fieldErrors.email && (
+              <p className="text-red-500 text-sm mt-1">{fieldErrors.email}</p>
+            )}
+          </div>
+
+          <div>
+            <Input
+              icon={Lock}
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => {
+                clearError();
+                setPassword(e.target.value);
+              }}
+              autoComplete="current-password"
+            />
+            {fieldErrors.password && (
+              <p className="text-red-500 text-sm mt-1">{fieldErrors.password}</p>
+            )}
+          </div>
+
           <div className="flex items-center mb-2">
             <Link
               href="/forgot-password"
