@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { connectDB } from "./db/connectDB.js";
-import authRoutes from "./routes/auth.js";
+import authRoutes from "./routes/auth-routes.js";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 

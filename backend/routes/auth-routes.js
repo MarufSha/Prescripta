@@ -7,7 +7,7 @@ import {
   forgotPassword,
   resetPassword,
   checkAuth,
-} from "../controllers/auth.js";
+} from "../controllers/auth-controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { handleValidationErrors } from "../middleware/handleValidationErrors.js";
 import {
@@ -24,8 +24,23 @@ router.get("/check-auth", verifyToken, checkAuth);
 router.post("/signup", signupValidation, handleValidationErrors, signup);
 router.post("/login", loginValidation, handleValidationErrors, login);
 router.post("/logout", logout);
-router.post("/verify-email", verifyEmailValidation, handleValidationErrors, verifyEmail);
-router.post("/forgot-password", forgotPasswordValidation, handleValidationErrors, forgotPassword);
-router.post("/reset-password/:token", resetPasswordValidation, handleValidationErrors, resetPassword);
+router.post(
+  "/verify-email",
+  verifyEmailValidation,
+  handleValidationErrors,
+  verifyEmail,
+);
+router.post(
+  "/forgot-password",
+  forgotPasswordValidation,
+  handleValidationErrors,
+  forgotPassword,
+);
+router.post(
+  "/reset-password/:token",
+  resetPasswordValidation,
+  handleValidationErrors,
+  resetPassword,
+);
 
 export default router;
