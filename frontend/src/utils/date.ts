@@ -14,3 +14,6 @@ export const formatDate = (dateString: string): string => {
     hour12: true,
   });
 };
+export function capitalize(word: string) {
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}

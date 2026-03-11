@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import axios from "axios";
 
-const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth`;
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api`;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -9,11 +9,23 @@ const api = axios.create({
 });
 
 type FieldErrorMap = Record<string, string>;
+type UserRole = "admin" | "doctor" | "patient";
 
 type User = {
   _id: string;
   email: string;
   name: string;
+  role: UserRole;
+  isVerified?: boolean;
+  createdAt?: string;
+  lastLogin?: string;
+};
+
+type AdminUser = {
+  _id: string;
+  email: string;
+  name: string;
+  role: UserRole;
   isVerified?: boolean;
   createdAt?: string;
   lastLogin?: string;
@@ -33,6 +45,7 @@ type BackendFieldError = {
 
 type AuthState = {
   user: User | null;
+  users: AdminUser[];
   isAuthenticated: boolean;
   isLoading: boolean;
   isCheckingAuth: boolean;
@@ -49,6 +62,9 @@ type AuthState = {
   clearError: () => void;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
+
+  fetchUsers: () => Promise<void>;
+  updateUserRole: (userId: string, role: "doctor" | "patient") => Promise<void>;
 };
 
 const getErrorMessage = (err: unknown, fallback: string): string => {
@@ -84,6 +100,7 @@ const getFieldErrors = (err: unknown): FieldErrorMap => {
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
+  users: [],
   isAuthenticated: false,
   isLoading: false,
   isCheckingAuth: true,
@@ -108,7 +125,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      const res = await api.post("/signup", { email, password, name });
+      const res = await api.post("/auth/signup", { email, password, name });
 
       set({
         user: res.data.user as User,
@@ -141,7 +158,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      const res = await api.post<VerifyEmailResponse>("/verify-email", {
+      const res = await api.post<VerifyEmailResponse>("/auth/verify-email", {
         code,
       });
 
@@ -176,7 +193,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      const res = await api.get("/check-auth");
+      const res = await api.get("/auth/check-auth");
 
       set({
         user: res.data.user as User,
@@ -205,7 +222,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      const res = await api.post("/login", { email, password });
+      const res = await api.post("/auth/login", { email, password });
 
       set({
         user: res.data.user as User,
@@ -238,10 +255,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      await api.post("/logout");
+      await api.post("/auth/logout");
 
       set({
         user: null,
+        users: [],
         isAuthenticated: false,
         isLoading: false,
         error: null,
@@ -269,7 +287,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      const res = await api.post("/forgot-password", { email });
+      const res = await api.post("/auth/forgot-password", { email });
 
       set({
         isLoading: false,
@@ -305,7 +323,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      const res = await api.post(`/reset-password/${token}`, { newPassword });
+      const res = await api.post(`/auth/reset-password/${token}`, {
+        newPassword,
+      });
 
       set({
         isLoading: false,
@@ -320,6 +340,69 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({
         fieldErrors,
         error: Object.keys(fieldErrors).length > 0 ? null : msg,
+        isLoading: false,
+      });
+
+      throw err;
+    }
+  },
+
+  fetchUsers: async (): Promise<void> => {
+    set({
+      isLoading: true,
+      error: null,
+      message: null,
+      fieldErrors: {},
+    });
+
+    try {
+      const res = await api.get("/admin/users");
+
+      set({
+        users: res.data.users as AdminUser[],
+        isLoading: false,
+        error: null,
+        message: null,
+      });
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to fetch users");
+
+      set({
+        error: msg,
+        isLoading: false,
+      });
+
+      throw err;
+    }
+  },
+
+  updateUserRole: async (
+    userId: string,
+    role: "doctor" | "patient",
+  ): Promise<void> => {
+    set({
+      isLoading: true,
+      error: null,
+      message: null,
+      fieldErrors: {},
+    });
+
+    try {
+      const res = await api.patch(`/admin/users/${userId}/role`, { role });
+
+      set((state) => ({
+        users: state.users.map((u) =>
+          u._id === userId ? { ...u, role: res.data.user.role as UserRole } : u,
+        ),
+        isLoading: false,
+        error: null,
+        message: res.data.message || "Role updated successfully",
+      }));
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to update user role");
+
+      set({
+        error: msg,
         isLoading: false,
       });
 

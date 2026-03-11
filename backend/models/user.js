@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
+    role: {
+      type: String,
+      enum: ["admin", "doctor", "patient"],
+      default: "patient",
+    },
     email: {
       type: String,
       required: [true, "Email is required"],
