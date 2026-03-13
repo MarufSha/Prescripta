@@ -21,7 +21,7 @@ type User = {
   lastLogin?: string;
 };
 
-type AdminUser = {
+export type AdminUser = {
   _id: string;
   email: string;
   name: string;

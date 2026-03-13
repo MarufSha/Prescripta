@@ -124,3 +124,28 @@
     @apply bg-background text-foreground;
   }
 }
+.custom-tabs-list {
+  @apply mx-auto flex w-fit items-center gap-2 rounded-xl border border-gray-700
+  bg-gray-900/60 p-1 backdrop-blur-xl shadow-lg;
+}
+
+.custom-tabs-trigger {
+  @apply px-8 py-2 text-sm font-semibold text-gray-300
+  transition-all duration-200 ease-out
+  hover:text-white hover:bg-gray-800/70 hover:scale-[1.03]
+  active:scale-95 cursor-pointer
+  data-[state=active]:bg-gradient-to-r
+  data-[state=active]:from-green-500
+  data-[state=active]:to-emerald-600
+  data-[state=active]:text-white
+  data-[state=active]:shadow-md
+  data-[state=active]:shadow-emerald-900/40;
+}
+
+.custom-tabs-content {
+  @apply mt-6 rounded-2xl border border-gray-800 bg-gray-900/70
+  p-6 text-white shadow-xl backdrop-blur-xl;
+}
+/* .glass-panel {
+  @apply bg-gray-900/70 backdrop-blur-xl border border-gray-800 shadow-xl rounded-2xl;
+} */
