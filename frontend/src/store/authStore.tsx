@@ -10,7 +10,10 @@ const api = axios.create({
 
 type FieldErrorMap = Record<string, string>;
 type UserRole = "admin" | "doctor" | "patient";
-
+type PendingSignupData = {
+  name: string;
+  email: string;
+};
 type User = {
   _id: string;
   email: string;
@@ -19,6 +22,8 @@ type User = {
   isVerified?: boolean;
   createdAt?: string;
   lastLogin?: string;
+  manualVerificationRequested?: boolean;
+  manualVerificationRequestedAt?: string | null;
 };
 
 export type AdminUser = {
@@ -29,6 +34,8 @@ export type AdminUser = {
   isVerified?: boolean;
   createdAt?: string;
   lastLogin?: string;
+  manualVerificationRequested?: boolean;
+  manualVerificationRequestedAt?: string | null;
 };
 
 type VerifyEmailResponse = {
@@ -53,6 +60,7 @@ type AuthState = {
   error: string | null;
   message: string | null;
   fieldErrors: FieldErrorMap;
+  pendingSignupData: PendingSignupData | null;
 
   signUp: (email: string, password: string, name: string) => Promise<void>;
   verifyEmail: (code: string) => Promise<VerifyEmailResponse>;
@@ -65,6 +73,9 @@ type AuthState = {
 
   fetchUsers: () => Promise<void>;
   updateUserRole: (userId: string, role: "doctor" | "patient") => Promise<void>;
+  deletePendingSignup: () => Promise<void>;
+  requestManualVerification: () => Promise<void>;
+  verifyUserManually: (userId: string) => Promise<void>;
 };
 
 const getErrorMessage = (err: unknown, fallback: string): string => {
@@ -108,7 +119,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   error: null,
   message: null,
   fieldErrors: {},
-
+  pendingSignupData: null,
   clearError: () =>
     set({
       error: null,
@@ -134,6 +145,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         error: null,
         message: null,
         fieldErrors: {},
+        pendingSignupData: { name, email },
       });
     } catch (err) {
       const fieldErrors = getFieldErrors(err);
@@ -169,6 +181,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         error: null,
         message: null,
         fieldErrors: {},
+        pendingSignupData: null,
       });
 
       return res.data;
@@ -257,7 +270,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       await api.post("/auth/logout");
 
-      set({
+      set((state) => ({
         user: null,
         users: [],
         isAuthenticated: false,
@@ -265,7 +278,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         error: null,
         message: null,
         fieldErrors: {},
-      });
+        pendingSignupData: state.pendingSignupData,
+      }));
     } catch (err) {
       const msg = getErrorMessage(err, "Logout failed");
 
@@ -311,10 +325,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  resetPassword: async (
-    token: string,
-    newPassword: string,
-  ): Promise<void> => {
+  resetPassword: async (token: string, newPassword: string): Promise<void> => {
     set({
       isLoading: true,
       error: null,
@@ -400,6 +411,114 @@ export const useAuthStore = create<AuthState>((set) => ({
       }));
     } catch (err) {
       const msg = getErrorMessage(err, "Failed to update user role");
+
+      set({
+        error: msg,
+        isLoading: false,
+      });
+
+      throw err;
+    }
+  },
+  deletePendingSignup: async (): Promise<void> => {
+    set({
+      isLoading: true,
+      error: null,
+      message: null,
+      fieldErrors: {},
+    });
+
+    try {
+      await api.delete("/auth/pending-signup");
+
+      set((state) => ({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null,
+        message: null,
+        fieldErrors: {},
+        pendingSignupData: state.pendingSignupData,
+      }));
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to delete pending signup");
+
+      set({
+        error: msg,
+        isLoading: false,
+      });
+
+      throw err;
+    }
+  },
+
+  requestManualVerification: async (): Promise<void> => {
+    set({
+      isLoading: true,
+      error: null,
+      message: null,
+      fieldErrors: {},
+    });
+
+    try {
+      await api.post("/auth/request-manual-verification");
+
+      set((state) => ({
+        user: state.user
+          ? {
+              ...state.user,
+              manualVerificationRequested: true,
+              manualVerificationRequestedAt: new Date().toISOString(),
+            }
+          : null,
+        isLoading: false,
+        error: null,
+        message: null,
+        fieldErrors: {},
+      }));
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to request manual verification");
+
+      set({
+        error: msg,
+        isLoading: false,
+      });
+
+      throw err;
+    }
+  },
+
+  verifyUserManually: async (userId: string): Promise<void> => {
+    set({
+      isLoading: true,
+      error: null,
+      message: null,
+      fieldErrors: {},
+    });
+
+    try {
+      const res = await api.patch(`/admin/users/${userId}/verify`);
+
+      set((state) => ({
+        users: state.users.map((u) =>
+          u._id === userId
+            ? {
+                ...u,
+                isVerified: true,
+                manualVerificationRequested: false,
+                manualVerificationRequestedAt: null,
+              }
+            : u,
+        ),
+        isLoading: false,
+        error: null,
+        message: null,
+        fieldErrors: {},
+      }));
+
+      return res.data;
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to verify user manually");
 
       set({
         error: msg,

@@ -15,6 +15,7 @@ export default function AdminDashboardPage() {
     fetchUsers,
     updateUserRole,
     isLoading,
+    verifyUserManually,
   } = useAuthStore();
 
   useEffect(() => {
@@ -36,11 +37,21 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleManualVerify = async (userId: string) => {
+    try {
+      await verifyUserManually(userId);
+      toast.success("User verified successfully");
+    } catch (err) {
+      console.error("Failed to verify user manually:", err);
+      toast.error("Failed to verify user");
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-6xl mx-auto p-6 text-white space-y-6"
+      className="max-w-[1600px] mx-auto p-6 text-white space-y-6"
     >
       <div className="flex items-center bg-gray-900/70 backdrop-blur-xl rounded-2xl shadow-xl p-6 border border-gray-800">
         <div className="flex flex-1 flex-col justify-center items-center">
@@ -51,7 +62,7 @@ export default function AdminDashboardPage() {
         </div>
         <button
           onClick={() => void logout()}
-          className="px-4 py-2 h-10 rounded-lg bg-linear-to-r from-green-500 to-emerald-600 font-semibold cursor-pointer"
+          className="px-4 py-2 h-10 rounded-lg bg-linear-to-r from-green-500 to-emerald-600 font-semibold cursor-pointer transition-all duration-200 hover:scale-[1.03] active:scale-95"
         >
           Logout
         </button>
@@ -81,6 +92,7 @@ export default function AdminDashboardPage() {
                 user={user}
                 isLoading={isLoading}
                 handleRoleChange={handleRoleChange}
+                handleManualVerify={handleManualVerify}
               />
             </TabsContent>
 
@@ -91,6 +103,7 @@ export default function AdminDashboardPage() {
                 user={user}
                 isLoading={isLoading}
                 handleRoleChange={handleRoleChange}
+                handleManualVerify={handleManualVerify}
               />
             </TabsContent>
 
@@ -101,6 +114,7 @@ export default function AdminDashboardPage() {
                 user={user}
                 isLoading={isLoading}
                 handleRoleChange={handleRoleChange}
+                handleManualVerify={handleManualVerify}
               />
             </TabsContent>
           </Tabs>

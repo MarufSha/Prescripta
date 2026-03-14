@@ -12,15 +12,21 @@ import { useAuthStore } from "@/store/authStore";
 
 export default function SignUpForm() {
   const router = useRouter();
-
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  const { signUp, error, isLoading, clearError, fieldErrors} = useAuthStore();
+  const {
+    signUp,
+    error,
+    isLoading,
+    clearError,
+    fieldErrors,
+    pendingSignupData,
+  } = useAuthStore();
   useEffect(() => {
     clearError();
   }, [clearError]);
+
+  const [name, setName] = useState(pendingSignupData?.name ?? "");
+  const [email, setEmail] = useState(pendingSignupData?.email ?? "");
+  const [password, setPassword] = useState("");
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -93,7 +99,9 @@ export default function SignUpForm() {
               autoComplete="new-password"
             />
             {fieldErrors.password && (
-              <p className="text-red-500 text-sm mt-1">{fieldErrors.password}</p>
+              <p className="text-red-500 text-sm mt-1">
+                {fieldErrors.password}
+              </p>
             )}
           </div>
 

@@ -64,6 +64,15 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    manualVerificationRequested: {
+      type: Boolean,
+      default: false,
+    },
+
+    manualVerificationRequestedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

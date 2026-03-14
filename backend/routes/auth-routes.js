@@ -7,6 +7,8 @@ import {
   forgotPassword,
   resetPassword,
   checkAuth,
+  deletePendingSignup,
+  requestManualVerification,
 } from "../controllers/auth-controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { handleValidationErrors } from "../middleware/handleValidationErrors.js";
@@ -43,4 +45,10 @@ router.post(
   resetPassword,
 );
 
+router.delete("/pending-signup", verifyToken, deletePendingSignup);
+router.post(
+  "/request-manual-verification",
+  verifyToken,
+  requestManualVerification,
+);
 export default router;

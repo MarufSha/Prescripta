@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
-
 import { useAuthStore } from "@/store/authStore";
+import { ChevronLeft } from "lucide-react";
 
 const CODE_LENGTH = 6;
 
@@ -16,7 +16,17 @@ export default function VerifyEmailForm() {
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const hasSubmitted = useRef(false);
 
-  const { error, fieldErrors, isLoading, verifyEmail, clearError } = useAuthStore();
+  const {
+    error,
+    fieldErrors,
+    isLoading,
+    verifyEmail,
+    clearError,
+    deletePendingSignup,
+    requestManualVerification,
+    user,
+    logout,
+  } = useAuthStore();
 
   useEffect(() => {
     clearError();
@@ -58,6 +68,34 @@ export default function VerifyEmailForm() {
 
     if (sanitized && index < CODE_LENGTH - 1) {
       focusInput(index + 1);
+    }
+  };
+
+ const handleGoBackToSignup = async () => {
+  try {
+    if (user?.manualVerificationRequested) {
+      await logout();
+      toast.success("Returned to signup page");
+      router.replace("/signup");
+      return;
+    }
+
+    await deletePendingSignup();
+    toast.success("Returned to signup page");
+    router.replace("/signup");
+  } catch (err) {
+    console.error("Failed to go back to signup:", err);
+    toast.error("Failed to return to signup page");
+  }
+};
+
+  const handleManualVerificationRequest = async () => {
+    try {
+      await requestManualVerification();
+      toast.success("Manual verification request sent");
+    } catch (err) {
+      console.error("Manual verification request failed:", err);
+      toast.error("Failed to request manual verification");
     }
   };
 
@@ -126,6 +164,15 @@ export default function VerifyEmailForm() {
         transition={{ duration: 0.5 }}
         className="bg-gray-800/50 backdrop-blur-xl rounded-2xl shadow-2xl p-8 w-full max-w-md"
       >
+        <button
+          type="button"
+          onClick={() => void handleGoBackToSignup()}
+          disabled={isLoading}
+          className="text-sm font-medium text-gray-300 transition hover:text-white cursor-pointer mb-8 flex items-center"
+        >
+          <ChevronLeft /> Back to signup
+        </button>
+
         <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-green-400 to-emerald-500 text-transparent bg-clip-text">
           Verify Your Email
         </h2>
@@ -167,7 +214,9 @@ export default function VerifyEmailForm() {
           </div>
 
           {fieldErrors.code && (
-            <p className="text-red-500 text-sm text-center">{fieldErrors.code}</p>
+            <p className="text-red-500 text-sm text-center">
+              {fieldErrors.code}
+            </p>
           )}
 
           {error && <p className="text-red-500 font-semibold mt-2">{error}</p>}
@@ -182,6 +231,18 @@ export default function VerifyEmailForm() {
             {isLoading ? "Verifying..." : "Verify Email"}
           </motion.button>
         </form>
+        <div className="mt-6 flex flex-col items-center gap-3">
+          <button
+            type="button"
+            onClick={() => void handleManualVerificationRequest()}
+            disabled={isLoading || Boolean(user?.manualVerificationRequested)}
+            className="text-sm font-medium text-emerald-400 transition hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+          >
+            {user?.manualVerificationRequested
+              ? "Manual verification already requested"
+              : "Request Manual Verification"}
+          </button>
+        </div>
       </motion.div>
     </div>
   );

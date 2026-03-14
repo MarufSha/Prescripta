@@ -248,3 +248,89 @@ export const checkAuth = async (req, res) => {
     });
   }
 };
+
+export const deletePendingSignup = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({
+        success: false,
+        message: "Verified users cannot delete pending signup this way",
+      });
+    }
+
+    if (user.manualVerificationRequested) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Cannot delete signup after manual verification has been requested",
+      });
+    }
+
+    await User.findByIdAndDelete(user._id);
+
+    res.clearCookie("token");
+
+    return res.status(200).json({
+      success: true,
+      message: "Pending signup deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting pending signup:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error deleting pending signup",
+    });
+  }
+};
+
+export const requestManualVerification = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({
+        success: false,
+        message: "User is already verified",
+      });
+    }
+
+    if (user.manualVerificationRequested) {
+      return res.status(400).json({
+        success: false,
+        message: "Manual verification has already been requested",
+      });
+    }
+
+    user.manualVerificationRequested = true;
+    user.manualVerificationRequestedAt = new Date();
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Manual verification request sent successfully",
+    });
+  } catch (error) {
+    console.error("Error requesting manual verification:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error requesting manual verification",
+    });
+  }
+};
