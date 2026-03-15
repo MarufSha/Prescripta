@@ -21,13 +21,18 @@ export const sendVerificationEmail = async (email, verificationToken) => {
     });
 
     console.log("Email sent successfully");
+    // !Important [This was chenged to combat the restrictions of mailtrap sandbox]
+    //catch (error) {
+    //   console.error("Error sending verification", error);
+    //   throw new Error(
+    //     `Failed to send verification email: ${
+    //       error instanceof Error ? error.message : "Unknown error"
+    //     }`,
+    //   );
+    // }
   } catch (error) {
     console.error("Error sending verification", error);
-    throw new Error(
-      `Failed to send verification email: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`,
-    );
+    return null;
   }
 };
 export const sendWelcomeEmail = async (email, name) => {
