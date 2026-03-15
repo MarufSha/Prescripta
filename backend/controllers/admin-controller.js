@@ -1,5 +1,5 @@
 import { User } from "../models/user.js";
-import { sendWelcomeEmail } from "../mailtrap/emails.js";
+import { sendWelcomeEmail } from "../mail/emails.js";
 
 const sanitizeUser = (user) => ({
   _id: user._id,

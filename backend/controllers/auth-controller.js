@@ -7,7 +7,7 @@ import {
   sendVerificationEmail,
   sendWelcomeEmail,
   sendResetSuccessEmail,
-} from "../mailtrap/emails.js";
+} from "../mail/emails.js";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 
