@@ -5,6 +5,7 @@ import {
   updateUserRole,
   getAllUsers,
   verifyUserManually,
+  deleteUserByAdmin,
 } from "../controllers/admin-controller.js";
 
 const router = express.Router();
@@ -20,5 +21,11 @@ router.patch(
   verifyToken,
   requireRole("admin"),
   verifyUserManually,
+);
+router.delete(
+  "/users/:id",
+  verifyToken,
+  requireRole("admin"),
+  deleteUserByAdmin,
 );
 export default router;

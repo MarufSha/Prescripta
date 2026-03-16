@@ -76,6 +76,7 @@ type AuthState = {
   deletePendingSignup: () => Promise<void>;
   requestManualVerification: () => Promise<void>;
   verifyUserManually: (userId: string) => Promise<void>;
+  deleteUser: (userId: string) => Promise<void>;
 };
 
 const getErrorMessage = (err: unknown, fallback: string): string => {
@@ -519,6 +520,35 @@ export const useAuthStore = create<AuthState>((set) => ({
       return res.data;
     } catch (err) {
       const msg = getErrorMessage(err, "Failed to verify user manually");
+
+      set({
+        error: msg,
+        isLoading: false,
+      });
+
+      throw err;
+    }
+  },
+  deleteUser: async (userId: string): Promise<void> => {
+    set({
+      isLoading: true,
+      error: null,
+      message: null,
+      fieldErrors: {},
+    });
+
+    try {
+      await api.delete(`/admin/users/${userId}`);
+
+      set((state) => ({
+        users: state.users.filter((u) => u._id !== userId),
+        isLoading: false,
+        error: null,
+        message: null,
+        fieldErrors: {},
+      }));
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to delete user");
 
       set({
         error: msg,

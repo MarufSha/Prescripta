@@ -8,7 +8,20 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/app/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/app/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
+
 type UserRole = "admin" | "doctor" | "patient";
 
 type CurrentUser = {
@@ -26,6 +39,7 @@ type Props = {
     role: "doctor" | "patient",
   ) => Promise<void> | void;
   handleManualVerify: (userId: string) => Promise<void> | void;
+  handleDeleteUser: (userId: string) => Promise<void> | void;
 };
 
 const roleMeta: Record<
@@ -62,6 +76,7 @@ const AdminTable = ({
   isLoading,
   handleRoleChange,
   handleManualVerify,
+  handleDeleteUser,
 }: Props) => {
   const filteredUsers = users.filter((u) => u.role === role);
   const meta = roleMeta[role];
@@ -76,7 +91,7 @@ const AdminTable = ({
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-gray-800 bg-gray-950/40 shadow-lg">
-        <table className="w-full min-w-[1150px] text-left border-collapse">
+        <table className="w-full min-w-[1280px] text-left border-collapse">
           <thead className="bg-gray-900/70">
             <tr className="border-b border-gray-800 text-sm text-gray-300">
               <th className="px-4 py-3 font-semibold">Name</th>
@@ -87,6 +102,7 @@ const AdminTable = ({
               <th className="px-4 py-3 font-semibold">Last Login</th>
               <th className="px-4 py-3 font-semibold">Edit Role</th>
               <th className="px-4 py-3 font-semibold">Manual Request</th>
+              <th className="px-4 py-3 font-semibold">Actions</th>
             </tr>
           </thead>
 
@@ -94,7 +110,7 @@ const AdminTable = ({
             {filteredUsers.length === 0 ? (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={9}
                   className="px-4 py-10 text-center text-sm text-gray-400"
                 >
                   {meta.empty}
@@ -221,6 +237,57 @@ const AdminTable = ({
                         <span className="inline-flex rounded-full border border-gray-700 bg-gray-800/60 px-3 py-1 text-xs font-semibold text-gray-400">
                           None
                         </span>
+                      )}
+                    </td>
+
+                    <td className="px-4 py-4">
+                      {locked ? (
+                        <span className="inline-flex rounded-lg border border-gray-700 bg-gray-800/60 px-3 py-2 text-xs font-medium text-gray-500">
+                          Not allowed
+                        </span>
+                      ) : (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <button
+                              type="button"
+                              disabled={isLoading}
+                              className="inline-flex items-center rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-red-300 transition-all duration-200 hover:bg-red-500/20 hover:scale-[1.03] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                            >
+                              <Trash2
+                                size={16}
+                                className="transition-transform duration-200 group-hover:rotate-6 group-hover:scale-110"
+                              />
+                            </button>
+                          </AlertDialogTrigger>
+
+                          <AlertDialogContent className="border border-gray-800 bg-gray-900/95 text-white backdrop-blur-xl shadow-2xl">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="text-white">
+                                Delete user account?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription className="text-gray-400">
+                                This will permanently delete{" "}
+                                <span className="font-semibold text-white">
+                                  {u.name}
+                                </span>{" "}
+                                from the system. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white">
+                                Cancel
+                              </AlertDialogCancel>
+
+                              <AlertDialogAction
+                                onClick={() => void handleDeleteUser(u._id)}
+                                className="bg-red-600 text-white hover:bg-red-700"
+                              >
+                                Delete User
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       )}
                     </td>
                   </tr>

@@ -3,7 +3,12 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/store/authStore";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/components/ui/tabs";
 import AdminTable from "@/app/components/AdminTable";
 import toast from "react-hot-toast";
 
@@ -16,6 +21,7 @@ export default function AdminDashboardPage() {
     updateUserRole,
     isLoading,
     verifyUserManually,
+    deleteUser,
   } = useAuthStore();
 
   useEffect(() => {
@@ -46,7 +52,15 @@ export default function AdminDashboardPage() {
       toast.error("Failed to verify user");
     }
   };
-
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      await deleteUser(userId);
+      toast.success("User deleted successfully");
+    } catch (err) {
+      console.error("Failed to delete user:", err);
+      toast.error("Failed to delete user");
+    }
+  };
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -68,7 +82,6 @@ export default function AdminDashboardPage() {
         </button>
       </div>
       <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl shadow-xl p-6 border border-gray-800">
-
         <div className="overflow-x-auto">
           <Tabs defaultValue="admin" className="w-full">
             <TabsList className="custom-tabs-list">
@@ -93,6 +106,7 @@ export default function AdminDashboardPage() {
                 isLoading={isLoading}
                 handleRoleChange={handleRoleChange}
                 handleManualVerify={handleManualVerify}
+                handleDeleteUser={handleDeleteUser}
               />
             </TabsContent>
 
@@ -104,6 +118,7 @@ export default function AdminDashboardPage() {
                 isLoading={isLoading}
                 handleRoleChange={handleRoleChange}
                 handleManualVerify={handleManualVerify}
+                handleDeleteUser={handleDeleteUser}
               />
             </TabsContent>
 
@@ -115,6 +130,7 @@ export default function AdminDashboardPage() {
                 isLoading={isLoading}
                 handleRoleChange={handleRoleChange}
                 handleManualVerify={handleManualVerify}
+                handleDeleteUser={handleDeleteUser}
               />
             </TabsContent>
           </Tabs>

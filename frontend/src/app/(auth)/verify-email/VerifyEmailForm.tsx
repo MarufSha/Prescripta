@@ -71,28 +71,33 @@ export default function VerifyEmailForm() {
     }
   };
 
- const handleGoBackToSignup = async () => {
-  try {
-    if (user?.manualVerificationRequested) {
-      await logout();
+  const handleGoBackToSignup = async () => {
+    try {
+      if (user?.manualVerificationRequested) {
+        await logout();
+        toast.success("Returned to signup page");
+        router.replace("/signup");
+        return;
+      }
+
+      await deletePendingSignup();
       toast.success("Returned to signup page");
       router.replace("/signup");
-      return;
+    } catch (err) {
+      console.error("Failed to go back to signup:", err);
+      toast.error("Failed to return to signup page");
     }
-
-    await deletePendingSignup();
-    toast.success("Returned to signup page");
-    router.replace("/signup");
-  } catch (err) {
-    console.error("Failed to go back to signup:", err);
-    toast.error("Failed to return to signup page");
-  }
-};
+  };
 
   const handleManualVerificationRequest = async () => {
     try {
       await requestManualVerification();
-      toast.success("Manual verification request sent");
+      toast.success(
+        "Manual verification requested. Please wait for admin approval.",
+      );
+      await logout();
+
+      router.replace("/login");
     } catch (err) {
       console.error("Manual verification request failed:", err);
       toast.error("Failed to request manual verification");
