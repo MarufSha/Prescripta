@@ -1,7 +1,8 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { AdminUser } from "@/store/authStore";
-import { formatDate } from "@/utils/date";
+import { capitalize, formatDate } from "@/utils/date";
 import {
   Select,
   SelectContent,
@@ -20,6 +21,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/app/components/ui/alert-dialog";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/app/components/ui/pagination";
 import { Trash2 } from "lucide-react";
 
 type UserRole = "admin" | "doctor" | "patient";
@@ -41,6 +51,8 @@ type Props = {
   handleManualVerify: (userId: string) => Promise<void> | void;
   handleDeleteUser: (userId: string) => Promise<void> | void;
 };
+
+const ROW_OPTIONS = [5, 10, 20, 50, 100] as const;
 
 const roleMeta: Record<
   UserRole,
@@ -78,8 +90,42 @@ const AdminTable = ({
   handleManualVerify,
   handleDeleteUser,
 }: Props) => {
-  const filteredUsers = users.filter((u) => u.role === role);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(5);
+
+  const filteredUsers = useMemo(
+    () => users.filter((u) => u.role === role),
+    [users, role],
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / rowsPerPage));
+
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (safeCurrentPage - 1) * rowsPerPage;
+    return filteredUsers.slice(startIndex, startIndex + rowsPerPage);
+  }, [filteredUsers, safeCurrentPage, rowsPerPage]);
+
   const meta = roleMeta[role];
+
+  const getPageNumbers = () => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    if (safeCurrentPage <= 3) {
+      return [1, 2, 3, 4];
+    }
+
+    if (safeCurrentPage >= totalPages - 2) {
+      return [totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+
+    return [safeCurrentPage - 1, safeCurrentPage, safeCurrentPage + 1];
+  };
+
+  const pageNumbers = getPageNumbers();
 
   return (
     <div className="space-y-5">
@@ -117,7 +163,7 @@ const AdminTable = ({
                 </td>
               </tr>
             ) : (
-              filteredUsers.map((u) => {
+              paginatedUsers.map((u) => {
                 const isSelf = u._id === user?._id;
                 const locked = isSelf || u.role === "admin";
                 const canVerifyManually =
@@ -178,24 +224,11 @@ const AdminTable = ({
                             )
                           }
                         >
-                          <SelectTrigger
-                            className="
-                              w-[150px] border-gray-700 bg-gray-800/80 text-white
-                              transition-all duration-200
-                              hover:border-emerald-500/50
-                              focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30
-                              data-[placeholder]:text-gray-400
-                            "
-                          >
+                          <SelectTrigger className="w-[150px] border-gray-700 bg-gray-800/80 text-white transition-all duration-200 hover:border-emerald-500/50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 data-[placeholder]:text-gray-400">
                             <SelectValue placeholder="Select role" />
                           </SelectTrigger>
 
-                          <SelectContent
-                            className="
-                              border border-gray-700 bg-gray-900/95 text-white
-                              backdrop-blur-xl shadow-xl
-                            "
-                          >
+                          <SelectContent className="border border-gray-700 bg-gray-900/95 text-white backdrop-blur-xl shadow-xl">
                             <SelectItem
                               value="patient"
                               className="cursor-pointer focus:bg-emerald-500/20 focus:text-white"
@@ -251,7 +284,7 @@ const AdminTable = ({
                             <button
                               type="button"
                               disabled={isLoading}
-                              className="inline-flex items-center rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-red-300 transition-all duration-200 hover:bg-red-500/20 hover:scale-[1.03] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                              className="group inline-flex items-center rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-red-300 transition-all duration-200 hover:bg-red-500/20 hover:scale-[1.03] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                             >
                               <Trash2
                                 size={16}
@@ -297,6 +330,170 @@ const AdminTable = ({
           </tbody>
         </table>
       </div>
+
+      {filteredUsers.length > 0 && (
+        <div className="flex items-center justify-evenly gap-4 rounded-2xl border border-gray-800 bg-gray-900/50 px-4 py-3 overflow-x-auto">
+          <div className="flex min-w-max items-center gap-4">
+            <p className="text-sm text-gray-400 whitespace-nowrap">
+              Showing{" "}
+              <span className="font-medium text-white">
+                {(safeCurrentPage - 1) * rowsPerPage + 1}
+              </span>{" "}
+              –{" "}
+              <span className="font-medium text-white">
+                {Math.min(safeCurrentPage * rowsPerPage, filteredUsers.length)}
+              </span>{" "}
+              of{" "}
+              <span className="font-medium text-white">
+                {filteredUsers.length}
+              </span>{" "}
+              {capitalize(role)}{" "}
+              {filteredUsers.length === 1 ? "Account" : "Accounts"}
+            </p>
+
+            <span className="text-gray-700">|</span>
+
+            {filteredUsers.length > rowsPerPage && (
+              <>
+                <Pagination>
+                  <PaginationContent className="flex-nowrap">
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (safeCurrentPage > 1) {
+                            setCurrentPage(safeCurrentPage - 1);
+                          }
+                        }}
+                        className={
+                          safeCurrentPage === 1
+                            ? "pointer-events-none opacity-50 text-gray-500"
+                            : "cursor-pointer border border-transparent bg-transparent text-gray-300 hover:bg-emerald-500/10 hover:text-emerald-300 hover:border-emerald-500/20"
+                        }
+                      />
+                    </PaginationItem>
+
+                    {pageNumbers[0] > 1 && (
+                      <>
+                        <PaginationItem>
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setCurrentPage(1);
+                            }}
+                            className="cursor-pointer border border-transparent bg-transparent text-gray-300 hover:bg-emerald-500/10 hover:text-emerald-300 hover:border-emerald-500/20"
+                          >
+                            1
+                          </PaginationLink>
+                        </PaginationItem>
+
+                        {pageNumbers[0] > 2 && (
+                          <PaginationItem>
+                            <PaginationEllipsis className="text-gray-500" />
+                          </PaginationItem>
+                        )}
+                      </>
+                    )}
+
+                    {pageNumbers.map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          href="#"
+                          isActive={safeCurrentPage === page}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(page);
+                          }}
+                          className={
+                            safeCurrentPage === page
+                              ? "cursor-pointer border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 hover:text-emerald-200"
+                              : "cursor-pointer border border-transparent bg-transparent text-gray-300 hover:bg-emerald-500/10 hover:text-emerald-300 hover:border-emerald-500/20"
+                          }
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+
+                    {pageNumbers[pageNumbers.length - 1] < totalPages && (
+                      <>
+                        {pageNumbers[pageNumbers.length - 1] <
+                          totalPages - 1 && (
+                          <PaginationItem>
+                            <PaginationEllipsis className="text-gray-500" />
+                          </PaginationItem>
+                        )}
+
+                        <PaginationItem>
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setCurrentPage(totalPages);
+                            }}
+                            className="cursor-pointer border border-transparent bg-transparent text-gray-300 hover:bg-emerald-500/10 hover:text-emerald-300 hover:border-emerald-500/20"
+                          >
+                            {totalPages}
+                          </PaginationLink>
+                        </PaginationItem>
+                      </>
+                    )}
+
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (safeCurrentPage < totalPages) {
+                            setCurrentPage(safeCurrentPage + 1);
+                          }
+                        }}
+                        className={
+                          safeCurrentPage === totalPages
+                            ? "pointer-events-none opacity-50 text-gray-500"
+                            : "cursor-pointer border border-transparent bg-transparent text-gray-300 hover:bg-emerald-500/10 hover:text-emerald-300 hover:border-emerald-500/20"
+                        }
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+
+                <span className="text-gray-700">|</span>
+              </>
+            )}
+
+            <div className="flex items-center gap-2 whitespace-nowrap">
+              <span className="text-sm text-gray-400">Rows per page</span>
+
+              <Select
+                value={String(rowsPerPage)}
+                onValueChange={(value) => {
+                  setRowsPerPage(Number(value));
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="h-9 w-[90px] border-gray-700 bg-gray-800/80 text-white hover:border-emerald-500/30 focus:border-emerald-500 focus:ring-emerald-500/30 cursor-pointer">
+                  <SelectValue placeholder="Rows" />
+                </SelectTrigger>
+
+                <SelectContent className="border border-gray-700 bg-gray-900/95 text-white backdrop-blur-xl shadow-xl">
+                  {ROW_OPTIONS.map((option) => (
+                    <SelectItem
+                      key={option}
+                      value={String(option)}
+                      className="cursor-pointer focus:bg-emerald-500/20 focus:text-white"
+                    >
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

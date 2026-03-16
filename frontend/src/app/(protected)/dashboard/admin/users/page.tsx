@@ -93,6 +93,7 @@ export default function AdminUsersPage() {
 
           <TabsContent value="admin" className="custom-tabs-content">
             <AdminTable
+              key="admin"
               role="admin"
               users={users}
               user={user}
@@ -105,6 +106,7 @@ export default function AdminUsersPage() {
 
           <TabsContent value="doctor" className="custom-tabs-content">
             <AdminTable
+              key="doctor"
               role="doctor"
               users={users}
               user={user}
@@ -117,6 +119,7 @@ export default function AdminUsersPage() {
 
           <TabsContent value="patient" className="custom-tabs-content">
             <AdminTable
+              key="patient"
               role="patient"
               users={users}
               user={user}
