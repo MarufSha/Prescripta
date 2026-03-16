@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import LoadingSpinner from "@/app/components/LoadingSpinner";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuthStore } from "@/store/authStore";
 
 export default function DashboardPage() {

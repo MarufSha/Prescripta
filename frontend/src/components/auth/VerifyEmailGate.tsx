@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import LoadingSpinner from "@/app/components/LoadingSpinner";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function VerifyEmailGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
