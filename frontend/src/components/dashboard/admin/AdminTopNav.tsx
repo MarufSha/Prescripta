@@ -38,7 +38,7 @@ export default function AdminTopNav({ onToggle }: Props) {
 
         <button
           onClick={() => void logout()}
-          className="inline-flex items-center gap-2 rounded-xl border border-gray-700 bg-gray-900/80 px-4 py-2 text-sm font-medium text-gray-200 transition-all duration-200 hover:border-emerald-500/30 hover:bg-gray-800 hover:text-white active:scale-95"
+          className="inline-flex items-center gap-2 rounded-xl border border-gray-700 bg-gray-900/80 px-4 py-2 text-sm font-medium text-gray-200 transition-all duration-200 hover:border-emerald-500/30 hover:bg-gray-800 hover:text-white active:scale-95 cursor-pointer"
         >
           <LogOut className="h-4 w-4 text-emerald-300" />
           Logout

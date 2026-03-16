@@ -30,7 +30,14 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ShieldCheck, Trash2 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type UserRole = "admin" | "doctor" | "patient";
 
@@ -92,14 +99,26 @@ const AdminTable = ({
 }: Props) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState<number>(5);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
 
   const filteredUsers = useMemo(
     () => users.filter((u) => u.role === role),
     [users, role],
   );
 
-  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / rowsPerPage));
+  const validUserIds = useMemo(() => new Set(users.map((u) => u._id)), [users]);
 
+  const effectiveSelectedUserIds = useMemo(
+    () => selectedUserIds.filter((id) => validUserIds.has(id)),
+    [selectedUserIds, validUserIds],
+  );
+
+  const selectedUsers = useMemo(
+    () => users.filter((u) => effectiveSelectedUserIds.includes(u._id)),
+    [users, effectiveSelectedUserIds],
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / rowsPerPage));
   const safeCurrentPage = Math.min(currentPage, totalPages);
 
   const paginatedUsers = useMemo(() => {
@@ -107,7 +126,99 @@ const AdminTable = ({
     return filteredUsers.slice(startIndex, startIndex + rowsPerPage);
   }, [filteredUsers, safeCurrentPage, rowsPerPage]);
 
+  const selectableUsers = useMemo(() => {
+    return paginatedUsers.filter((u) => {
+      const isSelf = u._id === user?._id;
+      const locked = isSelf || u.role === "admin";
+      return !locked;
+    });
+  }, [paginatedUsers, user?._id]);
+
+  const allVisibleSelectableIds = selectableUsers.map((u) => u._id);
+
+  const allVisibleSelected =
+    allVisibleSelectableIds.length > 0 &&
+    allVisibleSelectableIds.every((id) =>
+      effectiveSelectedUserIds.includes(id),
+    );
+
+  const someVisibleSelected =
+    allVisibleSelectableIds.some((id) =>
+      effectiveSelectedUserIds.includes(id),
+    ) && !allVisibleSelected;
+
+  const allSelectedCanVerifyManually =
+    selectedUsers.length > 0 &&
+    selectedUsers.every(
+      (u) => Boolean(u.manualVerificationRequested) && !u.isVerified,
+    );
+
+  const showChangeToPatient = selectedUsers.some((u) => u.role !== "patient");
+  const showChangeToDoctor = selectedUsers.some((u) => u.role !== "doctor");
+
   const meta = roleMeta[role];
+
+  const toggleRowSelection = (userId: string) => {
+    setSelectedUserIds((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId],
+    );
+  };
+
+  const toggleSelectAllVisible = () => {
+    setSelectedUserIds((prev) => {
+      const currentValid = prev.filter((id) => validUserIds.has(id));
+
+      if (allVisibleSelected) {
+        return currentValid.filter(
+          (id) => !allVisibleSelectableIds.includes(id),
+        );
+      }
+
+      const merged = new Set([...currentValid, ...allVisibleSelectableIds]);
+      return Array.from(merged);
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedUserIds([]);
+  };
+
+  const handleBulkRoleChange = async (newRole: "doctor" | "patient") => {
+    try {
+      const applicableUsers = selectedUsers.filter((u) => u.role !== newRole);
+
+      if (applicableUsers.length === 0) return;
+
+      await Promise.all(
+        applicableUsers.map((u) => handleRoleChange(u._id, newRole)),
+      );
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk role change failed:", error);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(
+        effectiveSelectedUserIds.map((id) => handleDeleteUser(id)),
+      );
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+    }
+  };
+
+  const handleBulkVerify = async () => {
+    try {
+      await Promise.all(selectedUsers.map((u) => handleManualVerify(u._id)));
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk verify failed:", error);
+    }
+  };
 
   const getPageNumbers = () => {
     if (totalPages <= 5) {
@@ -136,10 +247,152 @@ const AdminTable = ({
         <p className="text-sm text-gray-400">{meta.subtitle}</p>
       </div>
 
+      {effectiveSelectedUserIds.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
+          <p className="text-sm text-emerald-300">
+            <span className="font-semibold text-white">
+              {effectiveSelectedUserIds.length}
+            </span>{" "}
+            {effectiveSelectedUserIds.length === 1 ? "user" : "users"} selected
+          </p>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {(showChangeToPatient || showChangeToDoctor) && (
+              <Select
+                onValueChange={(value) =>
+                  void handleBulkRoleChange(value as "doctor" | "patient")
+                }
+                disabled={isLoading}
+              >
+                <SelectTrigger className="h-9 w-[180px] border-emerald-500/20 bg-gray-900/70 text-white hover:border-emerald-500/40 focus:border-emerald-500 focus:ring-emerald-500/30 cursor-pointer">
+                  <SelectValue placeholder="Change selected role" />
+                </SelectTrigger>
+
+                <SelectContent className="border border-gray-700 bg-gray-900/95 text-white backdrop-blur-xl shadow-xl">
+                  {showChangeToPatient && (
+                    <SelectItem
+                      value="patient"
+                      className="cursor-pointer focus:bg-emerald-500/20 focus:text-white"
+                    >
+                      Change to Patient
+                    </SelectItem>
+                  )}
+
+                  {showChangeToDoctor && (
+                    <SelectItem
+                      value="doctor"
+                      className="cursor-pointer focus:bg-emerald-500/20 focus:text-white"
+                    >
+                      Change to Doctor
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            )}
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <button
+                      type="button"
+                      onClick={() => void handleBulkVerify()}
+                      disabled={isLoading || !allSelectedCanVerifyManually}
+                      className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 transition-all duration-200 hover:bg-emerald-500/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                    >
+                      <ShieldCheck size={14} />
+                      Verify Selected
+                    </button>
+                  </span>
+                </TooltipTrigger>
+
+                {!allSelectedCanVerifyManually && (
+                  <TooltipContent>
+                    <p>
+                      All selected users must have a manual verification
+                      request.
+                    </p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+
+            <button
+              type="button"
+              onClick={clearSelection}
+              disabled={isLoading}
+              className="inline-flex items-center rounded-lg border border-gray-700 bg-gray-900/70 px-3 py-2 text-xs font-semibold text-gray-300 transition-all duration-200 hover:bg-gray-800 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+            >
+              Clear Selection
+            </button>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  className="inline-flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 transition-all duration-200 hover:bg-red-500/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                >
+                  <Trash2 size={14} />
+                  Delete Selected
+                </button>
+              </AlertDialogTrigger>
+
+              <AlertDialogContent className="border border-gray-800 bg-gray-900/95 text-white backdrop-blur-xl shadow-2xl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-white">
+                    Delete selected users?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-gray-400">
+                    This will permanently delete{" "}
+                    <span className="font-semibold text-white">
+                      {effectiveSelectedUserIds.length}
+                    </span>{" "}
+                    selected{" "}
+                    {effectiveSelectedUserIds.length === 1 ? "user" : "users"}.
+                    This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white cursor-pointer">
+                    Cancel
+                  </AlertDialogCancel>
+
+                  <AlertDialogAction
+                    onClick={() => void handleBulkDelete()}
+                    className="bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+                  >
+                    Delete Selected
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      )}
+
       <div className="overflow-x-auto rounded-2xl border border-gray-800 bg-gray-950/40 shadow-lg">
-        <table className="w-full min-w-[1280px] text-left border-collapse">
+        <table className="w-full min-w-[1320px] text-left border-collapse">
           <thead className="bg-gray-900/70">
             <tr className="border-b border-gray-800 text-sm text-gray-300">
+              <th className="w-[52px] px-4 py-3 font-semibold">
+                <Checkbox
+                  checked={
+                    allVisibleSelected
+                      ? true
+                      : someVisibleSelected
+                        ? "indeterminate"
+                        : false
+                  }
+                  onCheckedChange={() => toggleSelectAllVisible()}
+                  disabled={
+                    role === "admin" || allVisibleSelectableIds.length === 0
+                  }
+                  aria-label="Select all visible rows"
+                  className="border-gray-600 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500 cursor-pointer"
+                />
+              </th>
               <th className="px-4 py-3 font-semibold">Name</th>
               <th className="px-4 py-3 font-semibold">Email</th>
               <th className="px-4 py-3 font-semibold">Role</th>
@@ -156,7 +409,7 @@ const AdminTable = ({
             {filteredUsers.length === 0 ? (
               <tr>
                 <td
-                  colSpan={9}
+                  colSpan={10}
                   className="px-4 py-10 text-center text-sm text-gray-400"
                 >
                   {meta.empty}
@@ -168,12 +421,33 @@ const AdminTable = ({
                 const locked = isSelf || u.role === "admin";
                 const canVerifyManually =
                   !u.isVerified && Boolean(u.manualVerificationRequested);
+                const isSelected = effectiveSelectedUserIds.includes(u._id);
 
                 return (
                   <tr
                     key={u._id}
-                    className="border-b border-gray-800/80 text-sm text-gray-200 transition-colors duration-200 hover:bg-gray-900/40"
+                    className={`border-b border-gray-800/80 text-sm text-gray-200 transition-colors duration-200 hover:bg-gray-900/40 ${
+                      isSelected ? "bg-emerald-500/5" : ""
+                    }`}
                   >
+                    <td className="px-4 py-4">
+                      {locked ? (
+                        <Checkbox
+                          checked={false}
+                          disabled
+                          aria-label={`Row for ${u.name} cannot be selected`}
+                          className="border-gray-700 opacity-40"
+                        />
+                      ) : (
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleRowSelection(u._id)}
+                          aria-label={`Select ${u.name}`}
+                          className="border-gray-600 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500 cursor-pointer"
+                        />
+                      )}
+                    </td>
+
                     <td className="px-4 py-4 font-medium text-white">
                       {u.name}
                     </td>
@@ -224,7 +498,7 @@ const AdminTable = ({
                             )
                           }
                         >
-                          <SelectTrigger className="w-[150px] border-gray-700 bg-gray-800/80 text-white transition-all duration-200 hover:border-emerald-500/50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 data-[placeholder]:text-gray-400">
+                          <SelectTrigger className="w-[150px] border-gray-700 bg-gray-800/80 text-white transition-all duration-200 hover:border-emerald-500/50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 data-[placeholder]:text-gray-400 cursor-pointer">
                             <SelectValue placeholder="Select role" />
                           </SelectTrigger>
 
@@ -308,13 +582,13 @@ const AdminTable = ({
                             </AlertDialogHeader>
 
                             <AlertDialogFooter>
-                              <AlertDialogCancel className="border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white">
+                              <AlertDialogCancel className="border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white cursor-pointer">
                                 Cancel
                               </AlertDialogCancel>
 
                               <AlertDialogAction
                                 onClick={() => void handleDeleteUser(u._id)}
-                                className="bg-red-600 text-white hover:bg-red-700"
+                                className="bg-red-600 text-white hover:bg-red-700 cursor-pointer"
                               >
                                 Delete User
                               </AlertDialogAction>
