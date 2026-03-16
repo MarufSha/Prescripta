@@ -3,14 +3,9 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/store/authStore";
-import AdminTable from "@/app/components/AdminTable";
+import AdminTable from "@/components/dashboard/admin/AdminTable";
 import toast from "react-hot-toast";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/app/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function AdminUsersPage() {
   const {

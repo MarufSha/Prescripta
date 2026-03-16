@@ -9,7 +9,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/app/components/ui/select";
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/app/components/ui/alert-dialog";
+} from "@/components/ui/alert-dialog";
 import {
   Pagination,
   PaginationContent,
@@ -29,7 +29,7 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/app/components/ui/pagination";
+} from "@/components/ui/pagination";
 import { Trash2 } from "lucide-react";
 
 type UserRole = "admin" | "doctor" | "patient";

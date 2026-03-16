@@ -6,7 +6,7 @@ import { Mail, Lock, Loader } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import Input from "@/app/components/Input";
+import Input from "@/components/Input";
 import { useAuthStore } from "@/store/authStore";
 
 export default function LoginForm() {
@@ -75,7 +75,9 @@ export default function LoginForm() {
               autoComplete="current-password"
             />
             {fieldErrors.password && (
-              <p className="text-red-500 text-sm mt-1">{fieldErrors.password}</p>
+              <p className="text-red-500 text-sm mt-1">
+                {fieldErrors.password}
+              </p>
             )}
           </div>
 

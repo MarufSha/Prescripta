@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import AdminGuard from "@/app/components/auth/AdminGuard";
-import AdminSidebar from "@/app/components/dashboard/admin/AdminSidebar";
-import AdminTopNav from "@/app/components/dashboard/admin/AdminTopNav";
+import AdminGuard from "@/components/auth/AdminGuard";
+import AdminSidebar from "@/components/dashboard/admin/AdminSidebar";
+import AdminTopNav from "@/components/dashboard/admin/AdminTopNav";
 
 export default function AdminDashboardLayout({
   children,

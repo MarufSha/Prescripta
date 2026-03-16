@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Lock, Loader } from "lucide-react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import Input from "@/app/components/Input";
+import Input from "@/components/Input";
 import { useAuthStore } from "@/store/authStore";
 
 type ResetPasswordFormProps = {

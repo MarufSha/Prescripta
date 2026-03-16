@@ -6,8 +6,8 @@ import { motion } from "framer-motion";
 import { Loader, Lock, Mail, User } from "lucide-react";
 import Link from "next/link";
 
-import Input from "@/app/components/Input";
-import PasswordStrengthMeter from "@/app/components/PasswordStrengthMeter";
+import Input from "@/components/Input";
+import PasswordStrengthMeter from "@/components/PasswordStrengthMeter";
 import { useAuthStore } from "@/store/authStore";
 
 export default function SignUpForm() {

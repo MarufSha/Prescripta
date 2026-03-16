@@ -1,4 +1,4 @@
-import GuestOnly from "@/app/components/auth/GuestOnly";
+import GuestOnly from "@/components/auth/GuestOnly";
 import ForgotPasswordForm from "./ForgotPasswordForm";
 
 const ForgotPassword = () => {

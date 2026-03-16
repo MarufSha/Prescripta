@@ -5,14 +5,15 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Loader, Mail } from "lucide-react";
 import Link from "next/link";
 
-import Input from "@/app/components/Input";
+import Input from "@/components/Input";
 import { useAuthStore } from "@/store/authStore";
 
 const ForgotPasswordForm: React.FC = () => {
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const { isLoading, forgotPassword, error, fieldErrors, clearError } = useAuthStore();
+  const { isLoading, forgotPassword, error, fieldErrors, clearError } =
+    useAuthStore();
 
   useEffect(() => {
     clearError();
@@ -65,7 +66,9 @@ const ForgotPasswordForm: React.FC = () => {
               )}
             </div>
 
-            {error && <p className="text-red-500 font-semibold mt-2">{error}</p>}
+            {error && (
+              <p className="text-red-500 font-semibold mt-2">{error}</p>
+            )}
 
             <motion.button
               whileHover={{ scale: 1.02 }}

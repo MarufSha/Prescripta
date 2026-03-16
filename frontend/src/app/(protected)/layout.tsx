@@ -1,5 +1,5 @@
-import AuthGuard from "../components/auth/AuthGuard";
-import Background from "../components/Background";
+import AuthGuard from "../../components/auth/AuthGuard";
+import Background from "../../components/Background";
 
 export default function ProtectedLayout({
   children,
