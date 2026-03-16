@@ -1,139 +1,159 @@
 "use client";
 
-import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/store/authStore";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/app/components/ui/tabs";
-import AdminTable from "@/app/components/AdminTable";
-import toast from "react-hot-toast";
+  ShieldCheck,
+  Users,
+  Pill,
+  ChartNoAxesColumn,
+} from "lucide-react";
+import Link from "next/link";
 
 export default function AdminDashboardPage() {
-  const {
-    user,
-    users,
-    logout,
-    fetchUsers,
-    updateUserRole,
-    isLoading,
-    verifyUserManually,
-    deleteUser,
-  } = useAuthStore();
+  const { users } = useAuthStore();
 
-  useEffect(() => {
-    void fetchUsers();
-  }, [fetchUsers]);
+  const totalUsers = users.length;
+  const totalDoctors = users.filter((u) => u.role === "doctor").length;
+  const totalPatients = users.filter((u) => u.role === "patient").length;
+  const totalAdmins = users.filter((u) => u.role === "admin").length;
 
-  const handleRoleChange = async (
-    userId: string,
-    role: "doctor" | "patient",
-  ) => {
-    try {
-      await updateUserRole(userId, role);
+  const cards = [
+    {
+      title: "Admins",
+      value: totalAdmins,
+      icon: ShieldCheck,
+      href: "/dashboard/admin/users",
+    },
+    {
+      title: "Doctors",
+      value: totalDoctors,
+      icon: Users,
+      href: "/dashboard/admin/users",
+    },
+    {
+      title: "Patients",
+      value: totalPatients,
+      icon: Users,
+      href: "/dashboard/admin/users",
+    },
+    {
+      title: "Total Users",
+      value: totalUsers,
+      icon: ChartNoAxesColumn,
+      href: "/dashboard/admin/users",
+    },
+  ];
 
-      toast.success("User role updated successfully");
-    } catch (err) {
-      console.error("Failed to update role:", err);
-
-      toast.error("Failed to update user role");
-    }
-  };
-
-  const handleManualVerify = async (userId: string) => {
-    try {
-      await verifyUserManually(userId);
-      toast.success("User verified successfully");
-    } catch (err) {
-      console.error("Failed to verify user manually:", err);
-      toast.error("Failed to verify user");
-    }
-  };
-  const handleDeleteUser = async (userId: string) => {
-    try {
-      await deleteUser(userId);
-      toast.success("User deleted successfully");
-    } catch (err) {
-      console.error("Failed to delete user:", err);
-      toast.error("Failed to delete user");
-    }
-  };
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-[1600px] mx-auto p-6 text-white space-y-6"
+      className="space-y-6"
     >
-      <div className="flex items-center bg-gray-900/70 backdrop-blur-xl rounded-2xl shadow-xl p-6 border border-gray-800">
-        <div className="flex flex-1 flex-col justify-center items-center">
-          <h1 className="text-3xl font-bold bg-linear-to-r from-green-400 to-emerald-500 text-transparent bg-clip-text">
-            Admin Dashboard
-          </h1>
-          <p className="text-gray-300 mt-2">Welcome, {user?.name}</p>
-        </div>
-        <button
-          onClick={() => void logout()}
-          className="px-4 py-2 h-10 rounded-lg bg-linear-to-r from-green-500 to-emerald-600 font-semibold cursor-pointer transition-all duration-200 hover:scale-[1.03] active:scale-95"
-        >
-          Logout
-        </button>
+      <div className="rounded-3xl border border-gray-800 bg-gray-900/70 p-6 shadow-xl backdrop-blur-xl">
+        <h2 className="bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-3xl font-bold text-transparent">
+          Admin Overview
+        </h2>
+        <p className="mt-2 text-sm text-gray-400">
+          Manage users, review prescriptions, and monitor platform activity.
+        </p>
       </div>
-      <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl shadow-xl p-6 border border-gray-800">
-        <div className="overflow-x-auto">
-          <Tabs defaultValue="admin" className="w-full">
-            <TabsList className="custom-tabs-list">
-              <TabsTrigger value="admin" className="custom-tabs-trigger">
-                Admin
-              </TabsTrigger>
 
-              <TabsTrigger value="doctor" className="custom-tabs-trigger">
-                Doctor
-              </TabsTrigger>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {cards.map((card) => {
+          const Icon = card.icon;
 
-              <TabsTrigger value="patient" className="custom-tabs-trigger">
-                Patient
-              </TabsTrigger>
-            </TabsList>
+          return (
+            <Link key={card.title} href={card.href}>
+              <motion.div
+                whileHover={{ y: -4 }}
+                className="rounded-3xl border border-gray-800 bg-gray-900/70 p-5 shadow-xl backdrop-blur-xl transition-colors hover:border-emerald-500/20"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3">
+                    <Icon className="h-5 w-5 text-emerald-300" />
+                  </div>
 
-            <TabsContent value="admin" className="custom-tabs-content">
-              <AdminTable
-                role="admin"
-                users={users}
-                user={user}
-                isLoading={isLoading}
-                handleRoleChange={handleRoleChange}
-                handleManualVerify={handleManualVerify}
-                handleDeleteUser={handleDeleteUser}
-              />
-            </TabsContent>
+                  <span className="text-3xl font-bold text-white">
+                    {card.value}
+                  </span>
+                </div>
 
-            <TabsContent value="doctor" className="custom-tabs-content">
-              <AdminTable
-                role="doctor"
-                users={users}
-                user={user}
-                isLoading={isLoading}
-                handleRoleChange={handleRoleChange}
-                handleManualVerify={handleManualVerify}
-                handleDeleteUser={handleDeleteUser}
-              />
-            </TabsContent>
+                <div className="mt-5">
+                  <p className="text-sm text-gray-400">{card.title}</p>
+                </div>
+              </motion.div>
+            </Link>
+          );
+        })}
+      </div>
 
-            <TabsContent value="patient" className="custom-tabs-content">
-              <AdminTable
-                role="patient"
-                users={users}
-                user={user}
-                isLoading={isLoading}
-                handleRoleChange={handleRoleChange}
-                handleManualVerify={handleManualVerify}
-                handleDeleteUser={handleDeleteUser}
-              />
-            </TabsContent>
-          </Tabs>
+      <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+        <div className="rounded-3xl border border-gray-800 bg-gray-900/70 p-6 shadow-xl backdrop-blur-xl">
+          <h3 className="text-xl font-semibold text-white">Quick Actions</h3>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <Link
+              href="/dashboard/admin/users"
+              className="rounded-2xl border border-gray-800 bg-gray-950/50 p-4 transition hover:border-emerald-500/20 hover:bg-gray-900"
+            >
+              <div className="flex items-center gap-3">
+                <Users className="h-5 w-5 text-emerald-300" />
+                <div>
+                  <p className="font-medium text-white">User Management</p>
+                  <p className="text-sm text-gray-400">
+                    Change roles, verify accounts, delete users.
+                  </p>
+                </div>
+              </div>
+            </Link>
+
+            <Link
+              href="/dashboard/admin/prescriptions"
+              className="rounded-2xl border border-gray-800 bg-gray-950/50 p-4 transition hover:border-emerald-500/20 hover:bg-gray-900"
+            >
+              <div className="flex items-center gap-3">
+                <Pill className="h-5 w-5 text-emerald-300" />
+                <div>
+                  <p className="font-medium text-white">View Prescriptions</p>
+                  <p className="text-sm text-gray-400">
+                    Review future medicine records and doctor activity.
+                  </p>
+                </div>
+              </div>
+            </Link>
+
+            <Link
+              href="/dashboard/admin/statistics"
+              className="rounded-2xl border border-gray-800 bg-gray-950/50 p-4 transition hover:border-emerald-500/20 hover:bg-gray-900 md:col-span-2"
+            >
+              <div className="flex items-center gap-3">
+                <ChartNoAxesColumn className="h-5 w-5 text-emerald-300" />
+                <div>
+                  <p className="font-medium text-white">Statistics</p>
+                  <p className="text-sm text-gray-400">
+                    Explore future analytics and admin insights.
+                  </p>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-gray-800 bg-gray-900/70 p-6 shadow-xl backdrop-blur-xl">
+          <h3 className="text-xl font-semibold text-white">Admin Notes</h3>
+          <div className="mt-4 space-y-3 text-sm text-gray-400">
+            <p>
+              This panel is restricted to administrators only.
+            </p>
+            <p>
+              Role changes, manual verification, and deletion controls are managed from the user management section.
+            </p>
+            <p>
+              Prescription and statistics pages are ready for your next feature wave.
+            </p>
+          </div>
         </div>
       </div>
     </motion.div>
