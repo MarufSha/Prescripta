@@ -1,6 +1,4 @@
 "use client";
-
-import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/store/authStore";
 import AdminTable from "@/components/dashboard/admin/AdminTable";
@@ -11,16 +9,11 @@ export default function AdminUsersPage() {
   const {
     user,
     users,
-    fetchUsers,
     updateUserRole,
     isLoading,
     verifyUserManually,
     deleteUser,
   } = useAuthStore();
-
-  useEffect(() => {
-    void fetchUsers();
-  }, [fetchUsers]);
 
   const handleRoleChange = async (
     userId: string,

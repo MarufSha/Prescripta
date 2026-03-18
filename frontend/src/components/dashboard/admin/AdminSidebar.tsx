@@ -19,22 +19,22 @@ type Props = {
 const navItems = [
   {
     label: "Overview",
-    href: "/dashboard/admin",
+    href: "/admin",
     icon: LayoutDashboard,
   },
   {
     label: "User Management",
-    href: "/dashboard/admin/users",
+    href: "/admin/users",
     icon: Users,
   },
   {
     label: "Prescriptions",
-    href: "/dashboard/admin/prescriptions",
+    href: "/admin/prescriptions",
     icon: Pill,
   },
   {
     label: "Statistics",
-    href: "/dashboard/admin/statistics",
+    href: "/admin/statistics",
     icon: ChartNoAxesColumn,
   },
 ];
@@ -45,11 +45,11 @@ export default function AdminSidebar({ collapsed, onToggle }: Props) {
   return (
     <aside
       className={[
-        "hidden md:flex shrink-0 border-r border-gray-800 bg-gray-950/70 backdrop-blur-xl transition-all duration-300",
+        "hidden md:flex h-screen shrink-0 border-r border-gray-800 bg-gray-950/70 backdrop-blur-xl transition-all duration-300",
         collapsed ? "w-24" : "w-72",
       ].join(" ")}
     >
-      <div className="flex w-full flex-col px-4 py-6">
+      <div className="flex h-full w-full flex-col px-4 py-6">
         <div
           className={[
             "mb-8 flex items-center",
@@ -75,8 +75,7 @@ export default function AdminSidebar({ collapsed, onToggle }: Props) {
             const Icon = item.icon;
             const isActive =
               pathname === item.href ||
-              (item.href !== "/dashboard/admin" &&
-                pathname.startsWith(item.href));
+              (item.href !== "/admin" && pathname.startsWith(item.href));
 
             return (
               <Link

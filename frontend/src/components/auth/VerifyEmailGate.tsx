@@ -21,7 +21,7 @@ export default function VerifyEmailGate({ children }: { children: React.ReactNod
 
     // Logged in + verified -> never allow verify page again
     if (user?.isVerified) {
-      router.replace("/dashboard");
+      router.replace("/");
       return;
     }
   }, [isCheckingAuth, isAuthenticated, user?.isVerified, router, pathname]);

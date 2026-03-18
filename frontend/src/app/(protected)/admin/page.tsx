@@ -23,25 +23,25 @@ export default function AdminDashboardPage() {
       title: "Admins",
       value: totalAdmins,
       icon: ShieldCheck,
-      href: "/dashboard/admin/users",
+      href: "/admin/users",
     },
     {
       title: "Doctors",
       value: totalDoctors,
       icon: Users,
-      href: "/dashboard/admin/users",
+      href: "/admin/users",
     },
     {
       title: "Patients",
       value: totalPatients,
       icon: Users,
-      href: "/dashboard/admin/users",
+      href: "/admin/users",
     },
     {
       title: "Total Users",
       value: totalUsers,
       icon: ChartNoAxesColumn,
-      href: "/dashboard/admin/users",
+      href: "/admin/users",
     },
   ];
 
@@ -95,7 +95,7 @@ export default function AdminDashboardPage() {
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             <Link
-              href="/dashboard/admin/users"
+              href="/admin/users"
               className="rounded-2xl border border-gray-800 bg-gray-950/50 p-4 transition hover:border-emerald-500/20 hover:bg-gray-900"
             >
               <div className="flex items-center gap-3">
@@ -110,7 +110,7 @@ export default function AdminDashboardPage() {
             </Link>
 
             <Link
-              href="/dashboard/admin/prescriptions"
+              href="/admin/prescriptions"
               className="rounded-2xl border border-gray-800 bg-gray-950/50 p-4 transition hover:border-emerald-500/20 hover:bg-gray-900"
             >
               <div className="flex items-center gap-3">
@@ -125,7 +125,7 @@ export default function AdminDashboardPage() {
             </Link>
 
             <Link
-              href="/dashboard/admin/statistics"
+              href="/admin/statistics"
               className="rounded-2xl border border-gray-800 bg-gray-950/50 p-4 transition hover:border-emerald-500/20 hover:bg-gray-900 md:col-span-2"
             >
               <div className="flex items-center gap-3">

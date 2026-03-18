@@ -27,7 +27,7 @@ export default function AdminGuard({
     }
 
     if (user?.role !== "admin") {
-      router.replace("/dashboard");
+      router.replace("/");
     }
   }, [isCheckingAuth, isAuthenticated, user?.isVerified, user?.role, router]);
 

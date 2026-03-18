@@ -7,26 +7,32 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function LandingPage() {
   const router = useRouter();
-
   const { user, isAuthenticated, isCheckingAuth } = useAuthStore();
 
   useEffect(() => {
     if (isCheckingAuth) return;
 
-    // not logged in
     if (!isAuthenticated) {
       router.replace("/login");
       return;
     }
 
-    // logged in but not verified
     if (!user?.isVerified) {
       router.replace("/verify-email");
       return;
     }
 
-    // logged in + verified
-    router.replace("/dashboard");
+    if (user.role === "admin") {
+      router.replace("/admin");
+      return;
+    }
+
+    if (user.role === "doctor") {
+      router.replace("/doctor");
+      return;
+    }
+
+    router.replace("/patient");
   }, [isAuthenticated, user, isCheckingAuth, router]);
 
   if (isCheckingAuth) {

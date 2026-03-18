@@ -5,17 +5,31 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
-export default function GuestOnly({ children }: { children: React.ReactNode }) {
+export default function PatientGuard({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const { isCheckingAuth, isAuthenticated, user } = useAuthStore();
 
   useEffect(() => {
     if (isCheckingAuth) return;
 
-    if (isAuthenticated) {
-      router.replace(user?.isVerified ? "/" : "/verify-email");
+    if (!isAuthenticated) {
+      router.replace("/login");
+      return;
     }
-  }, [isCheckingAuth, isAuthenticated, user?.isVerified, router]);
+
+    if (!user?.isVerified) {
+      router.replace("/verify-email");
+      return;
+    }
+
+    if (user?.role !== "patient") {
+      router.replace("/");
+    }
+  }, [isCheckingAuth, isAuthenticated, user?.isVerified, user?.role, router]);
 
   if (isCheckingAuth) {
     return (
@@ -25,8 +39,9 @@ export default function GuestOnly({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If they are not authenticated, allow login/signup
-  if (!isAuthenticated) return <>{children}</>;
+  if (isAuthenticated && user?.isVerified && user?.role === "patient") {
+    return <>{children}</>;
+  }
 
   return null;
 }
