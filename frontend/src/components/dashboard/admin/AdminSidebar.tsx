@@ -9,6 +9,7 @@ import {
   ChartNoAxesColumn,
   ShieldCheck,
   Menu,
+  ClipboardList,
 } from "lucide-react";
 
 type Props = {
@@ -28,9 +29,14 @@ const navItems = [
     icon: Users,
   },
   {
+    label: "Medicine",
+    href: "/admin/medicine",
+    icon: Pill,
+  },
+  {
     label: "Prescriptions",
     href: "/admin/prescriptions",
-    icon: Pill,
+    icon: ClipboardList,
   },
   {
     label: "Statistics",

@@ -239,13 +239,13 @@ const AdminTable = ({
   const pageNumbers = getPageNumbers();
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-1">
+    <div className="space-y-4">
+      {/* <div className="flex flex-col gap-1">
         <h2 className="text-xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
           {meta.title}
         </h2>
         <p className="text-sm text-gray-400">{meta.subtitle}</p>
-      </div>
+      </div> */}
 
       {effectiveSelectedUserIds.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
