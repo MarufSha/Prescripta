@@ -2,6 +2,14 @@
   "name": "prescripta",
   "version": "1.0.0",
   "description": "",
+  "homepage": "https://github.com/MarufSha/Prescripta#readme",
+  "bugs": {
+    "url": "https://github.com/MarufSha/Prescripta/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MarufSha/Prescripta.git"
+  },
   "license": "ISC",
   "author": "",
   "type": "module",

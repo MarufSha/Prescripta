@@ -7,25 +7,28 @@ import {
   verifyUserManually,
   deleteUserByAdmin,
 } from "../controllers/admin-controller.js";
-
+import { requireCsrf } from "../middleware/requireCsrf.js";
 const router = express.Router();
 router.get("/users", verifyToken, requireRole("admin"), getAllUsers);
 router.patch(
   "/users/:id/role",
   verifyToken,
   requireRole("admin"),
+  requireCsrf,
   updateUserRole,
 );
 router.patch(
   "/users/:id/verify",
   verifyToken,
   requireRole("admin"),
+  requireCsrf,
   verifyUserManually,
 );
 router.delete(
   "/users/:id",
   verifyToken,
   requireRole("admin"),
+  requireCsrf,
   deleteUserByAdmin,
 );
 export default router;

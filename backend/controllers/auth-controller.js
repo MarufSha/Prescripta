@@ -10,7 +10,7 @@ import {
 } from "../mail/emails.js";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
-
+import { generateCsrfToken, setCsrfCookie } from "../utils/csrf.js";
 const sanitizeUser = (user) => ({
   ...user._doc,
   password: undefined,
@@ -42,6 +42,8 @@ export const signup = async (req, res) => {
     await user.save();
 
     generateTokenAndSetCookie(res, user._id);
+    const csrfToken = generateCsrfToken();
+    setCsrfCookie(res, csrfToken);
     await sendVerificationEmail(user.email, verificationToken);
 
     return res.status(201).json({
@@ -118,7 +120,8 @@ export const login = async (req, res) => {
     }
 
     generateTokenAndSetCookie(res, user._id);
-
+    const csrfToken = generateCsrfToken();
+    setCsrfCookie(res, csrfToken);
     user.lastLogin = new Date();
     await user.save();
 
@@ -137,7 +140,9 @@ export const login = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-  res.clearCookie("token");
+  res.clearCookie("token", { path: "/" });
+  res.clearCookie("csrfToken", { path: "/" });
+
   return res.status(200).json({
     success: true,
     message: "Logged out successfully",
@@ -331,6 +336,23 @@ export const requestManualVerification = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Server error requesting manual verification",
+    });
+  }
+};
+export const getCsrfToken = async (req, res) => {
+  try {
+    const csrfToken = generateCsrfToken();
+    setCsrfCookie(res, csrfToken);
+
+    return res.status(200).json({
+      success: true,
+      csrfToken,
+    });
+  } catch (error) {
+    console.error("Error generating CSRF token:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error generating CSRF token",
     });
   }
 };

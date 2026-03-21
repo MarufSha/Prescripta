@@ -62,6 +62,8 @@ type AuthState = {
   fieldErrors: FieldErrorMap;
   pendingSignupData: PendingSignupData | null;
 
+  csrfToken: string | null;
+  fetchCsrfToken: () => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   verifyEmail: (code: string) => Promise<VerifyEmailResponse>;
   login: (email: string, password: string) => Promise<void>;
@@ -121,6 +123,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   message: null,
   fieldErrors: {},
   pendingSignupData: null,
+  csrfToken: null,
   clearError: () =>
     set({
       error: null,
@@ -148,6 +151,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         fieldErrors: {},
         pendingSignupData: { name, email },
       });
+      await useAuthStore.getState().fetchCsrfToken();
     } catch (err) {
       const fieldErrors = getFieldErrors(err);
       const msg = getErrorMessage(err, "Sign up failed");
@@ -214,16 +218,39 @@ export const useAuthStore = create<AuthState>((set) => ({
         isAuthenticated: true,
       });
     } catch {
+      delete api.defaults.headers.common["x-csrf-token"];
       set({
         user: null,
         isAuthenticated: false,
         error: null,
+        csrfToken: null,
       });
     } finally {
       set({
         isCheckingAuth: false,
         hasHydrated: true,
       });
+    }
+  },
+  fetchCsrfToken: async (): Promise<void> => {
+    try {
+      const res = await api.get("/auth/csrf-token");
+
+      const token = res.data.csrfToken as string;
+
+      api.defaults.headers.common["x-csrf-token"] = token;
+
+      set({
+        csrfToken: token,
+      });
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to fetch CSRF token");
+
+      set({
+        error: msg,
+      });
+
+      throw err;
     }
   },
 
@@ -246,6 +273,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         message: null,
         fieldErrors: {},
       });
+      await useAuthStore.getState().fetchCsrfToken();
     } catch (err) {
       const fieldErrors = getFieldErrors(err);
       const msg = getErrorMessage(err, "Login failed");
@@ -270,6 +298,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     try {
       await api.post("/auth/logout");
+      delete api.defaults.headers.common["x-csrf-token"];
 
       set((state) => ({
         user: null,
@@ -280,6 +309,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         message: null,
         fieldErrors: {},
         pendingSignupData: state.pendingSignupData,
+        csrfToken: null,
       }));
     } catch (err) {
       const msg = getErrorMessage(err, "Logout failed");
