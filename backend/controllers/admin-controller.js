@@ -1,6 +1,98 @@
 import { User } from "../models/user.js";
 import { sendWelcomeEmail } from "../mail/emails.js";
 
+const normalizeStringArray = (value) => {
+  if (!Array.isArray(value)) return [];
+
+  return value.map((item) => String(item).trim()).filter(Boolean);
+};
+
+const sanitizeDoctorProfile = (doctorProfile) => {
+  if (!doctorProfile) return undefined;
+
+  return {
+    specialties: normalizeStringArray(doctorProfile.specialties),
+    bmdcNo: doctorProfile.bmdcNo ? String(doctorProfile.bmdcNo).trim() : "",
+    mobileNumber: doctorProfile.mobileNumber
+      ? String(doctorProfile.mobileNumber).trim()
+      : "",
+    designations: normalizeStringArray(doctorProfile.designations),
+    degrees: normalizeStringArray(doctorProfile.degrees),
+    chambers: Array.isArray(doctorProfile.chambers)
+      ? doctorProfile.chambers
+          .map((chamber) => ({
+            name: String(chamber?.name || "").trim(),
+            location: String(chamber?.location || "").trim(),
+          }))
+          .filter((chamber) => chamber.name && chamber.location)
+      : [],
+  };
+};
+
+const validateDoctorProfile = (doctorProfile) => {
+  if (!doctorProfile || typeof doctorProfile !== "object") {
+    return "Doctor profile is required";
+  }
+
+  const specialties = normalizeStringArray(doctorProfile.specialties);
+  const designations = normalizeStringArray(doctorProfile.designations);
+  const degrees = normalizeStringArray(doctorProfile.degrees);
+
+  const bmdcNo = String(doctorProfile.bmdcNo || "").trim();
+  const mobileNumber = String(doctorProfile.mobileNumber || "").trim();
+
+  const chambers = Array.isArray(doctorProfile.chambers)
+    ? doctorProfile.chambers
+        .map((chamber) => ({
+          name: String(chamber?.name || "").trim(),
+          location: String(chamber?.location || "").trim(),
+        }))
+        .filter((chamber) => chamber.name || chamber.location)
+    : [];
+
+  if (specialties.length === 0) {
+    return "At least one specialty is required";
+  }
+
+  if (!bmdcNo) {
+    return "BMDC No. is required";
+  }
+
+  if (bmdcNo.length > 20) {
+    return "BMDC No. must be at most 20 characters long";
+  }
+
+  if (!mobileNumber) {
+    return "Mobile number is required";
+  }
+
+  if (mobileNumber.length > 20) {
+    return "Mobile number must be at most 20 characters long";
+  }
+
+  if (designations.length === 0) {
+    return "At least one designation is required";
+  }
+
+  if (degrees.length === 0) {
+    return "At least one degree is required";
+  }
+
+  if (chambers.length === 0) {
+    return "At least one chamber is required";
+  }
+
+  const invalidChamber = chambers.find(
+    (chamber) => !chamber.name || !chamber.location,
+  );
+
+  if (invalidChamber) {
+    return "Each chamber must have both chamber name and chamber location";
+  }
+
+  return null;
+};
+
 const sanitizeUser = (user) => ({
   _id: user._id,
   name: user.name,
@@ -11,11 +103,12 @@ const sanitizeUser = (user) => ({
   lastLogin: user.lastLogin,
   manualVerificationRequested: user.manualVerificationRequested,
   manualVerificationRequestedAt: user.manualVerificationRequestedAt,
+  doctorProfile: sanitizeDoctorProfile(user.doctorProfile),
 });
 
 export const updateUserRole = async (req, res) => {
   const { id } = req.params;
-  const { role } = req.body;
+  const { role, doctorProfile } = req.body;
 
   try {
     if (!["doctor", "patient"].includes(role)) {
@@ -41,7 +134,33 @@ export const updateUserRole = async (req, res) => {
       });
     }
 
-    user.role = role;
+    if (user.role === "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Admin role cannot be changed",
+      });
+    }
+
+    if (role === "doctor") {
+      const validationError = validateDoctorProfile(doctorProfile);
+
+      if (validationError) {
+        return res.status(400).json({
+          success: false,
+          message: validationError,
+        });
+      }
+
+      user.role = "doctor";
+      user.doctorProfile = sanitizeDoctorProfile(doctorProfile);
+    }
+
+    if (role === "patient") {
+      user.role = "patient";
+      // Option A:
+      // Keep doctorProfile in the database so it can be reused later
+    }
+
     await user.save();
 
     return res.status(200).json({
@@ -60,10 +179,8 @@ export const updateUserRole = async (req, res) => {
 
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find(
-      {},
-      "name email role isVerified createdAt lastLogin manualVerificationRequested manualVerificationRequestedAt",
-    ).sort({ createdAt: -1 });
+    const users = await User.find({}).sort({ createdAt: -1 });
+
     return res.status(200).json({
       success: true,
       users: users.map(sanitizeUser),

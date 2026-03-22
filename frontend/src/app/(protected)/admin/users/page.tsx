@@ -1,6 +1,6 @@
 "use client";
 import { motion } from "framer-motion";
-import { useAuthStore } from "@/store/authStore";
+import { useAuthStore, DoctorProfile } from "@/store/authStore";
 import AdminTable from "@/components/dashboard/admin/AdminTable";
 import toast from "react-hot-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,9 +18,10 @@ export default function AdminUsersPage() {
   const handleRoleChange = async (
     userId: string,
     role: "doctor" | "patient",
+    doctorProfile?: DoctorProfile,
   ) => {
     try {
-      await updateUserRole(userId, role);
+      await updateUserRole(userId, role, doctorProfile);
       toast.success("User role updated successfully");
     } catch (err) {
       console.error("Failed to update role:", err);

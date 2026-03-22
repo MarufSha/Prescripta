@@ -14,6 +14,20 @@ type PendingSignupData = {
   name: string;
   email: string;
 };
+export type DoctorChamber = {
+  name: string;
+  location: string;
+};
+
+export type DoctorProfile = {
+  specialties: string[];
+  bmdcNo: string;
+  mobileNumber: string;
+  designations: string[];
+  degrees: string[];
+  chambers: DoctorChamber[];
+};
+
 type User = {
   _id: string;
   email: string;
@@ -24,6 +38,7 @@ type User = {
   lastLogin?: string;
   manualVerificationRequested?: boolean;
   manualVerificationRequestedAt?: string | null;
+  doctorProfile?: DoctorProfile;
 };
 
 export type AdminUser = {
@@ -36,6 +51,7 @@ export type AdminUser = {
   lastLogin?: string;
   manualVerificationRequested?: boolean;
   manualVerificationRequestedAt?: string | null;
+  doctorProfile?: DoctorProfile;
 };
 
 type VerifyEmailResponse = {
@@ -74,7 +90,11 @@ type AuthState = {
   resetPassword: (token: string, newPassword: string) => Promise<void>;
 
   fetchUsers: () => Promise<void>;
-  updateUserRole: (userId: string, role: "doctor" | "patient") => Promise<void>;
+  updateUserRole: (
+    userId: string,
+    role: "doctor" | "patient",
+    doctorProfile?: DoctorProfile,
+  ) => Promise<void>;
   deletePendingSignup: () => Promise<void>;
   requestManualVerification: () => Promise<void>;
   verifyUserManually: (userId: string) => Promise<void>;
@@ -124,6 +144,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   fieldErrors: {},
   pendingSignupData: null,
   csrfToken: null,
+
   clearError: () =>
     set({
       error: null,
@@ -421,6 +442,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   updateUserRole: async (
     userId: string,
     role: "doctor" | "patient",
+    doctorProfile?: DoctorProfile,
   ): Promise<void> => {
     set({
       isLoading: true,
@@ -430,17 +452,30 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      const res = await api.patch(`/admin/users/${userId}/role`, { role });
+      const res = await api.patch(`/admin/users/${userId}/role`, {
+        role,
+        doctorProfile,
+      });
 
       set((state) => ({
         users: state.users.map((u) =>
-          u._id === userId ? { ...u, role: res.data.user.role as UserRole } : u,
+          u._id === userId
+            ? {
+                ...u,
+                role: res.data.user.role as UserRole,
+                doctorProfile: res.data.user.doctorProfile,
+              }
+            : u,
         ),
         isLoading: false,
         error: null,
         message: res.data.message || "Role updated successfully",
       }));
     } catch (err) {
+      if (axios.isAxiosError(err)) {
+        console.error("Update role backend response:", err.response?.data);
+      }
+
       const msg = getErrorMessage(err, "Failed to update user role");
 
       set({
