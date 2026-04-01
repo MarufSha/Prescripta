@@ -5,7 +5,7 @@ import authRoutes from "./routes/auth-routes.js";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import adminRoutes from "./routes/admin-routes.js";
-
+import doctorInviteRoutes from "./routes/doctor-invite-routes.js";
 dotenv.config();
 
 const app = express();
@@ -23,7 +23,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
-
+app.use("/api/doctor-invites", doctorInviteRoutes);
 app.listen(port, async () => {
   await connectDB();
   console.log(`Server running on port ${port}`);

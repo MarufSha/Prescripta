@@ -10,10 +10,12 @@ const api = axios.create({
 
 type FieldErrorMap = Record<string, string>;
 type UserRole = "admin" | "doctor" | "patient";
+
 type PendingSignupData = {
   name: string;
   email: string;
 };
+
 export type DoctorChamber = {
   name: string;
   location: string;
@@ -95,6 +97,7 @@ type AuthState = {
     role: "doctor" | "patient",
     doctorProfile?: DoctorProfile,
   ) => Promise<void>;
+  createDoctorInvite: (name: string, email: string) => Promise<void>;
   deletePendingSignup: () => Promise<void>;
   requestManualVerification: () => Promise<void>;
   verifyUserManually: (userId: string) => Promise<void>;
@@ -132,6 +135,55 @@ const getFieldErrors = (err: unknown): FieldErrorMap => {
   );
 };
 
+const clearCsrfFromApi = () => {
+  delete api.defaults.headers.common["x-csrf-token"];
+};
+
+const isCsrfError = (err: unknown): boolean => {
+  if (!axios.isAxiosError(err)) return false;
+
+  const status = err.response?.status;
+  const message = String(
+    (err.response?.data as { message?: string } | undefined)?.message || "",
+  ).toLowerCase();
+
+  return (
+    status === 403 &&
+    (message.includes("csrf") ||
+      message.includes("invalid csrf token") ||
+      message.includes("csrf token missing"))
+  );
+};
+
+const ensureCsrfToken = async (): Promise<string> => {
+  let token = useAuthStore.getState().csrfToken;
+
+  if (!token) {
+    await useAuthStore.getState().fetchCsrfToken();
+    token = useAuthStore.getState().csrfToken;
+  }
+
+  if (!token) {
+    throw new Error("Failed to initialize CSRF token");
+  }
+
+  api.defaults.headers.common["x-csrf-token"] = token;
+  return token;
+};
+
+const withCsrfRetry = async (requestFn: () => Promise<unknown>) => {
+  await ensureCsrfToken();
+
+  try {
+    return await requestFn();
+  } catch (err) {
+    if (!isCsrfError(err)) throw err;
+
+    await useAuthStore.getState().fetchCsrfToken();
+    return await requestFn();
+  }
+};
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   users: [],
@@ -151,6 +203,29 @@ export const useAuthStore = create<AuthState>((set) => ({
       message: null,
       fieldErrors: {},
     }),
+
+  fetchCsrfToken: async (): Promise<void> => {
+    try {
+      const res = await api.get("/auth/csrf-token");
+      const token = res.data.csrfToken as string;
+
+      api.defaults.headers.common["x-csrf-token"] = token;
+
+      set({
+        csrfToken: token,
+      });
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to fetch CSRF token");
+
+      clearCsrfFromApi();
+      set({
+        csrfToken: null,
+        error: msg,
+      });
+
+      throw err;
+    }
+  },
 
   signUp: async (email, password, name) => {
     set({
@@ -172,6 +247,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         fieldErrors: {},
         pendingSignupData: { name, email },
       });
+
       await useAuthStore.getState().fetchCsrfToken();
     } catch (err) {
       const fieldErrors = getFieldErrors(err);
@@ -196,9 +272,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      const res = await api.post<VerifyEmailResponse>("/auth/verify-email", {
-        code,
-      });
+      const res = (await withCsrfRetry(() =>
+        api.post("/auth/verify-email", { code }),
+      )) as { data: VerifyEmailResponse };
 
       set({
         user: res.data.user as User,
@@ -239,7 +315,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         isAuthenticated: true,
       });
     } catch {
-      delete api.defaults.headers.common["x-csrf-token"];
+      clearCsrfFromApi();
+
       set({
         user: null,
         isAuthenticated: false,
@@ -251,27 +328,6 @@ export const useAuthStore = create<AuthState>((set) => ({
         isCheckingAuth: false,
         hasHydrated: true,
       });
-    }
-  },
-  fetchCsrfToken: async (): Promise<void> => {
-    try {
-      const res = await api.get("/auth/csrf-token");
-
-      const token = res.data.csrfToken as string;
-
-      api.defaults.headers.common["x-csrf-token"] = token;
-
-      set({
-        csrfToken: token,
-      });
-    } catch (err) {
-      const msg = getErrorMessage(err, "Failed to fetch CSRF token");
-
-      set({
-        error: msg,
-      });
-
-      throw err;
     }
   },
 
@@ -294,6 +350,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         message: null,
         fieldErrors: {},
       });
+
       await useAuthStore.getState().fetchCsrfToken();
     } catch (err) {
       const fieldErrors = getFieldErrors(err);
@@ -318,8 +375,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      await api.post("/auth/logout");
-      delete api.defaults.headers.common["x-csrf-token"];
+      await withCsrfRetry(() => api.post("/auth/logout"));
+
+      clearCsrfFromApi();
 
       set((state) => ({
         user: null,
@@ -452,10 +510,12 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      const res = await api.patch(`/admin/users/${userId}/role`, {
-        role,
-        doctorProfile,
-      });
+      const res = (await withCsrfRetry(() =>
+        api.patch(`/admin/users/${userId}/role`, {
+          role,
+          doctorProfile,
+        }),
+      )) as { data: { user: AdminUser; message?: string } };
 
       set((state) => ({
         users: state.users.map((u) =>
@@ -472,10 +532,6 @@ export const useAuthStore = create<AuthState>((set) => ({
         message: res.data.message || "Role updated successfully",
       }));
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        console.error("Update role backend response:", err.response?.data);
-      }
-
       const msg = getErrorMessage(err, "Failed to update user role");
 
       set({
@@ -486,6 +542,40 @@ export const useAuthStore = create<AuthState>((set) => ({
       throw err;
     }
   },
+
+  createDoctorInvite: async (name: string, email: string): Promise<void> => {
+    set({
+      isLoading: true,
+      error: null,
+      message: null,
+      fieldErrors: {},
+    });
+
+    try {
+      const res = (await withCsrfRetry(() =>
+        api.post("/admin/doctor-invites", { name, email }),
+      )) as { data: { message?: string } };
+
+      set({
+        isLoading: false,
+        error: null,
+        message: res.data.message || "Doctor invite sent successfully",
+        fieldErrors: {},
+      });
+    } catch (err) {
+      const fieldErrors = getFieldErrors(err);
+      const msg = getErrorMessage(err, "Failed to send doctor invite");
+
+      set({
+        fieldErrors,
+        error: Object.keys(fieldErrors).length > 0 ? null : msg,
+        isLoading: false,
+      });
+
+      throw err;
+    }
+  },
+
   deletePendingSignup: async (): Promise<void> => {
     set({
       isLoading: true,
@@ -495,7 +585,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      await api.delete("/auth/pending-signup");
+      await withCsrfRetry(() => api.delete("/auth/pending-signup"));
 
       set((state) => ({
         user: null,
@@ -527,7 +617,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      await api.post("/auth/request-manual-verification");
+      await withCsrfRetry(() => api.post("/auth/request-manual-verification"));
 
       set((state) => ({
         user: state.user
@@ -563,7 +653,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      const res = await api.patch(`/admin/users/${userId}/verify`);
+      await withCsrfRetry(() => api.patch(`/admin/users/${userId}/verify`));
 
       set((state) => ({
         users: state.users.map((u) =>
@@ -581,8 +671,6 @@ export const useAuthStore = create<AuthState>((set) => ({
         message: null,
         fieldErrors: {},
       }));
-
-      return res.data;
     } catch (err) {
       const msg = getErrorMessage(err, "Failed to verify user manually");
 
@@ -594,6 +682,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       throw err;
     }
   },
+
   deleteUser: async (userId: string): Promise<void> => {
     set({
       isLoading: true,
@@ -603,7 +692,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      await api.delete(`/admin/users/${userId}`);
+      await withCsrfRetry(() => api.delete(`/admin/users/${userId}`));
 
       set((state) => ({
         users: state.users.filter((u) => u._id !== userId),

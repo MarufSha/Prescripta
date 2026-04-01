@@ -5,11 +5,11 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
-  Pill,
   ChartNoAxesColumn,
   ShieldCheck,
   Menu,
   ClipboardList,
+  BriefcaseMedical,
 } from "lucide-react";
 
 type Props = {
@@ -29,9 +29,9 @@ const navItems = [
     icon: Users,
   },
   {
-    label: "Medicine",
-    href: "/admin/medicine",
-    icon: Pill,
+    label: "Add Doctor",
+    href: "/admin/add-doctor",
+    icon: BriefcaseMedical,
   },
   {
     label: "Prescriptions",

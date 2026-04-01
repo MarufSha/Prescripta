@@ -8,6 +8,7 @@ import {
   deleteUserByAdmin,
 } from "../controllers/admin-controller.js";
 import { requireCsrf } from "../middleware/requireCsrf.js";
+import { createDoctorInvite } from "../controllers/admin-controller.js";
 const router = express.Router();
 router.get("/users", verifyToken, requireRole("admin"), getAllUsers);
 router.patch(
@@ -30,5 +31,12 @@ router.delete(
   requireRole("admin"),
   requireCsrf,
   deleteUserByAdmin,
+);
+router.post(
+  "/doctor-invites",
+  verifyToken,
+  requireRole("admin"),
+  requireCsrf,
+  createDoctorInvite,
 );
 export default router;

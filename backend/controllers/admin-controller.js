@@ -1,5 +1,7 @@
+import crypto from "crypto";
 import { User } from "../models/user.js";
-import { sendWelcomeEmail } from "../mail/emails.js";
+import { DoctorInvite } from "../models/doctorInvite.js";
+import { sendDoctorInviteEmail, sendWelcomeEmail } from "../mail/emails.js";
 
 const normalizeStringArray = (value) => {
   if (!Array.isArray(value)) return [];
@@ -105,6 +107,79 @@ const sanitizeUser = (user) => ({
   manualVerificationRequestedAt: user.manualVerificationRequestedAt,
   doctorProfile: sanitizeDoctorProfile(user.doctorProfile),
 });
+
+export const createDoctorInvite = async (req, res) => {
+  const { name, email } = req.body;
+
+  try {
+    const trimmedName = String(name || "").trim();
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+
+    if (!trimmedName) {
+      return res.status(400).json({
+        success: false,
+        message: "Doctor name is required",
+      });
+    }
+
+    if (!normalizedEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Doctor email is required",
+      });
+    }
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "A user with this email already exists",
+      });
+    }
+
+    const existingInvite = await DoctorInvite.findOne({
+      email: normalizedEmail,
+      used: false,
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (existingInvite) {
+      return res.status(409).json({
+        success: false,
+        message: "An active doctor invite already exists for this email",
+      });
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+
+    const invite = new DoctorInvite({
+      name: trimmedName,
+      email: normalizedEmail,
+      token,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      used: false,
+      invitedBy: req.userId,
+    });
+
+    await invite.save();
+
+    const inviteLink = `${process.env.CLIENT_URL}/doctor-invite/${token}`;
+
+    await sendDoctorInviteEmail(normalizedEmail, trimmedName, inviteLink);
+
+    return res.status(201).json({
+      success: true,
+      message: "Doctor invite sent successfully",
+    });
+  } catch (error) {
+    console.error("Error creating doctor invite:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error creating doctor invite",
+    });
+  }
+};
 
 export const updateUserRole = async (req, res) => {
   const { id } = req.params;
