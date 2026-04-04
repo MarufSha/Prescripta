@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { getDashboardRoute } from "@/utils/getDashboardRoute";
 
 export default function GuestOnly({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -13,9 +14,11 @@ export default function GuestOnly({ children }: { children: React.ReactNode }) {
     if (isCheckingAuth) return;
 
     if (isAuthenticated) {
-      router.replace(user?.isVerified ? "/" : "/verify-email");
+      router.replace(
+        user?.isVerified ? getDashboardRoute(user) : "/verify-email",
+      );
     }
-  }, [isCheckingAuth, isAuthenticated, user?.isVerified, router]);
+  }, [isCheckingAuth, isAuthenticated, user, router]);
 
   if (isCheckingAuth) {
     return (

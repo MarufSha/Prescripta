@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useEffect, useState } from "react";
-import { AdminUser, DoctorProfile } from "@/store/authStore";
+import { AdminUser, DoctorProfile, UserRole } from "@/store/authStore";
 import { capitalize, formatDate } from "@/utils/date";
 import { createPortal } from "react-dom";
 import {
@@ -38,8 +38,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-type UserRole = "admin" | "doctor" | "patient";
 
 type CurrentUser = {
   _id: string;
@@ -86,6 +84,11 @@ const roleMeta: Record<
   UserRole,
   { title: string; subtitle: string; empty: string }
 > = {
+  superadmin: {
+    title: "Super Admin Accounts",
+    subtitle: "Highest-level administrators with extended privileges.",
+    empty: "No super admin accounts found.",
+  },
   admin: {
     title: "Admin Accounts",
     subtitle: "System administrators with elevated permissions.",
@@ -104,6 +107,7 @@ const roleMeta: Record<
 };
 
 const badgeClassMap: Record<UserRole, string> = {
+  superadmin: "border border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300",
   admin: "border border-amber-500/30 bg-amber-500/10 text-amber-300",
   doctor: "border border-sky-500/30 bg-sky-500/10 text-sky-300",
   patient: "border border-emerald-500/30 bg-emerald-500/10 text-emerald-300",

@@ -12,7 +12,10 @@ export const requireRole = (...allowedRoles) => {
         });
       }
 
-      if (!allowedRoles.includes(user.role)) {
+      const isSuperAdmin = user.role === "superadmin";
+      const isAllowedRole = allowedRoles.includes(user.role);
+
+      if (!isSuperAdmin && !isAllowedRole) {
         return res.status(403).json({
           success: false,
           message: "Forbidden",
@@ -20,6 +23,8 @@ export const requireRole = (...allowedRoles) => {
       }
 
       req.user = user;
+      req.userRole = user.role;
+
       next();
     } catch (error) {
       console.error("Error checking role:", error);

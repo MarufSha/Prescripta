@@ -12,7 +12,7 @@ export default function AdminDashboardLayout({
   const [collapsed, setCollapsed] = useState(false);
   const { fetchUsers, user } = useAuthStore();
   useEffect(() => {
-    if (user?.role === "admin") {
+    if (user?.role === "admin" || user?.role === "superadmin") {
       void fetchUsers();
     }
   }, [fetchUsers, user?.role]);

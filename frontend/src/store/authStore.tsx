@@ -9,7 +9,7 @@ const api = axios.create({
 });
 
 type FieldErrorMap = Record<string, string>;
-type UserRole = "admin" | "doctor" | "patient";
+export type UserRole = "superadmin" | "admin" | "doctor" | "patient";
 
 type PendingSignupData = {
   name: string;

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuthStore, UserRole } from "@/store/authStore";
 import {
   LayoutDashboard,
   Users,
@@ -17,36 +18,59 @@ type Props = {
   onToggle: () => void;
 };
 
-const navItems = [
+const navItems: {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  roles: UserRole[];
+}[] = [
   {
     label: "Overview",
     href: "/admin",
     icon: LayoutDashboard,
+    roles: ["admin", "superadmin"],
   },
   {
     label: "User Management",
     href: "/admin/users",
     icon: Users,
+    roles: ["admin", "superadmin"],
   },
   {
     label: "Add Doctor",
     href: "/admin/add-doctor",
     icon: BriefcaseMedical,
+    roles: ["admin", "superadmin"],
   },
   {
     label: "Prescriptions",
     href: "/admin/prescriptions",
     icon: ClipboardList,
+    roles: ["superadmin"],
   },
   {
     label: "Statistics",
     href: "/admin/statistics",
     icon: ChartNoAxesColumn,
+    roles: ["admin", "superadmin"],
   },
 ];
 
 export default function AdminSidebar({ collapsed, onToggle }: Props) {
   const pathname = usePathname();
+  const user = useAuthStore((state) => state.user);
+
+  const filteredNavItems = navItems.filter((item) =>
+    item.roles.includes((user?.role as UserRole) || "patient"),
+  );
+
+  const accessLabel =
+    user?.role === "superadmin" ? "Super Administrator" : "Administrator";
+
+  const accessDescription =
+    user?.role === "superadmin"
+      ? "Full platform control with elevated system privileges."
+      : "Full system control and user management.";
 
   return (
     <aside
@@ -77,7 +101,7 @@ export default function AdminSidebar({ collapsed, onToggle }: Props) {
         </div>
 
         <nav className="flex flex-col gap-2">
-          {navItems.map((item) => {
+          {filteredNavItems.map((item) => {
             const Icon = item.icon;
             const isActive =
               pathname === item.href ||
@@ -126,11 +150,9 @@ export default function AdminSidebar({ collapsed, onToggle }: Props) {
                 Access Level
               </p>
               <p className="mt-2 text-sm font-semibold text-emerald-300">
-                Administrator
+                {accessLabel}
               </p>
-              <p className="mt-1 text-xs text-gray-400">
-                Full system control and user management.
-              </p>
+              <p className="mt-1 text-xs text-gray-400">{accessDescription}</p>
             </div>
           )}
         </div>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
-export default function AdminGuard({
+export default function SuperAdminGuard({
   children,
 }: {
   children: React.ReactNode;
@@ -26,8 +26,8 @@ export default function AdminGuard({
       return;
     }
 
-    if (user?.role !== "admin" && user?.role !== "superadmin") {
-      router.replace("/");
+    if (user?.role !== "superadmin") {
+      router.replace("/admin");
     }
   }, [isCheckingAuth, isAuthenticated, user?.isVerified, user?.role, router]);
 
@@ -39,11 +39,7 @@ export default function AdminGuard({
     );
   }
 
-  if (
-    isAuthenticated &&
-    user?.isVerified &&
-    (user?.role === "admin" || user?.role === "superadmin")
-  ) {
+  if (isAuthenticated && user?.isVerified && user?.role === "superadmin") {
     return <>{children}</>;
   }
 

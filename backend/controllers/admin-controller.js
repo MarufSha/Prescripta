@@ -113,7 +113,9 @@ export const createDoctorInvite = async (req, res) => {
 
   try {
     const trimmedName = String(name || "").trim();
-    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const normalizedEmail = String(email || "")
+      .trim()
+      .toLowerCase();
 
     if (!trimmedName) {
       return res.status(400).json({
@@ -209,10 +211,10 @@ export const updateUserRole = async (req, res) => {
       });
     }
 
-    if (user.role === "admin") {
+    if (user.role === "admin" || user.role === "superadmin") {
       return res.status(403).json({
         success: false,
-        message: "Admin role cannot be changed",
+        message: "Admin and superadmin roles cannot be changed",
       });
     }
 
@@ -254,7 +256,10 @@ export const updateUserRole = async (req, res) => {
 
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({}).sort({ createdAt: -1 });
+    const users = await User.find({}).sort({
+      role: 1,
+      createdAt: -1,
+    });
 
     return res.status(200).json({
       success: true,
@@ -332,10 +337,10 @@ export const deleteUserByAdmin = async (req, res) => {
       });
     }
 
-    if (user.role === "admin") {
+    if (user.role === "admin" || user.role === "superadmin") {
       return res.status(403).json({
         success: false,
-        message: "Admins cannot delete other admin accounts",
+        message: "Admins cannot delete admin or superadmin accounts",
       });
     }
 

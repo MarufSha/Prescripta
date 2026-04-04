@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { getDashboardRoute } from "@/utils/getDashboardRoute";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -22,17 +23,7 @@ export default function LandingPage() {
       return;
     }
 
-    if (user.role === "admin") {
-      router.replace("/admin");
-      return;
-    }
-
-    if (user.role === "doctor") {
-      router.replace("/doctor");
-      return;
-    }
-
-    router.replace("/patient");
+    router.replace(getDashboardRoute(user));
   }, [isAuthenticated, user, isCheckingAuth, router]);
 
   if (isCheckingAuth) {
