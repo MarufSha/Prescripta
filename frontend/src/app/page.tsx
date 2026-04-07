@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { getDashboardRoute } from "@/utils/getDashboardRoute";
+import LandingUI from "@/components/landing/LandingUI";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -13,26 +14,23 @@ export default function LandingPage() {
   useEffect(() => {
     if (isCheckingAuth) return;
 
-    if (!isAuthenticated) {
-      router.replace("/login");
-      return;
-    }
-
-    if (!user?.isVerified) {
+    if (isAuthenticated && user && !user.isVerified) {
       router.replace("/verify-email");
       return;
     }
 
-    router.replace(getDashboardRoute(user));
+    if (isAuthenticated && user?.isVerified) {
+      router.replace(getDashboardRoute(user));
+    }
   }, [isAuthenticated, user, isCheckingAuth, router]);
 
   if (isCheckingAuth) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <LoadingSpinner />
       </div>
     );
   }
 
-  return null;
+  return <LandingUI />;
 }

@@ -202,10 +202,17 @@ const AdminTable = ({
   const selectableUsers = useMemo(() => {
     return paginatedUsers.filter((u) => {
       const isSelf = u._id === user?._id;
-      const locked = isSelf || u.role === "admin";
-      return !locked;
+      const isSuperAdminViewer = user?.role === "superadmin";
+
+      const canSelect = isSelf
+        ? false
+        : isSuperAdminViewer
+          ? u.role !== "superadmin"
+          : u.role !== "admin" && u.role !== "superadmin";
+
+      return canSelect;
     });
-  }, [paginatedUsers, user?._id]);
+  }, [paginatedUsers, user?._id, user?.role]);
 
   const allVisibleSelectableIds = selectableUsers.map((u) => u._id);
 
@@ -222,16 +229,29 @@ const AdminTable = ({
 
   const allSelectedCanVerifyManually =
     selectedUsers.length > 0 &&
-    selectedUsers.every(
-      (u) => Boolean(u.manualVerificationRequested) && !u.isVerified,
-    );
+    selectedUsers.every((u) => {
+      const isSuperAdminViewer = user?.role === "superadmin";
 
+      return (
+        Boolean(u.manualVerificationRequested) &&
+        !u.isVerified &&
+        (isSuperAdminViewer
+          ? u.role !== "superadmin"
+          : u.role !== "admin" && u.role !== "superadmin")
+      );
+    });
+  const selectedHasProtectedRole = selectedUsers.some(
+    (u) => u.role === "admin" || u.role === "superadmin",
+  );
   const selectedSingleUser =
     selectedUsers.length === 1 ? selectedUsers[0] : null;
   const hasMultipleSelectedRows = effectiveSelectedUserIds.length > 1;
   const canBulkConvertToPatient =
     selectedUsers.length > 1 && selectedUsers.some((u) => u.role === "doctor");
-
+  const canBulkRoleChange =
+    !!selectedSingleUser &&
+    selectedSingleUser.role !== "admin" &&
+    selectedSingleUser.role !== "superadmin";
   const meta = roleMeta[role];
 
   const toggleRowSelection = (userId: string) => {
@@ -545,7 +565,7 @@ const AdminTable = ({
               {selectedSingleUser && (
                 <Select
                   value={selectedSingleUser.role}
-                  disabled={isLoading}
+                  disabled={isLoading || !canBulkRoleChange}
                   onValueChange={(value) =>
                     handleBulkRoleSelect(value as "doctor" | "patient")
                   }
@@ -588,7 +608,7 @@ const AdminTable = ({
                 </Select>
               )}
 
-              {canBulkConvertToPatient && (
+              {canBulkConvertToPatient && !selectedHasProtectedRole && (
                 <button
                   type="button"
                   onClick={handleBulkConvertSelectedToPatient}
@@ -661,7 +681,9 @@ const AdminTable = ({
                     }
                     onCheckedChange={() => toggleSelectAllVisible()}
                     disabled={
-                      role === "admin" || allVisibleSelectableIds.length === 0
+                      role === "admin" ||
+                      role === "superadmin" ||
+                      allVisibleSelectableIds.length === 0
                     }
                     aria-label="Select all visible rows"
                     className="border-gray-600 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500 cursor-pointer"
@@ -692,9 +714,33 @@ const AdminTable = ({
               ) : (
                 paginatedUsers.map((u) => {
                   const isSelf = u._id === user?._id;
-                  const locked = isSelf || u.role === "admin";
+                  const isSuperAdminViewer = user?.role === "superadmin";
+
+                  const canSelect = isSelf
+                    ? false
+                    : isSuperAdminViewer
+                      ? u.role !== "superadmin"
+                      : u.role !== "admin" && u.role !== "superadmin";
+
+                  const canEditRole = isSelf
+                    ? false
+                    : isSuperAdminViewer
+                      ? u.role !== "admin" && u.role !== "superadmin"
+                      : u.role !== "admin" && u.role !== "superadmin";
+
+                  const canDelete = isSelf
+                    ? false
+                    : isSuperAdminViewer
+                      ? u.role !== "superadmin"
+                      : u.role !== "admin" && u.role !== "superadmin";
+
                   const canVerifyManually =
-                    !u.isVerified && Boolean(u.manualVerificationRequested);
+                    !u.isVerified &&
+                    Boolean(u.manualVerificationRequested) &&
+                    (isSuperAdminViewer
+                      ? u.role !== "superadmin"
+                      : u.role !== "admin" && u.role !== "superadmin");
+
                   const isSelected = effectiveSelectedUserIds.includes(u._id);
 
                   return (
@@ -705,7 +751,7 @@ const AdminTable = ({
                       }`}
                     >
                       <td className="px-4 py-4">
-                        {locked ? (
+                        {!canSelect ? (
                           <Checkbox
                             checked={false}
                             disabled
@@ -757,8 +803,8 @@ const AdminTable = ({
                       </td>
 
                       <td className="px-4 py-4">
-                        {locked ? (
-                          <span className="inline-flex rounded-lg border border-gray-700 bg-gray-800/60 px-3 py-2 text-xs font-medium text-gray-500">
+                        {!canEditRole ? (
+                          <span className="inline-flex rounded-lg border border-gray-700 bg-gray-800/60 px-3 py-2 text-xs font-medium text-gray-500 text-center">
                             Not allowed
                           </span>
                         ) : hasMultipleSelectedRows ? (
@@ -848,7 +894,7 @@ const AdminTable = ({
                       </td>
 
                       <td className="px-4 py-4">
-                        {locked ? (
+                        {!canDelete ? (
                           <span className="inline-flex rounded-lg border border-gray-700 bg-gray-800/60 px-3 py-2 text-xs font-medium text-gray-500">
                             Not allowed
                           </span>
@@ -1097,11 +1143,11 @@ const AdminTable = ({
               <div className="flex h-full w-full items-start justify-center overflow-hidden p-0 md:p-6">
                 <div
                   className="
-            flex h-dvh w-full flex-col
-            bg-gray-950/98 text-white
-            md:h-auto md:max-h-[calc(100dvh-3rem)] md:w-[min(960px,calc(100%-2rem))]
-            md:rounded-3xl md:border md:border-gray-800 md:shadow-2xl md:backdrop-blur-xl
-          "
+                    flex h-dvh w-full flex-col
+                    bg-gray-950/98 text-white
+                    md:h-auto md:max-h-[calc(100dvh-3rem)] md:w-[min(960px,calc(100%-2rem))]
+                    md:rounded-3xl md:border md:border-gray-800 md:shadow-2xl md:backdrop-blur-xl
+                  "
                 >
                   <div className="sticky top-0 z-10 flex items-start justify-between border-b border-gray-800 bg-gray-950/95 px-5 py-4 backdrop-blur-xl md:rounded-t-3xl md:px-6 md:py-5">
                     <div className="pr-4">

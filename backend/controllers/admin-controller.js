@@ -211,10 +211,26 @@ export const updateUserRole = async (req, res) => {
       });
     }
 
-    if (user.role === "admin" || user.role === "superadmin") {
+    const actingUser = req.user;
+
+    if (!actingUser) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    if (user.role === "superadmin" && actingUser.role !== "superadmin") {
       return res.status(403).json({
         success: false,
-        message: "Admin and superadmin roles cannot be changed",
+        message: "Only superadmin can modify another superadmin",
+      });
+    }
+
+    if (user.role === "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Admin roles cannot be changed",
       });
     }
 
@@ -234,8 +250,6 @@ export const updateUserRole = async (req, res) => {
 
     if (role === "patient") {
       user.role = "patient";
-      // Option A:
-      // Keep doctorProfile in the database so it can be reused later
     }
 
     await user.save();
@@ -337,10 +351,26 @@ export const deleteUserByAdmin = async (req, res) => {
       });
     }
 
-    if (user.role === "admin" || user.role === "superadmin") {
+    const actingUser = req.user;
+
+    if (!actingUser) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    if (user.role === "superadmin" && actingUser.role !== "superadmin") {
       return res.status(403).json({
         success: false,
-        message: "Admins cannot delete admin or superadmin accounts",
+        message: "Only superadmin can delete another superadmin",
+      });
+    }
+
+    if (user.role === "admin" && actingUser.role !== "superadmin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only superadmin can delete admin accounts",
       });
     }
 
