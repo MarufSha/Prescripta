@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, Loader } from "lucide-react";
 import Link from "next/link";
@@ -8,21 +8,56 @@ import { useRouter } from "next/navigation";
 
 import Input from "@/components/Input";
 import { useAuthStore } from "@/store/authStore";
+import LoginCharacter from "@/components/LoginCharacter";
 
 export default function LoginForm() {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
+
+  const characterRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>(0);
 
   const { login, isLoading, clearError, fieldErrors, error } = useAuthStore();
+
   useEffect(() => {
     clearError();
   }, [clearError]);
 
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    // Throttle to one update per animation frame
+    if (rafRef.current) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = 0;
+      if (!characterRef.current) return;
+      const rect = characterRef.current.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const dx = e.clientX - cx;
+      const dy = e.clientY - cy;
+      const dist = Math.hypot(dx, dy) || 1;
+      const norm = Math.min(dist / 250, 1);
+      const maxOffset = 5;
+      setEyeOffset({
+        x: (dx / dist) * maxOffset * norm,
+        y: (dy / dist) * maxOffset * norm,
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [handleMouseMove]);
+
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     try {
       await login(email, password);
       const isVerified = useAuthStore.getState().user?.isVerified;
@@ -34,12 +69,21 @@ export default function LoginForm() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="max-w-md w-full bg-gray-800/50 backdrop-blur-xl rounded-2xl shadow-xl overflow-hidden"
+      className="max-w-md w-full bg-gray-800/50 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden border border-gray-700/40"
     >
-      <div className="p-8">
+      {/* ── Character ── */}
+      <div
+        ref={characterRef}
+        className="pt-8 pb-1 flex justify-center bg-gradient-to-b from-gray-900/60 to-transparent"
+      >
+        <LoginCharacter isPasswordFocused={isPasswordFocused} eyeOffset={eyeOffset} />
+      </div>
+
+      {/* ── Form ── */}
+      <div className="px-8 pb-8">
         <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-green-400 to-emerald-500 text-transparent bg-clip-text">
           Welcome Back
         </h2>
@@ -58,7 +102,7 @@ export default function LoginForm() {
               autoComplete="email"
             />
             {fieldErrors.email && (
-              <p className="text-red-500 text-sm mt-1">{fieldErrors.email}</p>
+              <p className="text-red-500 text-sm -mt-4 mb-2">{fieldErrors.email}</p>
             )}
           </div>
 
@@ -72,12 +116,12 @@ export default function LoginForm() {
                 clearError();
                 setPassword(e.target.value);
               }}
+              onFocus={() => setIsPasswordFocused(true)}
+              onBlur={() => setIsPasswordFocused(false)}
               autoComplete="current-password"
             />
             {fieldErrors.password && (
-              <p className="text-red-500 text-sm mt-1">
-                {fieldErrors.password}
-              </p>
+              <p className="text-red-500 text-sm -mt-4 mb-2">{fieldErrors.password}</p>
             )}
           </div>
 
@@ -90,7 +134,9 @@ export default function LoginForm() {
             </Link>
           </div>
 
-          {error && <p className="text-red-500 font-semibold mb-2">{error}</p>}
+          {error && (
+            <p className="text-red-500 font-semibold mb-2">{error}</p>
+          )}
 
           <motion.button
             whileHover={{ scale: 1.02 }}
@@ -108,6 +154,7 @@ export default function LoginForm() {
         </form>
       </div>
 
+      {/* ── Footer ── */}
       <div className="px-8 py-4 bg-gray-900/50 flex justify-center">
         <p className="text-sm text-gray-400">
           Don&apos;t have an account?{" "}
