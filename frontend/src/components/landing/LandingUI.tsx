@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import Background from "@/components/Background";
 import {
@@ -12,6 +14,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import Image from "next/image";
+import LandingResponsiveNav from "@/components/landing/LandingResponsiveNav";
 
 const features = [
   {
@@ -114,55 +117,10 @@ export default function LandingUI() {
   return (
     <Background>
       <div className="min-h-screen text-slate-100">
-        <nav className="sticky top-0 z-50 border-b border-emerald-900/20 bg-slate-950/50 backdrop-blur-xl">
-          <div className="flex h-20 w-full items-center justify-between px-6 md:px-10 lg:px-14 xl:px-20 2xl:px-24">
-            <Link
-              href="/"
-              className="text-xl font-bold tracking-tight text-emerald-400"
-            >
-              Prescripta
-            </Link>
-
-            <div className="hidden items-center gap-8 md:flex">
-              <a
-                href="#features"
-                className="text-sm font-medium text-emerald-300"
-              >
-                Platform
-              </a>
-              <a
-                href="#how-it-works"
-                className="text-sm font-medium text-slate-300 transition-colors hover:text-white"
-              >
-                How It Works
-              </a>
-              <a
-                href="#roles"
-                className="text-sm font-medium text-slate-300 transition-colors hover:text-white"
-              >
-                Roles
-              </a>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Link
-                href="/login"
-                className="rounded-xl px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/5 hover:text-white"
-              >
-                Login
-              </Link>
-              <Link
-                href="/signup"
-                className="rounded-xl bg-gradient-to-r from-emerald-500 to-lime-400 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-[0_16px_40px_-16px_rgba(16,185,129,0.55)] transition hover:scale-[1.02] active:scale-[0.98]"
-              >
-                Get Started
-              </Link>
-            </div>
-          </div>
-        </nav>
+        <LandingResponsiveNav />
 
         <main>
-          <section className="grid min-h-[calc(100vh-5rem)] w-full grid-cols-1 items-center gap-12 px-6 py-16 md:px-10 lg:grid-cols-[1.05fr_0.95fr] lg:px-14 lg:py-24 xl:px-20 2xl:px-24">
+          <section className="grid min-h-[calc(100vh-5rem)] w-full grid-cols-1 items-center gap-12 px-6 py-16 pt-28 md:px-10 lg:grid-cols-[1.05fr_0.95fr] lg:px-14 lg:py-24 lg:pt-32 xl:px-20 2xl:px-24">
             <div>
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
@@ -192,12 +150,17 @@ export default function LandingUI() {
                   <ArrowRight className="h-4 w-4" />
                 </Link>
 
-                <a
-                  href="#features"
-                  className="inline-flex items-center rounded-xl border border-slate-700 bg-slate-900/60 px-6 py-3.5 font-semibold text-slate-100 transition hover:border-emerald-500/30 hover:bg-white/5"
+                <button
+                  type="button"
+                  onClick={() =>
+                    document
+                      .getElementById("features")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  }
+                  className="inline-flex items-center rounded-xl border border-slate-700 bg-slate-900/60 px-6 py-3.5 font-semibold text-slate-100 transition hover:border-emerald-500/30 hover:bg-white/5 cursor-pointer"
                 >
                   Learn More
-                </a>
+                </button>
               </div>
             </div>
 
@@ -298,11 +261,11 @@ export default function LandingUI() {
             id="roles"
             className="w-full px-6 py-20 md:px-10 lg:px-14 xl:px-20 2xl:px-24"
           >
-            <div className="mb-14">
+            <div className="mb-14 flex flex-col items-center justify-center">
               <h2 className="text-4xl font-bold tracking-tight text-white md:text-5xl">
                 Tailored Interfaces
               </h2>
-              <p className="mt-4 max-w-3xl text-slate-400">
+              <p className="mt-4 max-w-3xl text-slate-400 text-center">
                 Prescripta adapts to the person using it, whether they are
                 managing the platform, providing care, or using healthcare
                 services.
@@ -384,18 +347,39 @@ export default function LandingUI() {
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-6">
-              <a href="#features" className="transition hover:text-emerald-300">
+              <button
+                type="button"
+                onClick={() =>
+                  document
+                    .getElementById("features")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }
+                className="transition hover:text-emerald-300 cursor-pointer"
+              >
                 Platform
-              </a>
-              <a
-                href="#how-it-works"
-                className="transition hover:text-emerald-300"
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  document
+                    .getElementById("how-it-works")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }
+                className="transition hover:text-emerald-300 cursor-pointer"
               >
                 How It Works
-              </a>
-              <a href="#roles" className="transition hover:text-emerald-300">
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  document
+                    .getElementById("roles")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }
+                className="transition hover:text-emerald-300 cursor-pointer"
+              >
                 Roles
-              </a>
+              </button>
             </div>
           </div>
         </footer>
