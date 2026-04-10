@@ -8,8 +8,14 @@ import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
 import LoginCharacter from "@/components/LoginCharacter";
 
-type CharacterMood = "idle" | "sad" | "happy";
-type GazeMode = "follow" | "email" | "password" | "away" | "remember";
+export type CharacterMood = "idle" | "sad" | "happy";
+export type GazeMode =
+  | "follow"
+  | "name"
+  | "email"
+  | "password"
+  | "away"
+  | "remember";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");

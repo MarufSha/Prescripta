@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 
 interface LoginCharacterProps {
   eyeOffset: { x: number; y: number };
-  gazeMode: "follow" | "email" | "password" | "away" | "remember";
+  gazeMode: "follow" | "name" | "email" | "password" | "away" | "remember";
   mood: "idle" | "sad" | "happy";
   rememberTrigger: number;
 }
@@ -39,6 +39,10 @@ export default function LoginCharacter({
 
     if (gazeMode === "password") {
       return { x: 3.8, y: 2.6 };
+    }
+
+    if (gazeMode === "name") {
+      return { x: 0.2, y: -0.8 };
     }
 
     if (gazeMode === "email") {
@@ -78,43 +82,53 @@ export default function LoginCharacter({
       ? null
       : gazeMode === "away"
         ? "M 264 206 H 292"
-        : mood === "sad"
-          ? "M 264 210 Q 278 202 292 210"
-          : mood === "happy"
-            ? "M 264 206 Q 278 215 292 206"
-            : "M 264 206 Q 278 211 292 206";
+        : gazeMode === "name"
+          ? "M 266 206 Q 278 208 290 206"
+          : mood === "sad"
+            ? "M 264 210 Q 278 202 292 210"
+            : mood === "happy"
+              ? "M 264 206 Q 278 215 292 206"
+              : "M 264 206 Q 278 211 292 206";
 
   const limeTallMouth =
     gazeMode === "email"
       ? null
       : gazeMode === "away"
         ? "M546 404H606"
-        : mood === "sad"
-          ? "M546 406H602"
-          : mood === "happy"
-            ? "M546 404Q578 414 610 404"
-            : "M546 404H610";
+        : gazeMode === "name"
+          ? "M548 404Q578 407 608 404"
+          : mood === "sad"
+            ? "M546 406H602"
+            : mood === "happy"
+              ? "M546 404Q578 414 610 404"
+              : "M546 404H610";
 
   const blobMouth =
     gazeMode === "email"
       ? null
       : gazeMode === "away"
         ? "M255 419H285"
-        : mood === "sad"
-          ? "M255 422Q270 413 285 422"
-          : mood === "happy"
-            ? "M255 418Q270 430 285 418"
-            : "M255 418Q270 425 285 418";
+        : gazeMode === "name"
+          ? "M257 418Q270 421 283 418"
+          : mood === "sad"
+            ? "M255 422Q270 413 285 422"
+            : mood === "happy"
+              ? "M255 418Q270 430 285 418"
+              : "M255 418Q270 425 285 418";
 
   const largeAnimate =
     gazeMode === "remember"
       ? { ...faceTurn, y: [0, 7, 0, 6, 0], rotate: [0, 1.2, 0, 1, 0] }
-      : faceTurn;
+      : gazeMode === "name"
+        ? { ...faceTurn, y: [0, 8, 0], rotate: [0, 1.2, 0] }
+        : faceTurn;
 
   const smallAnimate =
     gazeMode === "remember"
       ? { ...faceTurnSmall, y: [0, 5, 0, 4, 0], rotate: [0, 0.9, 0, 0.7, 0] }
-      : faceTurnSmall;
+      : gazeMode === "name"
+        ? { ...faceTurnSmall, y: [0, 6, 0], rotate: [0, 0.9, 0] }
+        : faceTurnSmall;
 
   return (
     <div className="mx-auto w-full max-w-[660px]">
@@ -193,7 +207,9 @@ export default function LoginCharacter({
             transition={
               gazeMode === "remember"
                 ? { duration: 0.5, repeat: 2, ease: "easeInOut" }
-                : { type: "spring", stiffness: 40, damping: 8 }
+                : gazeMode === "name"
+                  ? { duration: 0.9, ease: "easeInOut" }
+                  : { type: "spring", stiffness: 40, damping: 8 }
             }
             style={{ transformOrigin: "278px 192px" }}
           >
@@ -275,7 +291,9 @@ export default function LoginCharacter({
             transition={
               gazeMode === "remember"
                 ? { duration: 0.3, repeat: 2, ease: "easeInOut" }
-                : { type: "spring", stiffness: 140, damping: 16 }
+                : gazeMode === "name"
+                  ? { duration: 0.9, ease: "easeInOut" }
+                  : { type: "spring", stiffness: 140, damping: 16 }
             }
             style={{ transformOrigin: "391px 308px" }}
           >
@@ -326,7 +344,9 @@ export default function LoginCharacter({
             transition={
               gazeMode === "remember"
                 ? { duration: 0.5, repeat: 2, ease: "easeInOut" }
-                : { type: "spring", stiffness: 40, damping: 8 }
+                : gazeMode === "name"
+                  ? { duration: 0.9, ease: "easeInOut" }
+                  : { type: "spring", stiffness: 40, damping: 8 }
             }
             style={{ transformOrigin: "562px 396px" }}
           >
@@ -405,7 +425,9 @@ export default function LoginCharacter({
             transition={
               gazeMode === "remember"
                 ? { duration: 0.5, repeat: 2, ease: "easeInOut" }
-                : { type: "spring", stiffness: 40, damping: 8 }
+                : gazeMode === "name"
+                  ? { duration: 0.9, ease: "easeInOut" }
+                  : { type: "spring", stiffness: 40, damping: 8 }
             }
             style={{ transformOrigin: "270px 414px" }}
           >
