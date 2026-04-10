@@ -115,7 +115,7 @@ export default function LandingUI() {
     <Background>
       <div className="min-h-screen text-slate-100">
         <nav className="sticky top-0 z-50 border-b border-emerald-900/20 bg-slate-950/50 backdrop-blur-xl">
-          <div className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-4 md:px-6 lg:px-8">
+          <div className="flex h-20 w-full items-center justify-between px-6 md:px-10 lg:px-14 xl:px-20 2xl:px-24">
             <Link
               href="/"
               className="text-xl font-bold tracking-tight text-emerald-400"
@@ -162,14 +162,14 @@ export default function LandingUI() {
         </nav>
 
         <main>
-          <section className="mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-7xl grid-cols-1 items-center gap-12 px-4 py-16 md:px-6 lg:grid-cols-2 lg:px-8 lg:py-24">
+          <section className="grid min-h-[calc(100vh-5rem)] w-full grid-cols-1 items-center gap-12 px-6 py-16 md:px-10 lg:grid-cols-[1.05fr_0.95fr] lg:px-14 lg:py-24 xl:px-20 2xl:px-24">
             <div>
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
                 Healthcare Platform
               </div>
 
-              <h1 className="max-w-3xl text-5xl font-extrabold leading-[0.95] tracking-tight text-slate-100 md:text-6xl lg:text-7xl">
+              <h1 className="max-w-4xl text-5xl font-extrabold leading-[0.95] tracking-tight text-slate-100 md:text-6xl lg:text-7xl">
                 Smart{" "}
                 <span className="bg-gradient-to-r from-emerald-400 to-lime-300 bg-clip-text text-transparent">
                   Healthcare
@@ -177,7 +177,7 @@ export default function LandingUI() {
                 Management Made Simple
               </h1>
 
-              <p className="mt-6 max-w-xl text-base leading-8 text-slate-300 md:text-lg">
+              <p className="mt-6 max-w-2xl text-base leading-8 text-slate-300 md:text-lg">
                 Prescripta connects administrators, doctors, and patients in one
                 secure platform with modern authentication, structured
                 workflows, and a clean role-based experience.
@@ -202,15 +202,15 @@ export default function LandingUI() {
             </div>
 
             <div className="relative flex items-center justify-center">
-              <div className="absolute inset-0 rounded-[2rem] " />
+              <div className="absolute inset-0 rounded-[2rem]" />
 
-              <div className="relative flex w-full items-center justify-center rounded-[2rem]  p-6 backdrop-blur-xl">
+              <div className="relative flex w-full items-center justify-center rounded-[2rem] p-2 md:p-4 lg:p-6 backdrop-blur-xl">
                 <Image
-                  src="animations/LandingPage Graphic.svg"
+                  src="/animations/LandingPage Graphic.svg"
                   alt="Healthcare illustration"
-                  width={560}
-                  height={560}
-                  className="h-auto w-full max-w-[560px] object-contain"
+                  width={700}
+                  height={700}
+                  className="h-auto w-full max-w-[700px] object-contain"
                   priority
                 />
               </div>
@@ -219,13 +219,13 @@ export default function LandingUI() {
 
           <section
             id="features"
-            className="mx-auto w-full max-w-7xl px-4 py-20 md:px-6 lg:px-8"
+            className="w-full px-6 py-20 md:px-10 lg:px-14 xl:px-20 2xl:px-24"
           >
             <div className="mb-14 text-center">
               <h2 className="text-4xl font-bold tracking-tight text-white md:text-5xl">
                 Precision Features
               </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-slate-400">
+              <p className="mx-auto mt-4 max-w-3xl text-slate-400">
                 Built for security, structured workflows, and clean role-aware
                 platform management.
               </p>
@@ -264,7 +264,7 @@ export default function LandingUI() {
             id="how-it-works"
             className="border-y border-emerald-900/10 bg-slate-950/30 py-20"
           >
-            <div className="mx-auto w-full max-w-7xl px-4 md:px-6 lg:px-8">
+            <div className="w-full px-6 md:px-10 lg:px-14 xl:px-20 2xl:px-24">
               <div className="mb-16 text-center">
                 <h2 className="text-4xl font-bold tracking-tight text-white md:text-5xl">
                   How It Works
@@ -296,13 +296,13 @@ export default function LandingUI() {
 
           <section
             id="roles"
-            className="mx-auto w-full max-w-7xl px-4 py-20 md:px-6 lg:px-8"
+            className="w-full px-6 py-20 md:px-10 lg:px-14 xl:px-20 2xl:px-24"
           >
             <div className="mb-14">
               <h2 className="text-4xl font-bold tracking-tight text-white md:text-5xl">
                 Tailored Interfaces
               </h2>
-              <p className="mt-4 max-w-2xl text-slate-400">
+              <p className="mt-4 max-w-3xl text-slate-400">
                 Prescripta adapts to the person using it, whether they are
                 managing the platform, providing care, or using healthcare
                 services.
@@ -350,12 +350,12 @@ export default function LandingUI() {
             </div>
           </section>
 
-          <section className="px-4 pb-20 md:px-6 lg:px-8">
-            <div className="mx-auto w-full max-w-6xl overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-emerald-400 to-lime-400 px-6 py-16 text-center shadow-[0_40px_100px_-25px_rgba(16,185,129,0.45)] md:px-12">
+          <section className="px-6 pb-20 md:px-10 lg:px-14 xl:px-20 2xl:px-24">
+            <div className="w-full overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-emerald-400 to-lime-400 px-6 py-16 text-center shadow-[0_40px_100px_-25px_rgba(16,185,129,0.45)] md:px-12">
               <h2 className="text-4xl font-extrabold tracking-tight text-slate-950 md:text-6xl">
                 Join the platform today
               </h2>
-              <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-slate-900/80 md:text-lg">
+              <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-slate-900/80 md:text-lg">
                 Start with secure access, role-based workflows, and a modern
                 healthcare platform experience built for real system structure.
               </p>
@@ -373,7 +373,7 @@ export default function LandingUI() {
         </main>
 
         <footer className="border-t border-emerald-900/20 bg-slate-950/70">
-          <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-6 px-4 py-10 text-sm text-slate-400 md:flex-row md:px-6 lg:px-8">
+          <div className="flex w-full flex-col items-center justify-between gap-6 px-6 py-10 text-sm text-slate-400 md:flex-row md:px-10 lg:px-14 xl:px-20 2xl:px-24">
             <div>
               <p className="font-bold uppercase tracking-tight text-emerald-400">
                 Prescripta
