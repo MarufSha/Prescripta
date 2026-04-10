@@ -4,7 +4,9 @@ import LoginForm from "./LoginForm";
 export default function Page() {
   return (
     <GuestOnly>
-      <LoginForm />
+      <div className="h-screen w-screen overflow-hidden">
+        <LoginForm />
+      </div>
     </GuestOnly>
   );
 }
