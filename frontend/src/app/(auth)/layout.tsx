@@ -7,7 +7,9 @@ export default function AuthLayout({
 }) {
   return (
     <Background>
-      <div className="relative z-10 w-full max-w-md mx-auto">{children}</div>
+      <div className="relative z-10 h-screen w-screen overflow-hidden">
+        {children}
+      </div>
     </Background>
   );
 }
