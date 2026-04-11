@@ -6,16 +6,10 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 import { useAuthStore } from "@/store/authStore";
-import LoginCharacter from "@/components/LoginCharacter";
-
-export type CharacterMood = "idle" | "sad" | "happy";
-export type GazeMode =
-  | "follow"
-  | "name"
-  | "email"
-  | "password"
-  | "away"
-  | "remember";
+import LoginCharacter, {
+  CharacterMood,
+  GazeMode,
+} from "@/components/LoginCharacter";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");

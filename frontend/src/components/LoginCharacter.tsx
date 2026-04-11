@@ -2,12 +2,22 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+export type CharacterMood = "idle" | "sad" | "happy";
+export type GazeMode =
+  | "follow"
+  | "name"
+  | "email"
+  | "password"
+  | "away"
+  | "remember";
 
 interface LoginCharacterProps {
   eyeOffset: { x: number; y: number };
   gazeMode: "follow" | "name" | "email" | "password" | "away" | "remember";
   mood: "idle" | "sad" | "happy";
   rememberTrigger: number;
+  showQuestionMarks?: boolean;
+  forcedExpression?: "thinking";
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -19,6 +29,8 @@ export default function LoginCharacter({
   gazeMode,
   mood,
   rememberTrigger,
+  showQuestionMarks = false,
+  forcedExpression,
 }: LoginCharacterProps) {
   const [blink, setBlink] = useState(false);
 
@@ -78,43 +90,49 @@ export default function LoginCharacter({
           : { x: 0, y: 0, rotate: 0 };
 
   const greenTallMouth =
-    gazeMode === "email"
-      ? null
-      : gazeMode === "away"
-        ? "M 264 206 H 292"
-        : gazeMode === "name"
-          ? "M 266 206 Q 278 208 290 206"
-          : mood === "sad"
-            ? "M 264 210 Q 278 202 292 210"
-            : mood === "happy"
-              ? "M 264 206 Q 278 215 292 206"
-              : "M 264 206 Q 278 211 292 206";
+    forcedExpression === "thinking"
+      ? "M 268 206 Q 278 202 288 206"
+      : gazeMode === "email"
+        ? null
+        : gazeMode === "away"
+          ? "M 264 206 H 292"
+          : gazeMode === "name"
+            ? "M 266 206 Q 278 208 290 206"
+            : mood === "sad"
+              ? "M 264 210 Q 278 202 292 210"
+              : mood === "happy"
+                ? "M 264 206 Q 278 215 292 206"
+                : "M 264 206 Q 278 211 292 206";
 
   const limeTallMouth =
-    gazeMode === "email"
-      ? null
-      : gazeMode === "away"
-        ? "M546 404H606"
-        : gazeMode === "name"
-          ? "M548 404Q578 407 608 404"
-          : mood === "sad"
-            ? "M546 406H602"
-            : mood === "happy"
-              ? "M546 404Q578 414 610 404"
-              : "M546 404H610";
+    forcedExpression === "thinking"
+      ? "M550 404Q578 400 606 404"
+      : gazeMode === "email"
+        ? null
+        : gazeMode === "away"
+          ? "M546 404H606"
+          : gazeMode === "name"
+            ? "M548 404Q578 407 608 404"
+            : mood === "sad"
+              ? "M546 406H602"
+              : mood === "happy"
+                ? "M546 404Q578 414 610 404"
+                : "M546 404H610";
 
   const blobMouth =
-    gazeMode === "email"
-      ? null
-      : gazeMode === "away"
-        ? "M255 419H285"
-        : gazeMode === "name"
-          ? "M257 418Q270 421 283 418"
-          : mood === "sad"
-            ? "M255 422Q270 413 285 422"
-            : mood === "happy"
-              ? "M255 418Q270 430 285 418"
-              : "M255 418Q270 425 285 418";
+    forcedExpression === "thinking"
+      ? "M258 418Q270 414 282 418"
+      : gazeMode === "email"
+        ? null
+        : gazeMode === "away"
+          ? "M255 419H285"
+          : gazeMode === "name"
+            ? "M257 418Q270 421 283 418"
+            : mood === "sad"
+              ? "M255 422Q270 413 285 422"
+              : mood === "happy"
+                ? "M255 418Q270 430 285 418"
+                : "M255 418Q270 425 285 418";
 
   const largeAnimate =
     gazeMode === "remember"
@@ -492,6 +510,93 @@ export default function LoginCharacter({
             )}
           </motion.g>
         </g>
+
+        {showQuestionMarks && (
+          <g style={{ pointerEvents: "none" }}>
+            <motion.g
+              animate={{ x: [0, -6, 0, 6, 0], y: [0, -10, 0, -6, 0] }}
+              transition={{
+                duration: 2.1,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
+              <text
+                x="225"
+                y="118"
+                fontSize="36"
+                fontWeight="900"
+                fill="#dc2626"
+                textAnchor="middle"
+              >
+                ?
+              </text>
+            </motion.g>
+
+            <motion.g
+              animate={{ x: [0, -7, 0, 7, 0], y: [0, -9, 0, -5, 0] }}
+              transition={{
+                duration: 2.15,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.15,
+              }}
+            >
+              <text
+                x="448"
+                y="246"
+                fontSize="34"
+                fontWeight="900"
+                fill="#ef4444"
+                textAnchor="middle"
+              >
+                ?
+              </text>
+            </motion.g>
+
+            <motion.g
+              animate={{ x: [0, -6, 0, 6, 0], y: [0, -10, 0, -6, 0] }}
+              transition={{
+                duration: 2.2,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.28,
+              }}
+            >
+              <text
+                x="640"
+                y="330"
+                fontSize="34"
+                fontWeight="900"
+                fill="#dc2626"
+                textAnchor="middle"
+              >
+                ?
+              </text>
+            </motion.g>
+
+            <motion.g
+              animate={{ x: [0, -8, 0, 8, 0], y: [0, -10, 0, -5, 0] }}
+              transition={{
+                duration: 2.25,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.08,
+              }}
+            >
+              <text
+                x="175"
+                y="355"
+                fontSize="38"
+                fontWeight="900"
+                fill="#dc2626"
+                textAnchor="middle"
+              >
+                ?
+              </text>
+            </motion.g>
+          </g>
+        )}
       </svg>
     </div>
   );

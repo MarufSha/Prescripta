@@ -7,9 +7,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import PasswordStrengthMeter from "@/components/PasswordStrengthMeter";
-import LoginCharacter from "@/components/LoginCharacter";
+import LoginCharacter, {
+  CharacterMood,
+  GazeMode,
+} from "@/components/LoginCharacter";
 import { useAuthStore } from "@/store/authStore";
-import { CharacterMood, GazeMode } from "../login/LoginForm";
 
 export default function SignUpForm() {
   const router = useRouter();
