@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+
 export type CharacterMood = "idle" | "sad" | "happy";
 export type GazeMode =
   | "follow"
@@ -13,7 +14,12 @@ export type GazeMode =
   | "verify"
   | "otp"
   | "fail"
-  | "success";
+  | "success"
+  | "reset_idle"
+  | "reset_new_password"
+  | "reset_confirm_password"
+  | "reset_mismatch"
+  | "reset_success";
 
 interface LoginCharacterProps {
   eyeOffset: { x: number; y: number };
@@ -76,6 +82,26 @@ export default function LoginCharacter({
       };
     }
 
+    if (gazeMode === "reset_idle") {
+      return { x: 0, y: -0.2 };
+    }
+
+    if (gazeMode === "reset_new_password") {
+      return { x: 1.8, y: 1.3 };
+    }
+
+    if (gazeMode === "reset_confirm_password") {
+      return { x: 0.6, y: 1.1 };
+    }
+
+    if (gazeMode === "reset_mismatch") {
+      return { x: -1.4, y: 0.9 };
+    }
+
+    if (gazeMode === "reset_success") {
+      return { x: 0, y: -0.8 };
+    }
+
     if (gazeMode === "fail") {
       return { x: -1.2, y: 0.4 };
     }
@@ -101,11 +127,21 @@ export default function LoginCharacter({
             ? { x: -6, y: -1, rotate: -1.5 }
             : gazeMode === "otp"
               ? { x: -4, y: 0.5, rotate: -1 }
-              : gazeMode === "fail"
-                ? { x: -6, y: 1, rotate: -2 }
-                : gazeMode === "success"
-                  ? { x: 0, y: -2, rotate: 0.5 }
-                  : { x: 0, y: 0, rotate: 0 };
+              : gazeMode === "reset_idle"
+                ? { x: 0, y: -1.2, rotate: 0 }
+                : gazeMode === "reset_new_password"
+                  ? { x: 2, y: 1.5, rotate: 0.8 }
+                  : gazeMode === "reset_confirm_password"
+                    ? { x: 0.5, y: 1, rotate: 0.2 }
+                    : gazeMode === "reset_mismatch"
+                      ? { x: -3, y: 1.5, rotate: -1.2 }
+                      : gazeMode === "reset_success"
+                        ? { x: 0, y: -3.2, rotate: 0.8 }
+                        : gazeMode === "fail"
+                          ? { x: -6, y: 1, rotate: -2 }
+                          : gazeMode === "success"
+                            ? { x: 0, y: -2, rotate: 0.5 }
+                            : { x: 0, y: 0, rotate: 0 };
 
   const faceTurnSmall =
     gazeMode === "away"
@@ -118,11 +154,21 @@ export default function LoginCharacter({
             ? { x: -4, y: -0.5, rotate: -1.3 }
             : gazeMode === "otp"
               ? { x: -3, y: 0.5, rotate: -0.8 }
-              : gazeMode === "fail"
-                ? { x: -4, y: 1, rotate: -1.5 }
-                : gazeMode === "success"
-                  ? { x: 0, y: -1.5, rotate: 0.4 }
-                  : { x: 0, y: 0, rotate: 0 };
+              : gazeMode === "reset_idle"
+                ? { x: 0, y: -0.8, rotate: 0 }
+                : gazeMode === "reset_new_password"
+                  ? { x: 1.5, y: 1, rotate: 0.6 }
+                  : gazeMode === "reset_confirm_password"
+                    ? { x: 0.5, y: 0.8, rotate: 0.15 }
+                    : gazeMode === "reset_mismatch"
+                      ? { x: -2, y: 1, rotate: -1 }
+                      : gazeMode === "reset_success"
+                        ? { x: 0, y: -2.4, rotate: 0.6 }
+                        : gazeMode === "fail"
+                          ? { x: -4, y: 1, rotate: -1.5 }
+                          : gazeMode === "success"
+                            ? { x: 0, y: -1.5, rotate: 0.4 }
+                            : { x: 0, y: 0, rotate: 0 };
 
   const greenTallMouth =
     forcedExpression === "thinking"
@@ -135,17 +181,27 @@ export default function LoginCharacter({
             ? "M 258 207 Q 270 203 282 207"
             : gazeMode === "otp"
               ? "M 258 207 Q 270 205 282 207"
-              : gazeMode === "fail"
-                ? "M 266 210 Q 278 202 290 210"
-                : gazeMode === "success"
-                  ? "M 264 206 Q 278 214 292 206"
-                  : gazeMode === "name"
-                    ? "M 266 206 Q 278 208 290 206"
-                    : mood === "sad"
-                      ? "M 264 210 Q 278 202 292 210"
-                      : mood === "happy"
-                        ? "M 264 206 Q 278 215 292 206"
-                        : "M 264 206 Q 278 211 292 206";
+              : gazeMode === "reset_idle"
+                ? "M 266 206 Q 278 209 290 206"
+                : gazeMode === "reset_new_password"
+                  ? "M 266 206 Q 278 204 290 206"
+                  : gazeMode === "reset_confirm_password"
+                    ? "M 266 206 Q 278 205 290 206"
+                    : gazeMode === "reset_mismatch"
+                      ? "M 266 210 Q 278 202 290 210"
+                      : gazeMode === "reset_success"
+                        ? "M 262 205 Q 278 219 294 205"
+                        : gazeMode === "fail"
+                          ? "M 266 210 Q 278 202 290 210"
+                          : gazeMode === "success"
+                            ? "M 264 206 Q 278 214 292 206"
+                            : gazeMode === "name"
+                              ? "M 266 206 Q 278 208 290 206"
+                              : mood === "sad"
+                                ? "M 264 210 Q 278 202 292 210"
+                                : mood === "happy"
+                                  ? "M 264 206 Q 278 215 292 206"
+                                  : "M 264 206 Q 278 211 292 206";
 
   const limeTallMouth =
     forcedExpression === "thinking"
@@ -158,17 +214,27 @@ export default function LoginCharacter({
             ? "M536 405Q564 401 592 405"
             : gazeMode === "otp"
               ? "M536 405Q564 403 592 405"
-              : gazeMode === "fail"
-                ? "M548 408Q578 400 608 408"
-                : gazeMode === "success"
-                  ? "M546 404Q578 412 610 404"
-                  : gazeMode === "name"
-                    ? "M548 404Q578 407 608 404"
-                    : mood === "sad"
-                      ? "M546 406H602"
-                      : mood === "happy"
-                        ? "M546 404Q578 414 610 404"
-                        : "M546 404H610";
+              : gazeMode === "reset_idle"
+                ? "M546 404Q578 407 610 404"
+                : gazeMode === "reset_new_password"
+                  ? "M546 404Q578 402 610 404"
+                  : gazeMode === "reset_confirm_password"
+                    ? "M546 404Q578 403 610 404"
+                    : gazeMode === "reset_mismatch"
+                      ? "M548 408Q578 400 608 408"
+                      : gazeMode === "reset_success"
+                        ? "M542 403Q578 417 614 403"
+                        : gazeMode === "fail"
+                          ? "M548 408Q578 400 608 408"
+                          : gazeMode === "success"
+                            ? "M546 404Q578 412 610 404"
+                            : gazeMode === "name"
+                              ? "M548 404Q578 407 608 404"
+                              : mood === "sad"
+                                ? "M546 406H602"
+                                : mood === "happy"
+                                  ? "M546 404Q578 414 610 404"
+                                  : "M546 404H610";
 
   const blobMouth =
     forcedExpression === "thinking"
@@ -181,17 +247,27 @@ export default function LoginCharacter({
             ? "M248 419Q260 415 272 419"
             : gazeMode === "otp"
               ? "M248 419Q260 417 272 419"
-              : gazeMode === "fail"
-                ? "M258 422Q270 414 282 422"
-                : gazeMode === "success"
-                  ? "M255 418Q270 428 285 418"
-                  : gazeMode === "name"
-                    ? "M257 418Q270 421 283 418"
-                    : mood === "sad"
-                      ? "M255 422Q270 413 285 422"
-                      : mood === "happy"
-                        ? "M255 418Q270 430 285 418"
-                        : "M255 418Q270 425 285 418";
+              : gazeMode === "reset_idle"
+                ? "M255 418Q270 422 285 418"
+                : gazeMode === "reset_new_password"
+                  ? "M255 418Q270 416 285 418"
+                  : gazeMode === "reset_confirm_password"
+                    ? "M255 418Q270 417 285 418"
+                    : gazeMode === "reset_mismatch"
+                      ? "M258 422Q270 414 282 422"
+                      : gazeMode === "reset_success"
+                        ? "M252 417Q270 431 288 417"
+                        : gazeMode === "fail"
+                          ? "M258 422Q270 414 282 422"
+                          : gazeMode === "success"
+                            ? "M255 418Q270 428 285 418"
+                            : gazeMode === "name"
+                              ? "M257 418Q270 421 283 418"
+                              : mood === "sad"
+                                ? "M255 422Q270 413 285 422"
+                                : mood === "happy"
+                                  ? "M255 418Q270 430 285 418"
+                                  : "M255 418Q270 425 285 418";
 
   const largeAnimate =
     gazeMode === "remember"
@@ -200,11 +276,37 @@ export default function LoginCharacter({
         ? { ...faceTurn, y: [0, 8, 0], rotate: [0, 1.2, 0] }
         : gazeMode === "verify"
           ? { ...faceTurn, y: [0, -1.5, 0], rotate: [-1.5, -2.2, -1.5] }
-          : gazeMode === "fail"
-            ? { ...faceTurn, x: [0, -5, 3, -2, 0], rotate: [0, -3, 1, -1, 0] }
-            : gazeMode === "success"
-              ? { ...faceTurn, y: [0, -4, 0], rotate: [0, 0.6, 0] }
-              : faceTurn;
+          : gazeMode === "reset_idle"
+            ? { ...faceTurn, y: [0, -1.5, 0] }
+            : gazeMode === "reset_new_password"
+              ? { ...faceTurn, y: [0, 1.5, 0] }
+              : gazeMode === "reset_confirm_password"
+                ? { ...faceTurn, y: [0, 1, 0] }
+                : gazeMode === "reset_mismatch"
+                  ? {
+                      ...faceTurn,
+                      y: [0, 1.5, 0],
+                      rotate: [0, -1.2, 0],
+                    }
+                  : gazeMode === "reset_success"
+                    ? {
+                        ...faceTurn,
+                        y: [0, -5, 0, -3, 0],
+                        rotate: [0, 0.8, 0, 0.5, 0],
+                      }
+                    : gazeMode === "fail"
+                      ? {
+                          ...faceTurn,
+                          x: [0, -5, 3, -2, 0],
+                          rotate: [0, -3, 1, -1, 0],
+                        }
+                      : gazeMode === "success"
+                        ? {
+                            ...faceTurn,
+                            y: [0, -4, 0],
+                            rotate: [0, 0.6, 0],
+                          }
+                        : faceTurn;
 
   const smallAnimate =
     gazeMode === "remember"
@@ -213,15 +315,37 @@ export default function LoginCharacter({
         ? { ...faceTurnSmall, y: [0, 6, 0], rotate: [0, 0.9, 0] }
         : gazeMode === "verify"
           ? { ...faceTurnSmall, y: [0, -1, 0], rotate: [-1.3, -1.8, -1.3] }
-          : gazeMode === "fail"
-            ? {
-                ...faceTurnSmall,
-                x: [0, -4, 2, -1, 0],
-                rotate: [0, -2, 1, -1, 0],
-              }
-            : gazeMode === "success"
-              ? { ...faceTurnSmall, y: [0, -3, 0], rotate: [0, 0.5, 0] }
-              : faceTurnSmall;
+          : gazeMode === "reset_idle"
+            ? { ...faceTurnSmall, y: [0, -1, 0] }
+            : gazeMode === "reset_new_password"
+              ? { ...faceTurnSmall, y: [0, 1, 0] }
+              : gazeMode === "reset_confirm_password"
+                ? { ...faceTurnSmall, y: [0, 0.8, 0] }
+                : gazeMode === "reset_mismatch"
+                  ? {
+                      ...faceTurnSmall,
+                      y: [0, 1, 0],
+                      rotate: [0, -1, 0],
+                    }
+                  : gazeMode === "reset_success"
+                    ? {
+                        ...faceTurnSmall,
+                        y: [0, -4, 0, -2, 0],
+                        rotate: [0, 0.6, 0, 0.4, 0],
+                      }
+                    : gazeMode === "fail"
+                      ? {
+                          ...faceTurnSmall,
+                          x: [0, -4, 2, -1, 0],
+                          rotate: [0, -2, 1, -1, 0],
+                        }
+                      : gazeMode === "success"
+                        ? {
+                            ...faceTurnSmall,
+                            y: [0, -3, 0],
+                            rotate: [0, 0.5, 0],
+                          }
+                        : faceTurnSmall;
 
   const showVerifyBrows = gazeMode === "verify" || gazeMode === "otp";
 
@@ -344,9 +468,17 @@ export default function LoginCharacter({
               gazeMode === "name" ||
               gazeMode === "verify" ||
               gazeMode === "fail" ||
-              gazeMode === "success"
+              gazeMode === "success" ||
+              gazeMode === "reset_idle" ||
+              gazeMode === "reset_new_password" ||
+              gazeMode === "reset_confirm_password" ||
+              gazeMode === "reset_mismatch" ||
+              gazeMode === "reset_success"
                 ? {
-                    duration: gazeMode === "fail" ? 0.35 : 0.6,
+                    duration:
+                      gazeMode === "fail" || gazeMode === "reset_mismatch"
+                        ? 0.35
+                        : 0.6,
                     ease: "easeInOut",
                   }
                 : { type: "spring", stiffness: 40, damping: 8 }
@@ -452,9 +584,17 @@ export default function LoginCharacter({
               gazeMode === "name" ||
               gazeMode === "verify" ||
               gazeMode === "fail" ||
-              gazeMode === "success"
+              gazeMode === "success" ||
+              gazeMode === "reset_idle" ||
+              gazeMode === "reset_new_password" ||
+              gazeMode === "reset_confirm_password" ||
+              gazeMode === "reset_mismatch" ||
+              gazeMode === "reset_success"
                 ? {
-                    duration: gazeMode === "fail" ? 0.35 : 0.6,
+                    duration:
+                      gazeMode === "fail" || gazeMode === "reset_mismatch"
+                        ? 0.35
+                        : 0.6,
                     ease: "easeInOut",
                   }
                 : { type: "spring", stiffness: 140, damping: 16 }
@@ -529,9 +669,17 @@ export default function LoginCharacter({
               gazeMode === "name" ||
               gazeMode === "verify" ||
               gazeMode === "fail" ||
-              gazeMode === "success"
+              gazeMode === "success" ||
+              gazeMode === "reset_idle" ||
+              gazeMode === "reset_new_password" ||
+              gazeMode === "reset_confirm_password" ||
+              gazeMode === "reset_mismatch" ||
+              gazeMode === "reset_success"
                 ? {
-                    duration: gazeMode === "fail" ? 0.35 : 0.6,
+                    duration:
+                      gazeMode === "fail" || gazeMode === "reset_mismatch"
+                        ? 0.35
+                        : 0.6,
                     ease: "easeInOut",
                   }
                 : { type: "spring", stiffness: 40, damping: 8 }
@@ -634,9 +782,17 @@ export default function LoginCharacter({
               gazeMode === "name" ||
               gazeMode === "verify" ||
               gazeMode === "fail" ||
-              gazeMode === "success"
+              gazeMode === "success" ||
+              gazeMode === "reset_idle" ||
+              gazeMode === "reset_new_password" ||
+              gazeMode === "reset_confirm_password" ||
+              gazeMode === "reset_mismatch" ||
+              gazeMode === "reset_success"
                 ? {
-                    duration: gazeMode === "fail" ? 0.35 : 0.6,
+                    duration:
+                      gazeMode === "fail" || gazeMode === "reset_mismatch"
+                        ? 0.35
+                        : 0.6,
                     ease: "easeInOut",
                   }
                 : { type: "spring", stiffness: 40, damping: 8 }

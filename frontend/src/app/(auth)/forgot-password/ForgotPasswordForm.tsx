@@ -191,7 +191,7 @@ const ForgotPasswordForm: React.FC = () => {
                 <motion.button
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.985 }}
-                  className="flex h-14 w-full items-center justify-center rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-base font-semibold text-white shadow-[0_12px_28px_rgba(16,185,129,0.28)] transition hover:from-green-600 hover:to-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="cursor-pointer flex h-14 w-full items-center justify-center rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-base font-semibold text-white shadow-[0_12px_28px_rgba(16,185,129,0.28)] transition hover:from-green-600 hover:to-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
                   type="submit"
                   disabled={isLoading}
                   onFocus={() => {
