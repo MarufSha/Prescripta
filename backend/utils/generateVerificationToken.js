@@ -1,4 +1,4 @@
+import crypto from "crypto";
 export const generateVerificationToken = () => {
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  return code;
-}
+  return crypto.randomInt(100000, 1000000).toString();
+};
