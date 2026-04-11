@@ -12,6 +12,13 @@ export const requireRole = (...allowedRoles) => {
         });
       }
 
+      if (!user.isVerified) {
+        return res.status(403).json({
+          success: false,
+          message: "Email verification is required",
+        });
+      }
+
       const isSuperAdmin = user.role === "superadmin";
       const isAllowedRole = allowedRoles.includes(user.role);
 
