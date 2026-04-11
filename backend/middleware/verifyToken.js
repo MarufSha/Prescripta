@@ -15,6 +15,8 @@ export const verifyToken = (req, res, next) => {
         .json({ success: false, message: "Unauthorized - Invalid token" });
     }
     req.userId = decoded.userId;
+    req.userRole = decoded.role;
+    req.isVerified = Boolean(decoded.isVerified);
     next();
   } catch (error) {
     console.error("Error verifying token:", error);

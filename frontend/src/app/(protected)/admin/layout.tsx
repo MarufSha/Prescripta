@@ -1,21 +1,14 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import AdminGuard from "@/components/auth/AdminGuard";
 import AdminSidebar from "@/components/dashboard/admin/AdminSidebar";
 import AdminTopNav from "@/components/dashboard/admin/AdminTopNav";
-import { useAuthStore } from "@/store/authStore";
 export default function AdminDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(false);
-  const { fetchUsers, user } = useAuthStore();
-  useEffect(() => {
-    if (user?.role === "admin" || user?.role === "superadmin") {
-      void fetchUsers();
-    }
-  }, [fetchUsers, user?.role]);
   return (
     <AdminGuard>
       <div className="flex h-screen w-full overflow-hidden text-white">

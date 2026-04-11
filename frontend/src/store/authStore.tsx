@@ -68,9 +68,17 @@ type BackendFieldError = {
   location?: string;
 };
 
+type PaginationState = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
 type AuthState = {
   user: User | null;
   users: AdminUser[];
+  usersPagination: PaginationState;
   isAuthenticated: boolean;
   isLoading: boolean;
   isCheckingAuth: boolean;
@@ -91,7 +99,7 @@ type AuthState = {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
 
-  fetchUsers: () => Promise<void>;
+  fetchUsers: (params?: { page?: number; limit?: number; role?: UserRole }) => Promise<void>;
   updateUserRole: (
     userId: string,
     role: "doctor" | "patient",
@@ -171,6 +179,8 @@ const ensureCsrfToken = async (): Promise<string> => {
   return token;
 };
 
+let lastCheckAuthAt = 0;
+
 const withCsrfRetry = async (requestFn: () => Promise<unknown>) => {
   await ensureCsrfToken();
 
@@ -187,6 +197,7 @@ const withCsrfRetry = async (requestFn: () => Promise<unknown>) => {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   users: [],
+  usersPagination: { page: 1, limit: 25, total: 0, totalPages: 1 },
   isAuthenticated: false,
   isLoading: false,
   isCheckingAuth: true,
@@ -302,6 +313,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   checkAuth: async (): Promise<void> => {
+    const now = Date.now();
+
+    if (now - lastCheckAuthAt < 30000 && useAuthStore.getState().hasHydrated) {
+      return;
+    }
+
     set({
       isCheckingAuth: true,
       error: null,
@@ -309,6 +326,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     try {
       const res = await api.get("/auth/check-auth");
+      lastCheckAuthAt = Date.now();
 
       set({
         user: res.data.user as User,
@@ -382,6 +400,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set((state) => ({
         user: null,
         users: [],
+  usersPagination: { page: 1, limit: 25, total: 0, totalPages: 1 },
         isAuthenticated: false,
         isLoading: false,
         error: null,
@@ -468,7 +487,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  fetchUsers: async (): Promise<void> => {
+  fetchUsers: async (params = {}): Promise<void> => {
     set({
       isLoading: true,
       error: null,
@@ -477,12 +496,34 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
+      const page = Math.max(params.page || 1, 1);
+      const limit = Math.max(params.limit || 25, 1);
+
       const res = (await withCsrfRetry(() =>
-        api.get("/admin/users"),
-      )) as { data: { users: AdminUser[] } };
+        api.get("/admin/users", {
+          params: {
+            page,
+            limit,
+            role: params.role,
+          },
+        }),
+      )) as {
+        data: {
+          users: AdminUser[];
+          pagination?: PaginationState;
+        };
+      };
 
       set({
         users: res.data.users as AdminUser[],
+        usersPagination:
+          res.data.pagination ||
+          ({
+            page,
+            limit,
+            total: (res.data.users || []).length,
+            totalPages: 1,
+          } as PaginationState),
         isLoading: false,
         error: null,
         message: null,

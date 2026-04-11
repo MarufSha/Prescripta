@@ -41,7 +41,7 @@ export const signup = async (req, res) => {
 
     await user.save();
 
-    generateTokenAndSetCookie(res, user._id);
+    generateTokenAndSetCookie(res, user);
     const csrfToken = generateCsrfToken();
     setCsrfCookie(res, csrfToken);
     await sendVerificationEmail(user.email, verificationToken);
@@ -119,7 +119,7 @@ export const login = async (req, res) => {
       });
     }
 
-    generateTokenAndSetCookie(res, user._id);
+    generateTokenAndSetCookie(res, user);
     const csrfToken = generateCsrfToken();
     setCsrfCookie(res, csrfToken);
     user.lastLogin = new Date();
@@ -239,6 +239,8 @@ export const checkAuth = async (req, res) => {
         message: "User not found",
       });
     }
+
+    res.set("Cache-Control", "private, max-age=30");
 
     return res.status(200).json({
       success: true,

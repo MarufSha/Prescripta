@@ -212,16 +212,16 @@ export const updateUserRole = async (req, res) => {
       });
     }
 
-    const actingUser = req.user;
+    const actingRole = req.userRole;
 
-    if (!actingUser) {
+    if (!actingRole) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized",
       });
     }
 
-    if (user.role === "superadmin" && actingUser.role !== "superadmin") {
+    if (user.role === "superadmin" && actingRole !== "superadmin") {
       return res.status(403).json({
         success: false,
         message: "Only superadmin can modify another superadmin",
@@ -271,14 +271,33 @@ export const updateUserRole = async (req, res) => {
 
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({}).sort({
-      role: 1,
-      createdAt: -1,
-    });
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 25, 1), 100);
+    const roleFilter = String(req.query.role || "").trim();
+
+    const filter = {};
+
+    if (["superadmin", "admin", "doctor", "patient"].includes(roleFilter)) {
+      filter.role = roleFilter;
+    }
+
+    const [users, total] = await Promise.all([
+      User.find(filter)
+        .sort({ role: 1, createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      User.countDocuments(filter),
+    ]);
 
     return res.status(200).json({
       success: true,
       users: users.map(sanitizeUser),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
     });
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -352,23 +371,23 @@ export const deleteUserByAdmin = async (req, res) => {
       });
     }
 
-    const actingUser = req.user;
+    const actingRole = req.userRole;
 
-    if (!actingUser) {
+    if (!actingRole) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized",
       });
     }
 
-    if (user.role === "superadmin" && actingUser.role !== "superadmin") {
+    if (user.role === "superadmin" && actingRole !== "superadmin") {
       return res.status(403).json({
         success: false,
         message: "Only superadmin can delete another superadmin",
       });
     }
 
-    if (user.role === "admin" && actingUser.role !== "superadmin") {
+    if (user.role === "admin" && actingRole !== "superadmin") {
       return res.status(403).json({
         success: false,
         message: "Only superadmin can delete admin accounts",
