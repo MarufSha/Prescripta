@@ -9,7 +9,7 @@ import PasswordStrengthMeter from "@/components/PasswordStrengthMeter";
 import LoginCharacter, {
   CharacterMood,
   GazeMode,
-} from "@/components/LoginCharacter";
+} from "@/components/UICharacter";
 import { useAuthStore } from "@/store/authStore";
 
 export default function SignUpForm() {

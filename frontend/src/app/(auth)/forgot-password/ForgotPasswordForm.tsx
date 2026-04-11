@@ -6,8 +6,8 @@ import { ArrowLeft, Loader, Mail } from "lucide-react";
 import Link from "next/link";
 
 import { useAuthStore } from "@/store/authStore";
-import LoginCharacter from "@/components/LoginCharacter";
-import { CharacterMood, GazeMode } from "@/components/LoginCharacter";
+import LoginCharacter from "@/components/UICharacter";
+import { CharacterMood, GazeMode } from "@/components/UICharacter";
 
 const ForgotPasswordForm: React.FC = () => {
   const [email, setEmail] = useState("");

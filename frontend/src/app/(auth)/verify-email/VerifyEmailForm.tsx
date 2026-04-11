@@ -8,7 +8,7 @@ import { ChevronLeft } from "lucide-react";
 import LoginCharacter, {
   CharacterMood,
   GazeMode,
-} from "@/components/LoginCharacter";
+} from "@/components/UICharacter";
 
 const CODE_LENGTH = 6;
 

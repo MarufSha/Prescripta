@@ -9,7 +9,7 @@ import { useAuthStore } from "@/store/authStore";
 import LoginCharacter, {
   CharacterMood,
   GazeMode,
-} from "@/components/LoginCharacter";
+} from "@/components/UICharacter";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");

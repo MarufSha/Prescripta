@@ -9,7 +9,7 @@ import Link from "next/link";
 import LoginCharacter, {
   CharacterMood,
   GazeMode,
-} from "@/components/LoginCharacter";
+} from "@/components/UICharacter";
 import { useAuthStore } from "@/store/authStore";
 
 type ResetPasswordFormProps = {
