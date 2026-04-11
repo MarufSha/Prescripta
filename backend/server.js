@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import { connectDB } from "./db/connectDB.js";
 import authRoutes from "./routes/auth-routes.js";
 import dotenv from "dotenv";
@@ -11,6 +12,7 @@ import doctorInviteRoutes from "./routes/doctor-invite-routes.js";
 dotenv.config();
 
 const app = express();
+app.set("trust proxy", 1);
 const port = process.env.PORT || 5000;
 
 // login: max 5 tries per 15 minutes
@@ -61,6 +63,12 @@ const verifyEmailLimiter = rateLimit({
     message: "Too many verification attempts. Please try again later.",
   },
 });
+
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+  }),
+);
 
 app.use(
   cors({
