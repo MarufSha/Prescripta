@@ -9,8 +9,10 @@ import {
 } from "../controllers/admin-controller.js";
 import { requireCsrf } from "../middleware/requireCsrf.js";
 import { createDoctorInvite } from "../controllers/admin-controller.js";
+import { handleValidationErrors } from "../middleware/handleValidationErrors.js";
+import { createDoctorInviteValidation } from "../validators/adminValidators.js";
 const router = express.Router();
-router.get("/users", verifyToken, requireRole("admin"), getAllUsers);
+router.get("/users", verifyToken, requireRole("admin"), requireCsrf, getAllUsers);
 router.patch(
   "/users/:id/role",
   verifyToken,
@@ -37,6 +39,8 @@ router.post(
   verifyToken,
   requireRole("admin"),
   requireCsrf,
+  createDoctorInviteValidation,
+  handleValidationErrors,
   createDoctorInvite,
 );
 export default router;

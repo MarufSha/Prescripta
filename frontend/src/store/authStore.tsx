@@ -477,7 +477,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      const res = await api.get("/admin/users");
+      const res = (await withCsrfRetry(() =>
+        api.get("/admin/users"),
+      )) as { data: { users: AdminUser[] } };
 
       set({
         users: res.data.users as AdminUser[],

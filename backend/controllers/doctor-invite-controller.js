@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { matchedData } from "express-validator";
 import { DoctorInvite } from "../models/doctorInvite.js";
 import { User } from "../models/user.js";
 import { sendWelcomeEmail } from "../mail/emails.js";
@@ -95,7 +96,7 @@ export const getDoctorInviteByToken = async (req, res) => {
 
 export const acceptDoctorInvite = async (req, res) => {
   const { token } = req.params;
-  const { password, doctorProfile } = req.body;
+  const { password, doctorProfile } = matchedData(req);
 
   try {
     const invite = await DoctorInvite.findOne({ token });
@@ -113,13 +114,6 @@ export const acceptDoctorInvite = async (req, res) => {
       return res.status(409).json({
         success: false,
         message: "A user with this email already exists",
-      });
-    }
-
-    if (!password || String(password).length < 8) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 8 characters long",
       });
     }
 

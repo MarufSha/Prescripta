@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { matchedData } from "express-validator";
 import { User } from "../models/user.js";
 import { DoctorInvite } from "../models/doctorInvite.js";
 import { sendDoctorInviteEmail, sendWelcomeEmail } from "../mail/emails.js";
@@ -109,7 +110,7 @@ const sanitizeUser = (user) => ({
 });
 
 export const createDoctorInvite = async (req, res) => {
-  const { name, email } = req.body;
+  const { name, email } = matchedData(req);
 
   try {
     const trimmedName = String(name || "").trim();

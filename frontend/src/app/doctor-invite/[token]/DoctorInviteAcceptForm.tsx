@@ -80,19 +80,34 @@ export default function DoctorInviteAcceptForm({ token }: Props) {
     setIsSubmitting(true);
 
     try {
-      await axios.post(`${API_BASE_URL}/doctor-invites/${token}/accept`, {
-        password,
-        doctorProfile: {
-          specialties: parseList(specialties),
-          bmdcNo,
-          mobileNumber,
-          designations: parseList(designations),
-          degrees: parseList(degrees),
-          chambers: chambers.filter(
-            (chamber) => chamber.name.trim() && chamber.location.trim(),
-          ),
-        },
+      const csrfResponse = await axios.get(`${API_BASE_URL}/auth/csrf-token`, {
+        withCredentials: true,
       });
+
+      const tokenFromServer = String(csrfResponse.data?.csrfToken || "");
+
+      await axios.post(
+        `${API_BASE_URL}/doctor-invites/${token}/accept`,
+        {
+          password,
+          doctorProfile: {
+            specialties: parseList(specialties),
+            bmdcNo,
+            mobileNumber,
+            designations: parseList(designations),
+            degrees: parseList(degrees),
+            chambers: chambers.filter(
+              (chamber) => chamber.name.trim() && chamber.location.trim(),
+            ),
+          },
+        },
+        {
+          withCredentials: true,
+          headers: {
+            "x-csrf-token": tokenFromServer,
+          },
+        },
+      );
 
       toast.success("Doctor account created successfully");
       router.replace("/login");
