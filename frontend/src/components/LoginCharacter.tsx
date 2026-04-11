@@ -9,12 +9,16 @@ export type GazeMode =
   | "email"
   | "password"
   | "away"
-  | "remember";
+  | "remember"
+  | "verify"
+  | "otp"
+  | "fail"
+  | "success";
 
 interface LoginCharacterProps {
   eyeOffset: { x: number; y: number };
-  gazeMode: "follow" | "name" | "email" | "password" | "away" | "remember";
-  mood: "idle" | "sad" | "happy";
+  gazeMode: GazeMode;
+  mood: CharacterMood;
   rememberTrigger: number;
   showQuestionMarks?: boolean;
   forcedExpression?: "thinking";
@@ -65,6 +69,21 @@ export default function LoginCharacter({
       return { x: 0.4, y: 0.8 };
     }
 
+    if (gazeMode === "verify" || gazeMode === "otp") {
+      return {
+        x: clamp(eyeOffset.x * 0.32, -5.5, 5.5),
+        y: clamp(eyeOffset.y * 0.2, -3.2, 3.2),
+      };
+    }
+
+    if (gazeMode === "fail") {
+      return { x: -1.2, y: 0.4 };
+    }
+
+    if (gazeMode === "success") {
+      return { x: 0.2, y: -0.6 };
+    }
+
     return {
       x: clamp(eyeOffset.x * 0.32, -5.5, 5.5),
       y: clamp(eyeOffset.y * 0.2, -3.2, 3.2),
@@ -78,7 +97,15 @@ export default function LoginCharacter({
         ? { x: 10, y: 4, rotate: 3 }
         : gazeMode === "email"
           ? { x: 0, y: -1, rotate: 0 }
-          : { x: 0, y: 0, rotate: 0 };
+          : gazeMode === "verify"
+            ? { x: -6, y: -1, rotate: -1.5 }
+            : gazeMode === "otp"
+              ? { x: -4, y: 0.5, rotate: -1 }
+              : gazeMode === "fail"
+                ? { x: -6, y: 1, rotate: -2 }
+                : gazeMode === "success"
+                  ? { x: 0, y: -2, rotate: 0.5 }
+                  : { x: 0, y: 0, rotate: 0 };
 
   const faceTurnSmall =
     gazeMode === "away"
@@ -87,7 +114,15 @@ export default function LoginCharacter({
         ? { x: 7, y: 3, rotate: 2 }
         : gazeMode === "email"
           ? { x: 0, y: -1, rotate: 0 }
-          : { x: 0, y: 0, rotate: 0 };
+          : gazeMode === "verify"
+            ? { x: -4, y: -0.5, rotate: -1.3 }
+            : gazeMode === "otp"
+              ? { x: -3, y: 0.5, rotate: -0.8 }
+              : gazeMode === "fail"
+                ? { x: -4, y: 1, rotate: -1.5 }
+                : gazeMode === "success"
+                  ? { x: 0, y: -1.5, rotate: 0.4 }
+                  : { x: 0, y: 0, rotate: 0 };
 
   const greenTallMouth =
     forcedExpression === "thinking"
@@ -96,13 +131,21 @@ export default function LoginCharacter({
         ? null
         : gazeMode === "away"
           ? "M 264 206 H 292"
-          : gazeMode === "name"
-            ? "M 266 206 Q 278 208 290 206"
-            : mood === "sad"
-              ? "M 264 210 Q 278 202 292 210"
-              : mood === "happy"
-                ? "M 264 206 Q 278 215 292 206"
-                : "M 264 206 Q 278 211 292 206";
+          : gazeMode === "verify"
+            ? "M 258 207 Q 270 203 282 207"
+            : gazeMode === "otp"
+              ? "M 258 207 Q 270 205 282 207"
+              : gazeMode === "fail"
+                ? "M 266 210 Q 278 202 290 210"
+                : gazeMode === "success"
+                  ? "M 264 206 Q 278 214 292 206"
+                  : gazeMode === "name"
+                    ? "M 266 206 Q 278 208 290 206"
+                    : mood === "sad"
+                      ? "M 264 210 Q 278 202 292 210"
+                      : mood === "happy"
+                        ? "M 264 206 Q 278 215 292 206"
+                        : "M 264 206 Q 278 211 292 206";
 
   const limeTallMouth =
     forcedExpression === "thinking"
@@ -111,13 +154,21 @@ export default function LoginCharacter({
         ? null
         : gazeMode === "away"
           ? "M546 404H606"
-          : gazeMode === "name"
-            ? "M548 404Q578 407 608 404"
-            : mood === "sad"
-              ? "M546 406H602"
-              : mood === "happy"
-                ? "M546 404Q578 414 610 404"
-                : "M546 404H610";
+          : gazeMode === "verify"
+            ? "M536 405Q564 401 592 405"
+            : gazeMode === "otp"
+              ? "M536 405Q564 403 592 405"
+              : gazeMode === "fail"
+                ? "M548 408Q578 400 608 408"
+                : gazeMode === "success"
+                  ? "M546 404Q578 412 610 404"
+                  : gazeMode === "name"
+                    ? "M548 404Q578 407 608 404"
+                    : mood === "sad"
+                      ? "M546 406H602"
+                      : mood === "happy"
+                        ? "M546 404Q578 414 610 404"
+                        : "M546 404H610";
 
   const blobMouth =
     forcedExpression === "thinking"
@@ -126,27 +177,93 @@ export default function LoginCharacter({
         ? null
         : gazeMode === "away"
           ? "M255 419H285"
-          : gazeMode === "name"
-            ? "M257 418Q270 421 283 418"
-            : mood === "sad"
-              ? "M255 422Q270 413 285 422"
-              : mood === "happy"
-                ? "M255 418Q270 430 285 418"
-                : "M255 418Q270 425 285 418";
+          : gazeMode === "verify"
+            ? "M248 419Q260 415 272 419"
+            : gazeMode === "otp"
+              ? "M248 419Q260 417 272 419"
+              : gazeMode === "fail"
+                ? "M258 422Q270 414 282 422"
+                : gazeMode === "success"
+                  ? "M255 418Q270 428 285 418"
+                  : gazeMode === "name"
+                    ? "M257 418Q270 421 283 418"
+                    : mood === "sad"
+                      ? "M255 422Q270 413 285 422"
+                      : mood === "happy"
+                        ? "M255 418Q270 430 285 418"
+                        : "M255 418Q270 425 285 418";
 
   const largeAnimate =
     gazeMode === "remember"
       ? { ...faceTurn, y: [0, 7, 0, 6, 0], rotate: [0, 1.2, 0, 1, 0] }
       : gazeMode === "name"
         ? { ...faceTurn, y: [0, 8, 0], rotate: [0, 1.2, 0] }
-        : faceTurn;
+        : gazeMode === "verify"
+          ? { ...faceTurn, y: [0, -1.5, 0], rotate: [-1.5, -2.2, -1.5] }
+          : gazeMode === "fail"
+            ? { ...faceTurn, x: [0, -5, 3, -2, 0], rotate: [0, -3, 1, -1, 0] }
+            : gazeMode === "success"
+              ? { ...faceTurn, y: [0, -4, 0], rotate: [0, 0.6, 0] }
+              : faceTurn;
 
   const smallAnimate =
     gazeMode === "remember"
       ? { ...faceTurnSmall, y: [0, 5, 0, 4, 0], rotate: [0, 0.9, 0, 0.7, 0] }
       : gazeMode === "name"
         ? { ...faceTurnSmall, y: [0, 6, 0], rotate: [0, 0.9, 0] }
-        : faceTurnSmall;
+        : gazeMode === "verify"
+          ? { ...faceTurnSmall, y: [0, -1, 0], rotate: [-1.3, -1.8, -1.3] }
+          : gazeMode === "fail"
+            ? {
+                ...faceTurnSmall,
+                x: [0, -4, 2, -1, 0],
+                rotate: [0, -2, 1, -1, 0],
+              }
+            : gazeMode === "success"
+              ? { ...faceTurnSmall, y: [0, -3, 0], rotate: [0, 0.5, 0] }
+              : faceTurnSmall;
+
+  const showVerifyBrows = gazeMode === "verify" || gazeMode === "otp";
+
+  const greenBrowLeft =
+    gazeMode === "verify"
+      ? "M236 166 Q245 166 254 166"
+      : "M236 167 Q245 167 254 167";
+
+  const greenBrowRight =
+    gazeMode === "verify"
+      ? "M311 160 Q320 151 329 158"
+      : "M311 162 Q320 156 329 161";
+
+  const darkBrowLeft =
+    gazeMode === "verify"
+      ? "M364 295 Q376 295 388 295"
+      : "M364 296 Q376 296 388 296";
+
+  const darkBrowRight =
+    gazeMode === "verify"
+      ? "M398 289 Q410 278 422 287"
+      : "M398 292 Q410 284 422 290";
+
+  const limeBrowLeft =
+    gazeMode === "verify"
+      ? "M521 377 Q528 377 535 377"
+      : "M521 378 Q528 378 535 378";
+
+  const limeBrowRight =
+    gazeMode === "verify"
+      ? "M587 371 Q594 364 601 371"
+      : "M587 374 Q594 369 601 374";
+
+  const blobBrowLeft =
+    gazeMode === "verify"
+      ? "M227 389 Q235 389 243 389"
+      : "M227 390 Q235 390 243 390";
+
+  const blobBrowRight =
+    gazeMode === "verify"
+      ? "M277 383 Q285 375 293 382"
+      : "M277 386 Q285 380 293 385";
 
   return (
     <div className="mx-auto w-full max-w-[660px]">
@@ -223,11 +340,16 @@ export default function LoginCharacter({
             key={`green-${rememberTrigger}`}
             animate={largeAnimate}
             transition={
-              gazeMode === "remember"
-                ? { duration: 0.5, repeat: 2, ease: "easeInOut" }
-                : gazeMode === "name"
-                  ? { duration: 0.9, ease: "easeInOut" }
-                  : { type: "spring", stiffness: 40, damping: 8 }
+              gazeMode === "remember" ||
+              gazeMode === "name" ||
+              gazeMode === "verify" ||
+              gazeMode === "fail" ||
+              gazeMode === "success"
+                ? {
+                    duration: gazeMode === "fail" ? 0.35 : 0.6,
+                    ease: "easeInOut",
+                  }
+                : { type: "spring", stiffness: 40, damping: 8 }
             }
             style={{ transformOrigin: "278px 192px" }}
           >
@@ -262,6 +384,25 @@ export default function LoginCharacter({
                 transition={{ duration: 0.11, ease: "easeInOut" }}
               />
             </g>
+
+            {showVerifyBrows && (
+              <>
+                <path
+                  d={greenBrowLeft}
+                  stroke="#06261d"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                <path
+                  d={greenBrowRight}
+                  stroke="#06261d"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              </>
+            )}
 
             {gazeMode === "email" ? (
               <motion.circle
@@ -307,11 +448,16 @@ export default function LoginCharacter({
             key={`dark-${rememberTrigger}`}
             animate={largeAnimate}
             transition={
-              gazeMode === "remember"
-                ? { duration: 0.3, repeat: 2, ease: "easeInOut" }
-                : gazeMode === "name"
-                  ? { duration: 0.9, ease: "easeInOut" }
-                  : { type: "spring", stiffness: 140, damping: 16 }
+              gazeMode === "remember" ||
+              gazeMode === "name" ||
+              gazeMode === "verify" ||
+              gazeMode === "fail" ||
+              gazeMode === "success"
+                ? {
+                    duration: gazeMode === "fail" ? 0.35 : 0.6,
+                    ease: "easeInOut",
+                  }
+                : { type: "spring", stiffness: 140, damping: 16 }
             }
             style={{ transformOrigin: "391px 308px" }}
           >
@@ -346,6 +492,25 @@ export default function LoginCharacter({
                 transition={{ duration: 0.11, ease: "easeInOut" }}
               />
             </g>
+
+            {showVerifyBrows && (
+              <>
+                <path
+                  d={darkBrowLeft}
+                  stroke="#f9fafb"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                <path
+                  d={darkBrowRight}
+                  stroke="#f9fafb"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              </>
+            )}
           </motion.g>
         </g>
 
@@ -360,11 +525,16 @@ export default function LoginCharacter({
             key={`lime-${rememberTrigger}`}
             animate={smallAnimate}
             transition={
-              gazeMode === "remember"
-                ? { duration: 0.5, repeat: 2, ease: "easeInOut" }
-                : gazeMode === "name"
-                  ? { duration: 0.9, ease: "easeInOut" }
-                  : { type: "spring", stiffness: 40, damping: 8 }
+              gazeMode === "remember" ||
+              gazeMode === "name" ||
+              gazeMode === "verify" ||
+              gazeMode === "fail" ||
+              gazeMode === "success"
+                ? {
+                    duration: gazeMode === "fail" ? 0.35 : 0.6,
+                    ease: "easeInOut",
+                  }
+                : { type: "spring", stiffness: 40, damping: 8 }
             }
             style={{ transformOrigin: "562px 396px" }}
           >
@@ -399,6 +569,25 @@ export default function LoginCharacter({
                 transition={{ duration: 0.11, ease: "easeInOut" }}
               />
             </g>
+
+            {showVerifyBrows && (
+              <>
+                <path
+                  d={limeBrowLeft}
+                  stroke="#17320a"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                <path
+                  d={limeBrowRight}
+                  stroke="#17320a"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              </>
+            )}
 
             {gazeMode === "email" ? (
               <motion.circle
@@ -441,11 +630,16 @@ export default function LoginCharacter({
             key={`blob-${rememberTrigger}`}
             animate={smallAnimate}
             transition={
-              gazeMode === "remember"
-                ? { duration: 0.5, repeat: 2, ease: "easeInOut" }
-                : gazeMode === "name"
-                  ? { duration: 0.9, ease: "easeInOut" }
-                  : { type: "spring", stiffness: 40, damping: 8 }
+              gazeMode === "remember" ||
+              gazeMode === "name" ||
+              gazeMode === "verify" ||
+              gazeMode === "fail" ||
+              gazeMode === "success"
+                ? {
+                    duration: gazeMode === "fail" ? 0.35 : 0.6,
+                    ease: "easeInOut",
+                  }
+                : { type: "spring", stiffness: 40, damping: 8 }
             }
             style={{ transformOrigin: "270px 414px" }}
           >
@@ -480,6 +674,25 @@ export default function LoginCharacter({
                 transition={{ duration: 0.11, ease: "easeInOut" }}
               />
             </g>
+
+            {showVerifyBrows && (
+              <>
+                <path
+                  d={blobBrowLeft}
+                  stroke="#052e25"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                <path
+                  d={blobBrowRight}
+                  stroke="#052e25"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              </>
+            )}
 
             {gazeMode === "email" ? (
               <motion.circle

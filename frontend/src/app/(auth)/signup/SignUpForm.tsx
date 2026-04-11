@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import PasswordStrengthMeter from "@/components/PasswordStrengthMeter";
 import LoginCharacter, {
@@ -14,8 +13,6 @@ import LoginCharacter, {
 import { useAuthStore } from "@/store/authStore";
 
 export default function SignUpForm() {
-  const router = useRouter();
-
   const {
     signUp,
     error,
@@ -92,10 +89,6 @@ export default function SignUpForm() {
     try {
       await signUp(email, password, name);
       setCharacterMood("happy");
-
-      setTimeout(() => {
-        router.replace("/verify-email");
-      }, 650);
     } catch (err) {
       console.error("Sign up failed:", err);
       setCharacterMood("sad");
@@ -172,10 +165,10 @@ export default function SignUpForm() {
                     value={name}
                     autoComplete="name"
                     onFocus={() => {
-                      setModeAndResetMood("name");
+                      setModeAndResetMood("name" as GazeMode);
                     }}
                     onBlur={() => {
-                      if (gazeMode === "name") {
+                      if (gazeMode === ("name" as GazeMode)) {
                         setGazeMode("follow");
                       }
                     }}
