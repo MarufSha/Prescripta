@@ -101,7 +101,9 @@ export const login = async (req, res) => {
   const { email, password } = matchedData(req);
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select(
+      "-resetPasswordToken -verificationToken",
+    );
 
     if (!user) {
       return res.status(400).json({
@@ -153,7 +155,9 @@ export const forgotPassword = async (req, res) => {
   const { email } = matchedData(req);
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select(
+      "-password -verificationToken",
+    );
 
     if (!user) {
       return res.status(200).json({
@@ -198,7 +202,7 @@ export const resetPassword = async (req, res) => {
     const user = await User.findOne({
       resetPasswordToken: token,
       resetPasswordExpiresAt: { $gt: Date.now() },
-    });
+    }).select("-verificationToken");
 
     if (!user) {
       return res.status(400).json({
@@ -231,7 +235,9 @@ export const resetPassword = async (req, res) => {
 
 export const checkAuth = async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
+    const user = await User.findById(req.userId).select(
+      "-password -resetPasswordToken -verificationToken",
+    );
 
     if (!user) {
       return res.status(404).json({

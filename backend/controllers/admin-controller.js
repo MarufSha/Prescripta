@@ -203,7 +203,9 @@ export const updateUserRole = async (req, res) => {
       });
     }
 
-    const user = await User.findById(id);
+    const user = await User.findById(id).select(
+      "-password -resetPasswordToken -verificationToken",
+    );
 
     if (!user) {
       return res.status(404).json({
@@ -312,7 +314,9 @@ export const verifyUserManually = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const user = await User.findById(id);
+    const user = await User.findById(id).select(
+      "-password -resetPasswordToken -verificationToken",
+    );
 
     if (!user) {
       return res.status(404).json({
@@ -362,7 +366,9 @@ export const deleteUserByAdmin = async (req, res) => {
       });
     }
 
-    const user = await User.findById(id);
+    const user = await User.findById(id).select(
+      "-password -resetPasswordToken -verificationToken",
+    );
 
     if (!user) {
       return res.status(404).json({
