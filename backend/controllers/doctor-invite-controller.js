@@ -3,6 +3,8 @@ import { matchedData } from "express-validator";
 import { DoctorInvite } from "../models/doctorInvite.js";
 import { User } from "../models/user.js";
 import { sendWelcomeEmail } from "../mail/emails.js";
+import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
+import { generateCsrfToken, setCsrfCookie } from "../utils/csrf.js";
 
 const normalizeStringArray = (value) => {
   if (!Array.isArray(value)) return [];
@@ -25,7 +27,10 @@ const sanitizeDoctorProfile = (doctorProfile) => ({
         .filter((chamber) => chamber.name && chamber.location)
     : [],
 });
-
+const sanitizeUser = (user) => ({
+  ...user._doc,
+  password: undefined,
+});
 const validateDoctorProfile = (doctorProfile) => {
   if (!doctorProfile || typeof doctorProfile !== "object") {
     return "Doctor profile is required";
@@ -148,9 +153,14 @@ export const acceptDoctorInvite = async (req, res) => {
 
     await sendWelcomeEmail(user.email, user.name);
 
+    generateTokenAndSetCookie(res, user);
+    const csrfToken = generateCsrfToken();
+    setCsrfCookie(res, csrfToken);
+
     return res.status(201).json({
       success: true,
       message: "Doctor account created successfully",
+      user: sanitizeUser(user),
     });
   } catch (error) {
     console.error("Error accepting doctor invite:", error);

@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { useAuthStore } from "@/store/authStore";
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api`;
 
@@ -15,7 +16,7 @@ type Props = {
 
 export default function DoctorInviteAcceptForm({ token }: Props) {
   const router = useRouter();
-
+  const fetchCsrfToken = useAuthStore((state) => state.fetchCsrfToken);
   const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -86,7 +87,7 @@ export default function DoctorInviteAcceptForm({ token }: Props) {
 
       const tokenFromServer = String(csrfResponse.data?.csrfToken || "");
 
-      await axios.post(
+      const acceptResponse = await axios.post(
         `${API_BASE_URL}/doctor-invites/${token}/accept`,
         {
           password,
@@ -108,9 +109,22 @@ export default function DoctorInviteAcceptForm({ token }: Props) {
           },
         },
       );
+      const acceptedUser = acceptResponse.data?.user;
 
+      if (acceptedUser) {
+        useAuthStore.setState({
+          user: acceptedUser,
+          isAuthenticated: true,
+          isCheckingAuth: false,
+          hasHydrated: true,
+          error: null,
+        });
+      }
+
+      await fetchCsrfToken();
+      
       toast.success("Doctor account created successfully");
-      router.replace("/login");
+      router.replace("/doctor");
     } catch (error) {
       if (axios.isAxiosError(error)) {
         toast.error(
