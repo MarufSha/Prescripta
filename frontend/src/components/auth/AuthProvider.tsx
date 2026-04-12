@@ -14,11 +14,9 @@ export default function AuthProvider({
   useEffect(() => {
     const init = async () => {
       try {
-        await fetchCsrfToken();
+        await Promise.all([fetchCsrfToken(), checkAuth()]);
       } catch (error) {
-        console.error("Failed to fetch CSRF token:", error);
-      } finally {
-        await checkAuth();
+        console.error("Auth bootstrap failed:", error);
       }
     };
 

@@ -1,9 +1,13 @@
 "use client";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { useAuthStore, DoctorProfile } from "@/store/authStore";
-import AdminTable from "@/components/dashboard/admin/AdminTable";
+import dynamic from "next/dynamic";
+import { useAuthStore, DoctorProfile, UserRole } from "@/store/authStore";
 import toast from "react-hot-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+const AdminTable = dynamic(() => import("@/components/dashboard/admin/AdminTable"), {
+  loading: () => <div className="text-sm text-gray-400">Loading table...</div>,
+});
 
 export default function AdminUsersPage() {
   const {
@@ -13,7 +17,16 @@ export default function AdminUsersPage() {
     isLoading,
     verifyUserManually,
     deleteUser,
+    fetchUsers,
   } = useAuthStore();
+
+  const [activeTab, setActiveTab] = useState<Extract<UserRole, "admin" | "doctor" | "patient">>("admin");
+
+  useEffect(() => {
+    if (user?.role === "admin" || user?.role === "superadmin") {
+      void fetchUsers({ role: activeTab, page: 1, limit: 50 });
+    }
+  }, [activeTab, fetchUsers, user?.role]);
 
   const handleRoleChange = async (
     userId: string,
@@ -65,7 +78,13 @@ export default function AdminUsersPage() {
       </div>
 
       <div className="rounded-3xl border border-gray-800 bg-gray-900/70 p-6 shadow-xl backdrop-blur-xl">
-        <Tabs defaultValue="admin" className="w-full">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) =>
+            setActiveTab(value as Extract<UserRole, "admin" | "doctor" | "patient">)
+          }
+          className="w-full"
+        >
           <TabsList className="custom-tabs-list">
             <TabsTrigger value="admin" className="custom-tabs-trigger">
               Admin

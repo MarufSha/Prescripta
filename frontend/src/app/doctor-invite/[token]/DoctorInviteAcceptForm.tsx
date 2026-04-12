@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { useAuthStore } from "@/store/authStore";
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api`;
 
@@ -15,7 +16,7 @@ type Props = {
 
 export default function DoctorInviteAcceptForm({ token }: Props) {
   const router = useRouter();
-
+  const fetchCsrfToken = useAuthStore((state) => state.fetchCsrfToken);
   const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -80,22 +81,50 @@ export default function DoctorInviteAcceptForm({ token }: Props) {
     setIsSubmitting(true);
 
     try {
-      await axios.post(`${API_BASE_URL}/doctor-invites/${token}/accept`, {
-        password,
-        doctorProfile: {
-          specialties: parseList(specialties),
-          bmdcNo,
-          mobileNumber,
-          designations: parseList(designations),
-          degrees: parseList(degrees),
-          chambers: chambers.filter(
-            (chamber) => chamber.name.trim() && chamber.location.trim(),
-          ),
-        },
+      const csrfResponse = await axios.get(`${API_BASE_URL}/auth/csrf-token`, {
+        withCredentials: true,
       });
 
+      const tokenFromServer = String(csrfResponse.data?.csrfToken || "");
+
+      const acceptResponse = await axios.post(
+        `${API_BASE_URL}/doctor-invites/${token}/accept`,
+        {
+          password,
+          doctorProfile: {
+            specialties: parseList(specialties),
+            bmdcNo,
+            mobileNumber,
+            designations: parseList(designations),
+            degrees: parseList(degrees),
+            chambers: chambers.filter(
+              (chamber) => chamber.name.trim() && chamber.location.trim(),
+            ),
+          },
+        },
+        {
+          withCredentials: true,
+          headers: {
+            "x-csrf-token": tokenFromServer,
+          },
+        },
+      );
+      const acceptedUser = acceptResponse.data?.user;
+
+      if (acceptedUser) {
+        useAuthStore.setState({
+          user: acceptedUser,
+          isAuthenticated: true,
+          isCheckingAuth: false,
+          hasHydrated: true,
+          error: null,
+        });
+      }
+
+      await fetchCsrfToken();
+      
       toast.success("Doctor account created successfully");
-      router.replace("/login");
+      router.replace("/doctor");
     } catch (error) {
       if (axios.isAxiosError(error)) {
         toast.error(

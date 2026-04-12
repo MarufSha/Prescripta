@@ -1,19 +1,22 @@
-import { User } from "../models/user.js";
-
 export const requireRole = (...allowedRoles) => {
   return async (req, res, next) => {
     try {
-      const user = await User.findById(req.userId);
-
-      if (!user) {
-        return res.status(404).json({
+      if (!req.userId || !req.userRole) {
+        return res.status(401).json({
           success: false,
-          message: "User not found",
+          message: "Unauthorized",
         });
       }
 
-      const isSuperAdmin = user.role === "superadmin";
-      const isAllowedRole = allowedRoles.includes(user.role);
+      if (!req.isVerified) {
+        return res.status(403).json({
+          success: false,
+          message: "Email verification is required",
+        });
+      }
+
+      const isSuperAdmin = req.userRole === "superadmin";
+      const isAllowedRole = allowedRoles.includes(req.userRole);
 
       if (!isSuperAdmin && !isAllowedRole) {
         return res.status(403).json({
@@ -21,9 +24,6 @@ export const requireRole = (...allowedRoles) => {
           message: "Forbidden",
         });
       }
-
-      req.user = user;
-      req.userRole = user.role;
 
       next();
     } catch (error) {

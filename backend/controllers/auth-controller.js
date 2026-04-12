@@ -36,12 +36,12 @@ export const signup = async (req, res) => {
       email,
       password: hashedPassword,
       verificationToken,
-      verificationTokenExpiresAt: Date.now() + 3600000,
+      verificationTokenExpiresAt: Date.now() + 15 * 60 * 1000,
     });
 
     await user.save();
 
-    generateTokenAndSetCookie(res, user._id);
+    generateTokenAndSetCookie(res, user);
     const csrfToken = generateCsrfToken();
     setCsrfCookie(res, csrfToken);
     await sendVerificationEmail(user.email, verificationToken);
@@ -101,7 +101,9 @@ export const login = async (req, res) => {
   const { email, password } = matchedData(req);
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select(
+      "-resetPasswordToken -verificationToken",
+    );
 
     if (!user) {
       return res.status(400).json({
@@ -119,7 +121,7 @@ export const login = async (req, res) => {
       });
     }
 
-    generateTokenAndSetCookie(res, user._id);
+    generateTokenAndSetCookie(res, user);
     const csrfToken = generateCsrfToken();
     setCsrfCookie(res, csrfToken);
     user.lastLogin = new Date();
@@ -153,7 +155,9 @@ export const forgotPassword = async (req, res) => {
   const { email } = matchedData(req);
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select(
+      "-password -verificationToken",
+    );
 
     if (!user) {
       return res.status(200).json({
@@ -163,7 +167,7 @@ export const forgotPassword = async (req, res) => {
       });
     }
 
-    const resetToken = crypto.randomBytes(20).toString("hex");
+    const resetToken = crypto.randomBytes(32).toString("hex");
     const resetTokenExpiresAt = Date.now() + 3600000;
 
     user.resetPasswordToken = resetToken;
@@ -198,7 +202,7 @@ export const resetPassword = async (req, res) => {
     const user = await User.findOne({
       resetPasswordToken: token,
       resetPasswordExpiresAt: { $gt: Date.now() },
-    });
+    }).select("-verificationToken");
 
     if (!user) {
       return res.status(400).json({
@@ -231,7 +235,9 @@ export const resetPassword = async (req, res) => {
 
 export const checkAuth = async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
+    const user = await User.findById(req.userId).select(
+      "-password -resetPasswordToken -verificationToken",
+    );
 
     if (!user) {
       return res.status(404).json({
@@ -239,6 +245,8 @@ export const checkAuth = async (req, res) => {
         message: "User not found",
       });
     }
+
+    res.set("Cache-Control", "private, max-age=30");
 
     return res.status(200).json({
       success: true,
