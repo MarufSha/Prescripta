@@ -1,7 +1,14 @@
 "use client";
 
 import { useAuthStore } from "@/store/authStore";
-import { LogOut, Menu, Stethoscope, Sun, Moon } from "lucide-react";
+import {
+  LogOut,
+  Menu,
+  Stethoscope,
+  Sun,
+  Moon,
+  CircleUserRound,
+} from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 
 type Props = {
@@ -55,7 +62,9 @@ export default function DoctorTopNav({ onToggle }: Props) {
               <Moon className="h-4 w-4 text-indigo-500" />
             )}
           </button>
-
+          <button className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 cursor-pointer">
+            <CircleUserRound className="h-4 w-4 text-emerald-500" />
+          </button>
           <button
             onClick={() => void logout()}
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/80 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-200 transition-all duration-200 hover:border-emerald-500/30 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white active:scale-95 cursor-pointer"

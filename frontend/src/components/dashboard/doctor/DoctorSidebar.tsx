@@ -20,8 +20,12 @@ type Props = {
 
 const navItems = [
   { label: "My Profile", href: "/doctor", icon: UserCircle },
-  { label: "Patients", href: "/doctor/patients", icon: Users },
-  { label: "Prescriptions", href: "/doctor/prescriptions", icon: ClipboardList },
+  {
+    label: "Add Prescription",
+    href: "/doctor/add-prescription",
+    icon: ClipboardList,
+  },
+  { label: "Appointments", href: "/doctor/appointments", icon: Users },
   { label: "Schedule", href: "/doctor/schedule", icon: Calendar },
   { label: "Settings", href: "/doctor/settings", icon: Settings },
 ];
@@ -116,7 +120,8 @@ export default function DoctorSidebar({ collapsed, onToggle }: Props) {
                 Registered Doctor
               </p>
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                {user?.doctorProfile?.specialties?.[0] ?? "Medical Professional"}
+                {user?.doctorProfile?.specialties?.[0] ??
+                  "Medical Professional"}
               </p>
             </div>
           )}
