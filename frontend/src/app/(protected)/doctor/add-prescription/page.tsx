@@ -4,7 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Plus, X, Save, Trash2, Download, ClipboardList } from "lucide-react";
-import { usePrescriptionStore, type Medication } from "@/store/prescriptionStore";
+import {
+  usePrescriptionStore,
+  type Medication,
+} from "@/store/prescriptionStore";
 import axios from "axios";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -15,7 +18,12 @@ const SEX_OPTIONS = ["Male", "Female", "Other"];
 
 const todayStr = () => new Date().toISOString().split("T")[0];
 
-const DEFAULT_MED: Medication = { medicine: "", days: "", timesPerDay: "", timing: "Anytime" };
+const DEFAULT_MED: Medication = {
+  medicine: "",
+  days: "",
+  timesPerDay: "",
+  timing: "Anytime",
+};
 
 const DEFAULT_FORM = {
   patientName: "",
@@ -37,7 +45,9 @@ const DEFAULT_FORM = {
 };
 
 type FormState = typeof DEFAULT_FORM;
-type Errors = Partial<Record<"patientName" | "age" | "sex" | "mobile" | "chiefComplaints", string>>;
+type Errors = Partial<
+  Record<"patientName" | "age" | "sex" | "mobile" | "chiefComplaints", string>
+>;
 
 // ── Medicine types ────────────────────────────────────────────────────────────
 
@@ -63,15 +73,30 @@ function FieldLabel({ text, required }: { text: string; required?: boolean }) {
 }
 
 function FormInput({
-  placeholder, value, onChange, type = "text", min, max, step,
+  placeholder,
+  value,
+  onChange,
+  type = "text",
+  min,
+  max,
+  step,
 }: {
-  placeholder?: string; value: string; onChange: (v: string) => void;
-  type?: string; min?: string; max?: string; step?: string;
+  placeholder?: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  min?: string;
+  max?: string;
+  step?: string;
 }) {
   return (
     <input
-      type={type} min={min} max={max} step={step}
-      placeholder={placeholder} value={value}
+      type={type}
+      min={min}
+      max={max}
+      step={step}
+      placeholder={placeholder}
+      value={value}
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors"
     />
@@ -79,17 +104,32 @@ function FormInput({
 }
 
 function FormSelect({
-  value, onChange, options, placeholder,
+  value,
+  onChange,
+  options,
+  placeholder,
 }: {
-  value: string; onChange: (v: string) => void; options: string[]; placeholder?: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  placeholder?: string;
 }) {
   return (
     <select
-      value={value} onChange={(e) => onChange(e.target.value)}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors"
     >
-      {placeholder && <option value="" disabled>{placeholder}</option>}
-      {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      {placeholder && (
+        <option value="" disabled>
+          {placeholder}
+        </option>
+      )}
+      {options.map((o) => (
+        <option key={o} value={o}>
+          {o}
+        </option>
+      ))}
     </select>
   );
 }
@@ -97,8 +137,12 @@ function FormSelect({
 function SectionHeader({ title, onAdd }: { title: string; onAdd: () => void }) {
   return (
     <div className="flex items-center justify-between mb-2">
-      <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{title}</span>
-      <button type="button" onClick={onAdd}
+      <span className="text-sm font-bold text-gray-700 dark:text-gray-200">
+        {title}
+      </span>
+      <button
+        type="button"
+        onClick={onAdd}
         className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer"
       >
         <Plus className="h-3.5 w-3.5" /> Add
@@ -109,7 +153,10 @@ function SectionHeader({ title, onAdd }: { title: string; onAdd: () => void }) {
 
 function RemoveBtn({ onClick }: { onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} aria-label="Remove"
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Remove"
       className="shrink-0 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
     >
       <X className="h-4 w-4" />
@@ -119,14 +166,16 @@ function RemoveBtn({ onClick }: { onClick: () => void }) {
 
 // ── TimesPerDayInput: 3-slot (D+N+E), each slot only 0 or 1 ──────────────────
 
-function TimesPerDayInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function TimesPerDayInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
   const slots = (() => {
     const parts = value.split("+");
-    return [
-      parts[0] ?? "",
-      parts[1] ?? "",
-      parts[2] ?? "",
-    ];
+    return [parts[0] ?? "", parts[1] ?? "", parts[2] ?? ""];
   })();
 
   const refs = [
@@ -168,7 +217,11 @@ function TimesPerDayInput({ value, onChange }: { value: string; onChange: (v: st
             onKeyDown={(e) => handleKey(idx, e)}
             className="w-8 text-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors"
           />
-          {idx < 2 && <span className="text-gray-400 font-bold text-xs select-none">+</span>}
+          {idx < 2 && (
+            <span className="text-gray-400 font-bold text-xs select-none">
+              +
+            </span>
+          )}
         </span>
       ))}
     </div>
@@ -197,7 +250,11 @@ function MedicineSearchInput({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const search = useCallback(async (q: string) => {
-    if (q.length < 2) { setSuggestions([]); setOpen(false); return; }
+    if (q.length < 2) {
+      setSuggestions([]);
+      setOpen(false);
+      return;
+    }
     setLoading(true);
     try {
       const res = await axios.get(`${API_BASE}/medicines/search`, {
@@ -230,7 +287,10 @@ function MedicineSearchInput({
   // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -264,7 +324,9 @@ function MedicineSearchInput({
                 onMouseDown={() => pick(m)}
                 className="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
               >
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">{m.medicine_name}</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {m.medicine_name}
+                </p>
                 {(m.generic_name || m.strength) && (
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {[m.generic_name, m.strength].filter(Boolean).join(" · ")}
@@ -280,29 +342,49 @@ function MedicineSearchInput({
       {selectedMed && (
         <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2.5 text-xs space-y-0.5">
           <div className="flex items-start justify-between gap-2">
-            <p className="font-semibold text-emerald-800 dark:text-emerald-300">{selectedMed.medicine_name}</p>
+            <p className="font-semibold text-emerald-800 dark:text-emerald-300">
+              {selectedMed.medicine_name}
+            </p>
             <button
               type="button"
-              onClick={() => { onSelect(null); onChange(""); }}
+              onClick={() => {
+                onSelect(null);
+                onChange("");
+              }}
               className="shrink-0 text-emerald-500 hover:text-red-500 transition-colors cursor-pointer"
             >
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
           {selectedMed.generic_name && (
-            <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Generic:</span> {selectedMed.generic_name}</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              <span className="font-medium">Generic:</span>{" "}
+              {selectedMed.generic_name}
+            </p>
           )}
           {selectedMed.dosage_form && (
-            <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Form:</span> {selectedMed.dosage_form}</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              <span className="font-medium">Form:</span>{" "}
+              {selectedMed.dosage_form}
+            </p>
           )}
           {selectedMed.strength && (
-            <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Strength:</span> {selectedMed.strength}</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              <span className="font-medium">Strength:</span>{" "}
+              {selectedMed.strength}
+            </p>
           )}
           {selectedMed.company_name && (
-            <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Mfr:</span> {selectedMed.company_name}</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              <span className="font-medium">Mfr:</span>{" "}
+              {selectedMed.company_name}
+            </p>
           )}
           {selectedMed.unit_price != null && (
-            <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Price:</span> ৳{selectedMed.unit_price}</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              <span className="font-medium">Price:</span> ৳
+              {selectedMed.unit_price}
+            </p>
           )}
         </div>
       )}
@@ -312,41 +394,87 @@ function MedicineSearchInput({
 
 // ── Print template (hidden on screen) ────────────────────────────────────────
 
-function PrintView({ form, patientUid }: { form: FormState; patientUid?: string }) {
+function PrintView({
+  form,
+  patientUid,
+}: {
+  form: FormState;
+  patientUid?: string;
+}) {
   const followUpDate =
     form.followUpDays && form.date
       ? new Date(
-          new Date(form.date).getTime() + Number(form.followUpDays) * 86400000
-        ).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+          new Date(form.date).getTime() + Number(form.followUpDays) * 86400000,
+        ).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
       : null;
 
   return (
-    <div id="print-prescription" className="hidden print:block p-8 text-black text-sm font-sans">
+    <div
+      id="print-prescription"
+      className="hidden print:block p-8 text-black text-sm font-sans"
+    >
       <div className="border-b-2 border-gray-800 pb-3 mb-4">
         <h1 className="text-xl font-bold">Prescripta</h1>
         <p className="text-xs text-gray-600">Medical Prescription</p>
       </div>
       <div className="grid grid-cols-3 gap-2 mb-4 text-xs">
-        <div><span className="font-semibold">Patient:</span> {form.patientName}</div>
-        <div><span className="font-semibold">Age:</span> {form.age}</div>
-        <div><span className="font-semibold">Sex:</span> {form.sex}</div>
-        <div><span className="font-semibold">Mobile:</span> {form.mobile}</div>
-        {form.weight && <div><span className="font-semibold">Weight:</span> {form.weight} kg</div>}
-        <div><span className="font-semibold">Date:</span> {form.date ? new Date(form.date).toLocaleDateString("en-GB") : ""}</div>
-        {patientUid && <div><span className="font-semibold">PUID:</span> {patientUid}</div>}
+        <div>
+          <span className="font-semibold">Patient:</span> {form.patientName}
+        </div>
+        <div>
+          <span className="font-semibold">Age:</span> {form.age}
+        </div>
+        <div>
+          <span className="font-semibold">Sex:</span> {form.sex}
+        </div>
+        <div>
+          <span className="font-semibold">Mobile:</span> {form.mobile}
+        </div>
+        {form.weight && (
+          <div>
+            <span className="font-semibold">Weight:</span> {form.weight} kg
+          </div>
+        )}
+        <div>
+          <span className="font-semibold">Date:</span>{" "}
+          {form.date ? new Date(form.date).toLocaleDateString("en-GB") : ""}
+        </div>
+        {patientUid && (
+          <div>
+            <span className="font-semibold">PUID:</span> {patientUid}
+          </div>
+        )}
       </div>
       {[form.pulse, form.bp, form.spo2].some(Boolean) && (
         <div className="flex gap-4 text-xs mb-4">
-          {form.pulse && <span><b>Pulse:</b> {form.pulse}</span>}
-          {form.bp && <span><b>BP:</b> {form.bp}</span>}
-          {form.spo2 && <span><b>SpO2:</b> {form.spo2}</span>}
+          {form.pulse && (
+            <span>
+              <b>Pulse:</b> {form.pulse}
+            </span>
+          )}
+          {form.bp && (
+            <span>
+              <b>BP:</b> {form.bp}
+            </span>
+          )}
+          {form.spo2 && (
+            <span>
+              <b>SpO2:</b> {form.spo2}
+            </span>
+          )}
         </div>
       )}
       {form.chiefComplaints.filter(Boolean).length > 0 && (
         <div className="mb-3">
           <p className="font-semibold">C/C:</p>
           <ul className="list-disc list-inside">
-            {form.chiefComplaints.filter(Boolean).map((c, i) => <li key={i}>{c}</li>)}
+            {form.chiefComplaints.filter(Boolean).map((c, i) => (
+              <li key={i}>{c}</li>
+            ))}
           </ul>
         </div>
       )}
@@ -354,7 +482,9 @@ function PrintView({ form, patientUid }: { form: FormState; patientUid?: string 
         <div className="mb-3">
           <p className="font-semibold">D/x:</p>
           <ul className="list-disc list-inside">
-            {form.diagnosis.filter(Boolean).map((d, i) => <li key={i}>{d}</li>)}
+            {form.diagnosis.filter(Boolean).map((d, i) => (
+              <li key={i}>{d}</li>
+            ))}
           </ul>
         </div>
       )}
@@ -365,19 +495,23 @@ function PrintView({ form, patientUid }: { form: FormState; patientUid?: string 
             <thead>
               <tr className="border-b border-gray-400">
                 {["Medicine", "Days", "Times/Day", "Timing"].map((h) => (
-                  <th key={h} className="text-left pb-1 pr-2">{h}</th>
+                  <th key={h} className="text-left pb-1 pr-2">
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {form.medications.filter((m) => m.medicine).map((m, i) => (
-                <tr key={i} className="border-b border-gray-200">
-                  <td className="py-1 pr-2">{m.medicine}</td>
-                  <td className="py-1 pr-2">{m.days}</td>
-                  <td className="py-1 pr-2">{m.timesPerDay}</td>
-                  <td className="py-1">{m.timing}</td>
-                </tr>
-              ))}
+              {form.medications
+                .filter((m) => m.medicine)
+                .map((m, i) => (
+                  <tr key={i} className="border-b border-gray-200">
+                    <td className="py-1 pr-2">{m.medicine}</td>
+                    <td className="py-1 pr-2">{m.days}</td>
+                    <td className="py-1 pr-2">{m.timesPerDay}</td>
+                    <td className="py-1">{m.timing}</td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
@@ -386,7 +520,9 @@ function PrintView({ form, patientUid }: { form: FormState; patientUid?: string 
         <div className="mb-3">
           <p className="font-semibold">Investigations:</p>
           <ul className="list-disc list-inside">
-            {form.investigations.filter(Boolean).map((v, i) => <li key={i}>{v}</li>)}
+            {form.investigations.filter(Boolean).map((v, i) => (
+              <li key={i}>{v}</li>
+            ))}
           </ul>
         </div>
       )}
@@ -394,11 +530,15 @@ function PrintView({ form, patientUid }: { form: FormState; patientUid?: string 
         <div className="mb-3">
           <p className="font-semibold">Advice:</p>
           <ul className="list-disc list-inside">
-            {form.advice.filter(Boolean).map((a, i) => <li key={i}>{a}</li>)}
+            {form.advice.filter(Boolean).map((a, i) => (
+              <li key={i}>{a}</li>
+            ))}
           </ul>
         </div>
       )}
-      {followUpDate && <p className="mt-4 font-semibold">Follow up: {followUpDate}</p>}
+      {followUpDate && (
+        <p className="mt-4 font-semibold">Follow up: {followUpDate}</p>
+      )}
     </div>
   );
 }
@@ -410,24 +550,37 @@ export default function AddPrescriptionPage() {
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
 
-  const { createPrescription, updatePrescription, getPrescriptionById, isSaving, error, clearError } =
-    usePrescriptionStore();
+  const {
+    createPrescription,
+    updatePrescription,
+    getPrescriptionById,
+    isSaving,
+    error,
+    clearError,
+  } = usePrescriptionStore();
 
-  const [form, setFormState] = useState<FormState>({ ...DEFAULT_FORM, date: todayStr() });
+  const [form, setFormState] = useState<FormState>({
+    ...DEFAULT_FORM,
+    date: todayStr(),
+  });
   const [errors, setErrors] = useState<Errors>({});
   const [successMsg, setSuccessMsg] = useState("");
   const [savedPuid, setSavedPuid] = useState<string | undefined>();
   const [isLoadingEdit, setIsLoadingEdit] = useState(!!editId);
 
   // Parallel array to form.medications — tracks selected medicine details per row
-  const [selectedMedicines, setSelectedMedicines] = useState<(MedicineResult | null)[]>([null]);
+  const [selectedMedicines, setSelectedMedicines] = useState<
+    (MedicineResult | null)[]
+  >([null]);
 
   // Pre-fill form when editing
   useEffect(() => {
     if (!editId) return;
     getPrescriptionById(editId)
       .then((p) => {
-        const meds = p.medications.length ? p.medications : [{ ...DEFAULT_MED }];
+        const meds = p.medications.length
+          ? p.medications
+          : [{ ...DEFAULT_MED }];
         setFormState({
           patientName: p.patientName,
           age: String(p.age),
@@ -458,13 +611,13 @@ export default function AddPrescriptionPage() {
   const setField = useCallback(
     <K extends keyof FormState>(key: K, value: FormState[K]) =>
       setFormState((prev) => ({ ...prev, [key]: value })),
-    []
+    [],
   );
 
   const setArrayItem = (
     key: "chiefComplaints" | "diagnosis" | "investigations" | "advice",
     idx: number,
-    value: string
+    value: string,
   ) =>
     setFormState((prev) => {
       const arr = [...(prev[key] as string[])];
@@ -472,12 +625,17 @@ export default function AddPrescriptionPage() {
       return { ...prev, [key]: arr };
     });
 
-  const addArrayItem = (key: "chiefComplaints" | "diagnosis" | "investigations" | "advice") =>
-    setFormState((prev) => ({ ...prev, [key]: [...(prev[key] as string[]), ""] }));
+  const addArrayItem = (
+    key: "chiefComplaints" | "diagnosis" | "investigations" | "advice",
+  ) =>
+    setFormState((prev) => ({
+      ...prev,
+      [key]: [...(prev[key] as string[]), ""],
+    }));
 
   const removeArrayItem = (
     key: "chiefComplaints" | "diagnosis" | "investigations" | "advice",
-    idx: number
+    idx: number,
   ) =>
     setFormState((prev) => {
       const arr = (prev[key] as string[]).filter((_, i) => i !== idx);
@@ -591,8 +749,12 @@ export default function AddPrescriptionPage() {
   const followUpDate =
     form.followUpDays && form.date
       ? new Date(
-          new Date(form.date).getTime() + Number(form.followUpDays) * 86400000
-        ).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+          new Date(form.date).getTime() + Number(form.followUpDays) * 86400000,
+        ).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
       : null;
 
   if (isLoadingEdit) {
@@ -620,7 +782,9 @@ export default function AddPrescriptionPage() {
               {editId ? "Edit Prescription" : "Add Prescription"}
             </h1>
             {savedPuid && (
-              <p className="mt-0.5 text-xs text-emerald-600 dark:text-emerald-400">PUID: {savedPuid}</p>
+              <p className="mt-0.5 text-xs text-emerald-600 dark:text-emerald-400">
+                PUID: {savedPuid}
+              </p>
             )}
           </div>
           <button
@@ -647,7 +811,6 @@ export default function AddPrescriptionPage() {
 
         {/* Form card */}
         <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/70 shadow-sm p-5 space-y-6">
-
           {/* Patient Info */}
           <section>
             <p className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
@@ -656,36 +819,73 @@ export default function AddPrescriptionPage() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div>
                 <FieldLabel text="Name" required />
-                <FormInput placeholder="Please Enter Name" value={form.patientName}
-                  onChange={(v) => setField("patientName", v)} />
-                {errors.patientName && <p className="mt-1 text-xs text-red-500">{errors.patientName}</p>}
+                <FormInput
+                  placeholder="Please Enter Name"
+                  value={form.patientName}
+                  onChange={(v) => setField("patientName", v)}
+                />
+                {errors.patientName && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {errors.patientName}
+                  </p>
+                )}
               </div>
               <div>
                 <FieldLabel text="Age" required />
-                <FormInput type="number" placeholder="Please Enter Age" min="0" max="150"
-                  value={form.age} onChange={(v) => setField("age", v)} />
-                {errors.age && <p className="mt-1 text-xs text-red-500">{errors.age}</p>}
+                <FormInput
+                  type="number"
+                  placeholder="Please Enter Age"
+                  min="0"
+                  max="150"
+                  value={form.age}
+                  onChange={(v) => setField("age", v)}
+                />
+                {errors.age && (
+                  <p className="mt-1 text-xs text-red-500">{errors.age}</p>
+                )}
               </div>
               <div>
                 <FieldLabel text="Sex" required />
-                <FormSelect value={form.sex} onChange={(v) => setField("sex", v)}
-                  options={SEX_OPTIONS} placeholder="Please Select a Gender" />
-                {errors.sex && <p className="mt-1 text-xs text-red-500">{errors.sex}</p>}
+                <FormSelect
+                  value={form.sex}
+                  onChange={(v) => setField("sex", v)}
+                  options={SEX_OPTIONS}
+                  placeholder="Please Select a Gender"
+                />
+                {errors.sex && (
+                  <p className="mt-1 text-xs text-red-500">{errors.sex}</p>
+                )}
               </div>
               <div>
                 <FieldLabel text="Mobile" required />
-                <FormInput placeholder="Enter Mobile Number" value={form.mobile}
-                  onChange={(v) => setField("mobile", v)} />
-                {errors.mobile && <p className="mt-1 text-xs text-red-500">{errors.mobile}</p>}
+                <FormInput
+                  placeholder="Enter Mobile Number"
+                  value={form.mobile}
+                  onChange={(v) => setField("mobile", v)}
+                />
+                {errors.mobile && (
+                  <p className="mt-1 text-xs text-red-500">{errors.mobile}</p>
+                )}
               </div>
               <div>
                 <FieldLabel text="Weight (kg)" />
-                <FormInput type="number" placeholder="0.1 – 1000" min="0.1" max="1000" step="0.1"
-                  value={form.weight} onChange={(v) => setField("weight", v)} />
+                <FormInput
+                  type="number"
+                  placeholder="0.1 – 1000"
+                  min="0.1"
+                  max="1000"
+                  step="0.1"
+                  value={form.weight}
+                  onChange={(v) => setField("weight", v)}
+                />
               </div>
               <div>
                 <FieldLabel text="Date" />
-                <FormInput type="date" value={form.date} onChange={(v) => setField("date", v)} />
+                <FormInput
+                  type="date"
+                  value={form.date}
+                  onChange={(v) => setField("date", v)}
+                />
               </div>
             </div>
           </section>
@@ -698,48 +898,80 @@ export default function AddPrescriptionPage() {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div>
                 <FieldLabel text="Pulse" />
-                <FormInput placeholder="e.g. 80/min" value={form.pulse} onChange={(v) => setField("pulse", v)} />
+                <FormInput
+                  placeholder="e.g. 80/min"
+                  value={form.pulse}
+                  onChange={(v) => setField("pulse", v)}
+                />
               </div>
               <div>
                 <FieldLabel text="BP" />
-                <FormInput placeholder="e.g. 120/80" value={form.bp} onChange={(v) => setField("bp", v)} />
+                <FormInput
+                  placeholder="e.g. 120/80"
+                  value={form.bp}
+                  onChange={(v) => setField("bp", v)}
+                />
               </div>
               <div>
                 <FieldLabel text="SpO2" />
-                <FormInput placeholder="e.g. 98%" value={form.spo2} onChange={(v) => setField("spo2", v)} />
+                <FormInput
+                  placeholder="e.g. 98%"
+                  value={form.spo2}
+                  onChange={(v) => setField("spo2", v)}
+                />
               </div>
               <div>
                 <FieldLabel text="Others" />
-                <FormInput placeholder="Other info" value={form.others} onChange={(v) => setField("others", v)} />
+                <FormInput
+                  placeholder="Other info"
+                  value={form.others}
+                  onChange={(v) => setField("others", v)}
+                />
               </div>
             </div>
           </section>
 
           {/* C/C */}
           <section>
-            <SectionHeader title="C/C  (Chief Complaints)" onAdd={() => addArrayItem("chiefComplaints")} />
+            <SectionHeader
+              title="C/C  (Chief Complaints)"
+              onAdd={() => addArrayItem("chiefComplaints")}
+            />
             <div className="space-y-2">
               {form.chiefComplaints.map((c, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <FormInput placeholder="Enter a complaint..." value={c}
-                    onChange={(v) => setArrayItem("chiefComplaints", i, v)} />
-                  <RemoveBtn onClick={() => removeArrayItem("chiefComplaints", i)} />
+                  <FormInput
+                    placeholder="Enter a complaint..."
+                    value={c}
+                    onChange={(v) => setArrayItem("chiefComplaints", i, v)}
+                  />
+                  <RemoveBtn
+                    onClick={() => removeArrayItem("chiefComplaints", i)}
+                  />
                 </div>
               ))}
             </div>
             {errors.chiefComplaints && (
-              <p className="mt-1 text-xs text-red-500">{errors.chiefComplaints}</p>
+              <p className="mt-1 text-xs text-red-500">
+                {errors.chiefComplaints}
+              </p>
             )}
           </section>
 
           {/* D/x */}
           <section>
-            <SectionHeader title="D/x  (Diagnosis)" onAdd={() => addArrayItem("diagnosis")} />
+            <SectionHeader
+              title="D/x  (Diagnosis)"
+              onAdd={() => addArrayItem("diagnosis")}
+            />
             <div className="space-y-2">
               {form.diagnosis.map((d, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <FormInput placeholder="Enter a diagnosis..." value={d}
-                    onChange={(v) => setArrayItem("diagnosis", i, v)} />
+                  <FormInput
+                    placeholder="Enter a diagnosis..."
+                    value={d}
+                    onChange={(v) => setArrayItem("diagnosis", i, v)}
+                  />
                   <RemoveBtn onClick={() => removeArrayItem("diagnosis", i)} />
                 </div>
               ))}
@@ -753,27 +985,41 @@ export default function AddPrescriptionPage() {
               {/* Column headers — hidden on mobile */}
               <div className="hidden sm:grid grid-cols-[2fr_1fr_120px_1.2fr_auto] gap-2 px-1">
                 {["Medicine", "Days", "Times/Day", "Timing", ""].map((h) => (
-                  <span key={h} className="text-xs font-medium text-gray-400 dark:text-gray-500">{h}</span>
+                  <span
+                    key={h}
+                    className="text-xs font-medium text-gray-400 dark:text-gray-500"
+                  >
+                    {h}
+                  </span>
                 ))}
               </div>
               {form.medications.map((med, i) => (
-                <div key={i} className="rounded-xl bg-gray-50 dark:bg-gray-800/50 p-3 space-y-2">
+                <div
+                  key={i}
+                  className="rounded-xl bg-gray-50 dark:bg-gray-800/50 p-3 space-y-2"
+                >
                   {/* Mobile layout: stacked; Desktop: grid */}
-                  <div className="flex flex-col gap-2 sm:grid sm:grid-cols-[2fr_1fr_120px_1.2fr_auto] sm:items-start">
+                  <div className="flex flex-col gap-2 sm:grid sm:grid-cols-[2fr_1fr_130px_1.2fr_auto] sm:items-start">
                     <MedicineSearchInput
                       value={med.medicine}
                       onChange={(v) => setMed(i, "medicine", v)}
                       selectedMed={selectedMedicines[i] ?? null}
                       onSelect={(m) => setSelectedMed(i, m)}
                     />
-                    <FormInput placeholder="Days e.g. 7" value={med.days}
-                      onChange={(v) => setMed(i, "days", v)} />
+                    <FormInput
+                      placeholder="Days e.g. 7"
+                      value={med.days}
+                      onChange={(v) => setMed(i, "days", v)}
+                    />
                     <TimesPerDayInput
                       value={med.timesPerDay}
                       onChange={(v) => setMed(i, "timesPerDay", v)}
                     />
-                    <FormSelect value={med.timing} onChange={(v) => setMed(i, "timing", v)}
-                      options={TIMING_OPTIONS} />
+                    <FormSelect
+                      value={med.timing}
+                      onChange={(v) => setMed(i, "timing", v)}
+                      options={TIMING_OPTIONS}
+                    />
                     <div className="flex justify-end sm:justify-center sm:pt-2">
                       <RemoveBtn onClick={() => removeMed(i)} />
                     </div>
@@ -785,13 +1031,21 @@ export default function AddPrescriptionPage() {
 
           {/* Investigations */}
           <section>
-            <SectionHeader title="Investigations" onAdd={() => addArrayItem("investigations")} />
+            <SectionHeader
+              title="Investigations"
+              onAdd={() => addArrayItem("investigations")}
+            />
             <div className="space-y-2">
               {form.investigations.map((v, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <FormInput placeholder="Enter an investigation..." value={v}
-                    onChange={(val) => setArrayItem("investigations", i, val)} />
-                  <RemoveBtn onClick={() => removeArrayItem("investigations", i)} />
+                  <FormInput
+                    placeholder="Enter an investigation..."
+                    value={v}
+                    onChange={(val) => setArrayItem("investigations", i, val)}
+                  />
+                  <RemoveBtn
+                    onClick={() => removeArrayItem("investigations", i)}
+                  />
                 </div>
               ))}
             </div>
@@ -800,12 +1054,18 @@ export default function AddPrescriptionPage() {
           {/* Advice + Follow-up */}
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_180px] items-start">
             <div>
-              <SectionHeader title="Advice" onAdd={() => addArrayItem("advice")} />
+              <SectionHeader
+                title="Advice"
+                onAdd={() => addArrayItem("advice")}
+              />
               <div className="space-y-2">
                 {form.advice.map((a, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <FormInput placeholder="Enter advice..." value={a}
-                      onChange={(v) => setArrayItem("advice", i, v)} />
+                    <FormInput
+                      placeholder="Enter advice..."
+                      value={a}
+                      onChange={(v) => setArrayItem("advice", i, v)}
+                    />
                     <RemoveBtn onClick={() => removeArrayItem("advice", i)} />
                   </div>
                 ))}
@@ -813,31 +1073,45 @@ export default function AddPrescriptionPage() {
             </div>
             <div>
               <FieldLabel text="Follow up in (days)" />
-              <FormInput type="number" placeholder="e.g. 3" min="1"
-                value={form.followUpDays} onChange={(v) => setField("followUpDays", v)} />
+              <FormInput
+                type="number"
+                placeholder="e.g. 3"
+                min="1"
+                value={form.followUpDays}
+                onChange={(v) => setField("followUpDays", v)}
+              />
               {followUpDate && (
-                <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">→ {followUpDate}</p>
+                <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
+                  → {followUpDate}
+                </p>
               )}
             </div>
           </section>
 
           {/* Actions */}
           <div className="flex flex-wrap gap-3 border-t border-gray-100 dark:border-gray-800 pt-4">
-            <button type="button" onClick={() => void handleSubmit()} disabled={isSaving}
+            <button
+              type="button"
+              onClick={() => void handleSubmit()}
+              disabled={isSaving}
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90 active:scale-95 transition-all disabled:opacity-60 cursor-pointer"
             >
               <Save className="h-4 w-4" />
               {isSaving ? "Saving…" : editId ? "Update" : "Save"}
             </button>
 
-            <button type="button" onClick={handleClear}
+            <button
+              type="button"
+              onClick={handleClear}
               className="inline-flex items-center gap-2 rounded-xl border border-red-200 dark:border-red-800/50 bg-white dark:bg-gray-800 px-5 py-2.5 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-95 transition-all cursor-pointer"
             >
               <Trash2 className="h-4 w-4" />
               Clear Form
             </button>
 
-            <button type="button" onClick={() => window.print()}
+            <button
+              type="button"
+              onClick={() => window.print()}
               className="ml-auto inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:border-gray-400 active:scale-95 transition-all cursor-pointer"
             >
               <Download className="h-4 w-4" />
