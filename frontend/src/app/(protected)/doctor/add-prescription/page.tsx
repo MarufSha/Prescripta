@@ -417,7 +417,7 @@ export default function AddPrescriptionPage() {
   const [errors, setErrors] = useState<Errors>({});
   const [successMsg, setSuccessMsg] = useState("");
   const [savedPuid, setSavedPuid] = useState<string | undefined>();
-  const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+  const [isLoadingEdit, setIsLoadingEdit] = useState(!!editId);
 
   // Parallel array to form.medications — tracks selected medicine details per row
   const [selectedMedicines, setSelectedMedicines] = useState<(MedicineResult | null)[]>([null]);
@@ -425,7 +425,6 @@ export default function AddPrescriptionPage() {
   // Pre-fill form when editing
   useEffect(() => {
     if (!editId) return;
-    setIsLoadingEdit(true);
     getPrescriptionById(editId)
       .then((p) => {
         const meds = p.medications.length ? p.medications : [{ ...DEFAULT_MED }];
@@ -752,7 +751,7 @@ export default function AddPrescriptionPage() {
             <SectionHeader title="R/X  (Medications)" onAdd={addMed} />
             <div className="space-y-3">
               {/* Column headers — hidden on mobile */}
-              <div className="hidden sm:grid grid-cols-[2fr_1fr_auto_1.2fr_auto] gap-2 px-1">
+              <div className="hidden sm:grid grid-cols-[2fr_1fr_120px_1.2fr_auto] gap-2 px-1">
                 {["Medicine", "Days", "Times/Day", "Timing", ""].map((h) => (
                   <span key={h} className="text-xs font-medium text-gray-400 dark:text-gray-500">{h}</span>
                 ))}
@@ -760,7 +759,7 @@ export default function AddPrescriptionPage() {
               {form.medications.map((med, i) => (
                 <div key={i} className="rounded-xl bg-gray-50 dark:bg-gray-800/50 p-3 space-y-2">
                   {/* Mobile layout: stacked; Desktop: grid */}
-                  <div className="flex flex-col gap-2 sm:grid sm:grid-cols-[2fr_1fr_auto_1.2fr_auto] sm:items-start">
+                  <div className="flex flex-col gap-2 sm:grid sm:grid-cols-[2fr_1fr_120px_1.2fr_auto] sm:items-start">
                     <MedicineSearchInput
                       value={med.medicine}
                       onChange={(v) => setMed(i, "medicine", v)}

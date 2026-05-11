@@ -10,7 +10,7 @@ export const searchMedicines = async (req, res) => {
     }
 
     const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const rx = new RegExp(escaped, "i");
+    const rx = new RegExp(`^${escaped}`, "i");
 
     const medicines = await Medicine.find({ medicine_name: rx })
       .select("medicine_name generic_name strength dosage_form company_name unit_price")
