@@ -1,30 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Plus, X, Save, Trash2, Download, ClipboardList, History } from "lucide-react";
+import { Plus, X, Save, Trash2, Download, ClipboardList } from "lucide-react";
 import { usePrescriptionStore, type Medication } from "@/store/prescriptionStore";
+import axios from "axios";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const TIMING_OPTIONS = [
-  "Before meal",
-  "After meal",
-  "With meal",
-  "D",
-  "N",
-  "E",
-  "D+E",
-  "D+N",
-  "N+E",
-  "D+N+E",
-  "As directed",
-];
+const TIMING_OPTIONS = ["Before meal", "After meal", "Anytime"];
 
 const SEX_OPTIONS = ["Male", "Female", "Other"];
 
 const todayStr = () => new Date().toISOString().split("T")[0];
+
+const DEFAULT_MED: Medication = { medicine: "", days: "", timesPerDay: "", timing: "Anytime" };
 
 const DEFAULT_FORM = {
   patientName: "",
@@ -39,7 +30,7 @@ const DEFAULT_FORM = {
   date: todayStr(),
   chiefComplaints: [""] as string[],
   diagnosis: [""] as string[],
-  medications: [{ medicine: "", days: "", timesPerDay: "", timing: "" }] as Medication[],
+  medications: [{ ...DEFAULT_MED }] as Medication[],
   investigations: [""] as string[],
   advice: [""] as string[],
   followUpDays: "",
@@ -47,6 +38,18 @@ const DEFAULT_FORM = {
 
 type FormState = typeof DEFAULT_FORM;
 type Errors = Partial<Record<"patientName" | "age" | "sex" | "mobile" | "chiefComplaints", string>>;
+
+// ── Medicine types ────────────────────────────────────────────────────────────
+
+type MedicineResult = {
+  _id: string;
+  medicine_name: string;
+  generic_name?: string;
+  strength?: string;
+  dosage_form?: string;
+  company_name?: string;
+  unit_price?: number;
+};
 
 // ── Small reusable pieces ─────────────────────────────────────────────────────
 
@@ -111,6 +114,199 @@ function RemoveBtn({ onClick }: { onClick: () => void }) {
     >
       <X className="h-4 w-4" />
     </button>
+  );
+}
+
+// ── TimesPerDayInput: 3-slot (D+N+E), each slot only 0 or 1 ──────────────────
+
+function TimesPerDayInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const slots = (() => {
+    const parts = value.split("+");
+    return [
+      parts[0] ?? "",
+      parts[1] ?? "",
+      parts[2] ?? "",
+    ];
+  })();
+
+  const refs = [
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+  ];
+
+  const update = (idx: number, digit: string) => {
+    const next = [...slots];
+    next[idx] = digit;
+    onChange(next.join("+"));
+    if (digit !== "" && idx < 2) {
+      refs[idx + 1].current?.focus();
+    }
+  };
+
+  const handleKey = (idx: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && slots[idx] === "" && idx > 0) {
+      refs[idx - 1].current?.focus();
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      {slots.map((slot, idx) => (
+        <span key={idx} className="flex items-center gap-1">
+          <input
+            ref={refs[idx]}
+            type="text"
+            inputMode="numeric"
+            maxLength={1}
+            value={slot}
+            placeholder="0"
+            onChange={(e) => {
+              const v = e.target.value.slice(-1);
+              if (v === "0" || v === "1" || v === "") update(idx, v);
+            }}
+            onKeyDown={(e) => handleKey(idx, e)}
+            className="w-8 text-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors"
+          />
+          {idx < 2 && <span className="text-gray-400 font-bold text-xs select-none">+</span>}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ── MedicineSearchInput: autocomplete with info card ─────────────────────────
+
+const API_BASE = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api`;
+
+function MedicineSearchInput({
+  value,
+  onChange,
+  selectedMed,
+  onSelect,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  selectedMed: MedicineResult | null;
+  onSelect: (med: MedicineResult | null) => void;
+}) {
+  const [suggestions, setSuggestions] = useState<MedicineResult[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const search = useCallback(async (q: string) => {
+    if (q.length < 2) { setSuggestions([]); setOpen(false); return; }
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API_BASE}/medicines/search`, {
+        params: { q },
+        withCredentials: true,
+      });
+      setSuggestions(res.data.medicines ?? []);
+      setOpen(true);
+    } catch {
+      setSuggestions([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleChange = (v: string) => {
+    onChange(v);
+    onSelect(null);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => search(v), 280);
+  };
+
+  const pick = (med: MedicineResult) => {
+    onChange(med.medicine_name);
+    onSelect(med);
+    setOpen(false);
+    setSuggestions([]);
+  };
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative flex flex-col gap-1.5 w-full">
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="Search medicine…"
+          value={value}
+          onChange={(e) => handleChange(e.target.value)}
+          onFocus={() => suggestions.length > 0 && setOpen(true)}
+          className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors pr-8"
+        />
+        {loading && (
+          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+        )}
+      </div>
+
+      {/* Dropdown */}
+      {open && suggestions.length > 0 && (
+        <ul className="absolute top-full left-0 z-50 mt-1 w-full max-h-52 overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg shadow-black/10 divide-y divide-gray-100 dark:divide-gray-800">
+          {suggestions.map((m) => (
+            <li key={m._id}>
+              <button
+                type="button"
+                onMouseDown={() => pick(m)}
+                className="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+              >
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">{m.medicine_name}</p>
+                {(m.generic_name || m.strength) && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {[m.generic_name, m.strength].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Selected medicine info card */}
+      {selectedMed && (
+        <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2.5 text-xs space-y-0.5">
+          <div className="flex items-start justify-between gap-2">
+            <p className="font-semibold text-emerald-800 dark:text-emerald-300">{selectedMed.medicine_name}</p>
+            <button
+              type="button"
+              onClick={() => { onSelect(null); onChange(""); }}
+              className="shrink-0 text-emerald-500 hover:text-red-500 transition-colors cursor-pointer"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          {selectedMed.generic_name && (
+            <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Generic:</span> {selectedMed.generic_name}</p>
+          )}
+          {selectedMed.dosage_form && (
+            <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Form:</span> {selectedMed.dosage_form}</p>
+          )}
+          {selectedMed.strength && (
+            <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Strength:</span> {selectedMed.strength}</p>
+          )}
+          {selectedMed.company_name && (
+            <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Mfr:</span> {selectedMed.company_name}</p>
+          )}
+          {selectedMed.unit_price != null && (
+            <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Price:</span> ৳{selectedMed.unit_price}</p>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -223,12 +419,16 @@ export default function AddPrescriptionPage() {
   const [savedPuid, setSavedPuid] = useState<string | undefined>();
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
 
+  // Parallel array to form.medications — tracks selected medicine details per row
+  const [selectedMedicines, setSelectedMedicines] = useState<(MedicineResult | null)[]>([null]);
+
   // Pre-fill form when editing
   useEffect(() => {
     if (!editId) return;
     setIsLoadingEdit(true);
     getPrescriptionById(editId)
       .then((p) => {
+        const meds = p.medications.length ? p.medications : [{ ...DEFAULT_MED }];
         setFormState({
           patientName: p.patientName,
           age: String(p.age),
@@ -242,13 +442,12 @@ export default function AddPrescriptionPage() {
           date: p.date ? p.date.split("T")[0] : todayStr(),
           chiefComplaints: p.chiefComplaints.length ? p.chiefComplaints : [""],
           diagnosis: p.diagnosis.length ? p.diagnosis : [""],
-          medications: p.medications.length
-            ? p.medications
-            : [{ medicine: "", days: "", timesPerDay: "", timing: "" }],
+          medications: meds,
           investigations: p.investigations.length ? p.investigations : [""],
           advice: p.advice.length ? p.advice : [""],
           followUpDays: p.followUpDays != null ? String(p.followUpDays) : "",
         });
+        setSelectedMedicines(meds.map(() => null));
         setSavedPuid(p.patientUid);
       })
       .catch(() => router.push("/doctor/add-prescription"))
@@ -293,19 +492,33 @@ export default function AddPrescriptionPage() {
       return { ...prev, medications: meds };
     });
 
-  const addMed = () =>
+  const addMed = () => {
     setFormState((prev) => ({
       ...prev,
-      medications: [...prev.medications, { medicine: "", days: "", timesPerDay: "", timing: "" }],
+      medications: [...prev.medications, { ...DEFAULT_MED }],
     }));
+    setSelectedMedicines((prev) => [...prev, null]);
+  };
 
-  const removeMed = (idx: number) =>
+  const removeMed = (idx: number) => {
     setFormState((prev) => {
       const meds = prev.medications.filter((_, i) => i !== idx);
       return {
         ...prev,
-        medications: meds.length ? meds : [{ medicine: "", days: "", timesPerDay: "", timing: "" }],
+        medications: meds.length ? meds : [{ ...DEFAULT_MED }],
       };
+    });
+    setSelectedMedicines((prev) => {
+      const next = prev.filter((_, i) => i !== idx);
+      return next.length ? next : [null];
+    });
+  };
+
+  const setSelectedMed = (idx: number, med: MedicineResult | null) =>
+    setSelectedMedicines((prev) => {
+      const next = [...prev];
+      next[idx] = med;
+      return next;
     });
 
   // ── validation ─────────────────────────────────────────────────────────────
@@ -358,6 +571,7 @@ export default function AddPrescriptionPage() {
       } else {
         setSuccessMsg("Prescription saved successfully!");
         setFormState({ ...DEFAULT_FORM, date: todayStr() });
+        setSelectedMedicines([null]);
         setErrors({});
         setTimeout(() => setSuccessMsg(""), 3500);
       }
@@ -368,6 +582,7 @@ export default function AddPrescriptionPage() {
 
   const handleClear = () => {
     setFormState({ ...DEFAULT_FORM, date: todayStr() });
+    setSelectedMedicines([null]);
     setErrors({});
     clearError();
     setSavedPuid(undefined);
@@ -535,26 +750,35 @@ export default function AddPrescriptionPage() {
           {/* R/X */}
           <section>
             <SectionHeader title="R/X  (Medications)" onAdd={addMed} />
-            <div className="space-y-2">
-              {/* Column headers */}
-              <div className="hidden sm:grid grid-cols-[2fr_1fr_1fr_1.2fr_auto] gap-2 px-1">
+            <div className="space-y-3">
+              {/* Column headers — hidden on mobile */}
+              <div className="hidden sm:grid grid-cols-[2fr_1fr_auto_1.2fr_auto] gap-2 px-1">
                 {["Medicine", "Days", "Times/Day", "Timing", ""].map((h) => (
                   <span key={h} className="text-xs font-medium text-gray-400 dark:text-gray-500">{h}</span>
                 ))}
               </div>
               {form.medications.map((med, i) => (
-                <div key={i}
-                  className="flex flex-col gap-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 p-3 sm:grid sm:grid-cols-[2fr_1fr_1fr_1.2fr_auto] sm:items-center sm:p-2"
-                >
-                  <FormInput placeholder="e.g. Amoxicillin 500mg" value={med.medicine}
-                    onChange={(v) => setMed(i, "medicine", v)} />
-                  <FormInput placeholder="e.g. 7" value={med.days}
-                    onChange={(v) => setMed(i, "days", v)} />
-                  <FormInput placeholder="e.g. D+N+E" value={med.timesPerDay}
-                    onChange={(v) => setMed(i, "timesPerDay", v)} />
-                  <FormSelect value={med.timing} onChange={(v) => setMed(i, "timing", v)}
-                    options={TIMING_OPTIONS} placeholder="When to take" />
-                  <RemoveBtn onClick={() => removeMed(i)} />
+                <div key={i} className="rounded-xl bg-gray-50 dark:bg-gray-800/50 p-3 space-y-2">
+                  {/* Mobile layout: stacked; Desktop: grid */}
+                  <div className="flex flex-col gap-2 sm:grid sm:grid-cols-[2fr_1fr_auto_1.2fr_auto] sm:items-start">
+                    <MedicineSearchInput
+                      value={med.medicine}
+                      onChange={(v) => setMed(i, "medicine", v)}
+                      selectedMed={selectedMedicines[i] ?? null}
+                      onSelect={(m) => setSelectedMed(i, m)}
+                    />
+                    <FormInput placeholder="Days e.g. 7" value={med.days}
+                      onChange={(v) => setMed(i, "days", v)} />
+                    <TimesPerDayInput
+                      value={med.timesPerDay}
+                      onChange={(v) => setMed(i, "timesPerDay", v)}
+                    />
+                    <FormSelect value={med.timing} onChange={(v) => setMed(i, "timing", v)}
+                      options={TIMING_OPTIONS} />
+                    <div className="flex justify-end sm:justify-center sm:pt-2">
+                      <RemoveBtn onClick={() => removeMed(i)} />
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

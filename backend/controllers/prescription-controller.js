@@ -52,7 +52,12 @@ export const createPrescription = async (req, res) => {
 
     // Determine patientUid and visitNumber
     const mobileClean = String(mobile).trim();
-    const [lastVisit] = await Prescription.find({ doctorId, mobile: mobileClean })
+    const nameEscaped = String(patientName).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const [lastVisit] = await Prescription.find({
+      doctorId,
+      mobile: mobileClean,
+      patientName: { $regex: new RegExp(`^${nameEscaped}$`, "i") },
+    })
       .select("patientUid visitNumber")
       .sort({ visitNumber: -1 })
       .limit(1);
@@ -62,7 +67,7 @@ export const createPrescription = async (req, res) => {
       patientUid = lastVisit.patientUid;
       visitNumber = lastVisit.visitNumber + 1;
     } else {
-      const uniquePatients = await Prescription.distinct("mobile", { doctorId });
+      const uniquePatients = await Prescription.distinct("patientUid", { doctorId });
       patientUid = `P-${String(uniquePatients.length + 1).padStart(4, "0")}`;
       visitNumber = 1;
     }

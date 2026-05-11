@@ -9,6 +9,7 @@ import rateLimit from "express-rate-limit";
 import adminRoutes from "./routes/admin-routes.js";
 import doctorInviteRoutes from "./routes/doctor-invite-routes.js";
 import prescriptionRoutes from "./routes/prescription-routes.js";
+import medicineRoutes from "./routes/medicine-routes.js";
 
 dotenv.config();
 
@@ -92,6 +93,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/doctor-invites", doctorInviteRoutes);
 app.use("/api/prescriptions", prescriptionRoutes);
+app.use("/api/medicines", medicineRoutes);
 
 app.listen(port, async () => {
   await connectDB();
