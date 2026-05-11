@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Plus, X, Save, Trash2, Download, ClipboardList } from "lucide-react";
+import { Plus, X, Save, Trash2, Download, ClipboardList, History } from "lucide-react";
 import { usePrescriptionStore, type Medication } from "@/store/prescriptionStore";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -53,9 +53,7 @@ type Errors = Partial<Record<"patientName" | "age" | "sex" | "mobile" | "chiefCo
 function FieldLabel({ text, required }: { text: string; required?: boolean }) {
   return (
     <label className="block mb-1 text-sm font-semibold">
-      <span className={required ? "text-red-500 dark:text-red-400" : "text-gray-600 dark:text-gray-300"}>
-        {text}
-      </span>
+      <span className="text-gray-700 dark:text-gray-200">{text}</span>
       {required && <span className="text-red-500"> *</span>}
     </label>
   );
@@ -355,27 +353,16 @@ export default function AddPrescriptionPage() {
         ? await updatePrescription(editId, payload)
         : await createPrescription(payload);
       setSavedPuid(result.patientUid);
-      setSuccessMsg(editId ? "Prescription updated!" : "Prescription saved successfully!");
-      if (!editId) {
+      if (editId) {
+        router.push("/doctor/add-prescription/previous");
+      } else {
+        setSuccessMsg("Prescription saved successfully!");
         setFormState({ ...DEFAULT_FORM, date: todayStr() });
         setErrors({});
+        setTimeout(() => setSuccessMsg(""), 3500);
       }
-      setTimeout(() => setSuccessMsg(""), 3500);
     } catch {
       // error displayed from store
-    }
-  };
-
-  const handleSaveOffline = () => {
-    if (!validate()) return;
-    try {
-      const stored = JSON.parse(localStorage.getItem("offline_prescriptions") ?? "[]") as unknown[];
-      stored.push({ ...form, savedAt: new Date().toISOString() });
-      localStorage.setItem("offline_prescriptions", JSON.stringify(stored));
-      setSuccessMsg("Saved offline!");
-      setTimeout(() => setSuccessMsg(""), 3000);
-    } catch {
-      setSuccessMsg("Failed to save offline.");
     }
   };
 
@@ -618,13 +605,6 @@ export default function AddPrescriptionPage() {
             >
               <Save className="h-4 w-4" />
               {isSaving ? "Saving…" : editId ? "Update" : "Save"}
-            </button>
-
-            <button type="button" onClick={handleSaveOffline}
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:border-emerald-500/40 hover:text-emerald-600 dark:hover:text-emerald-400 active:scale-95 transition-all cursor-pointer"
-            >
-              <Save className="h-4 w-4" />
-              Save Offline
             </button>
 
             <button type="button" onClick={handleClear}
