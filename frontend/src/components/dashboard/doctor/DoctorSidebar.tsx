@@ -11,6 +11,7 @@ import {
   Settings,
   Stethoscope,
   Menu,
+  History,
 } from "lucide-react";
 
 type Props = {
@@ -19,15 +20,12 @@ type Props = {
 };
 
 const navItems = [
-  { label: "My Profile", href: "/doctor", icon: UserCircle },
-  {
-    label: "Add Prescription",
-    href: "/doctor/add-prescription",
-    icon: ClipboardList,
-  },
-  { label: "Appointments", href: "/doctor/appointments", icon: Users },
-  { label: "Schedule", href: "/doctor/schedule", icon: Calendar },
-  { label: "Settings", href: "/doctor/settings", icon: Settings },
+  { label: "My Profile", href: "/doctor", icon: UserCircle, sub: false },
+  { label: "Add Prescription", href: "/doctor/add-prescription", icon: ClipboardList, sub: false },
+  { label: "Previous Prescriptions", href: "/doctor/add-prescription/previous", icon: History, sub: true },
+  { label: "Appointments", href: "/doctor/appointments", icon: Users, sub: false },
+  { label: "Schedule", href: "/doctor/schedule", icon: Calendar, sub: false },
+  { label: "Settings", href: "/doctor/settings", icon: Settings, sub: false },
 ];
 
 export default function DoctorSidebar({ collapsed, onToggle }: Props) {
@@ -80,7 +78,9 @@ export default function DoctorSidebar({ collapsed, onToggle }: Props) {
                 title={collapsed ? item.label : undefined}
                 className={[
                   "group flex items-center rounded-2xl text-sm font-medium transition-all duration-200",
-                  collapsed ? "justify-center px-3 py-3" : "gap-3 px-4 py-3",
+                  collapsed ? "justify-center px-3 py-3" : "gap-3 px-4 py-2.5",
+                  // sub-items get left indent and smaller text when expanded
+                  !collapsed && item.sub ? "ml-4 text-xs" : "",
                   isActive
                     ? "bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-gray-900 dark:text-white border border-emerald-500/20 shadow-md shadow-emerald-900/20"
                     : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-900/70 border border-transparent",
@@ -88,7 +88,8 @@ export default function DoctorSidebar({ collapsed, onToggle }: Props) {
               >
                 <Icon
                   className={[
-                    "h-5 w-5 shrink-0 transition-colors",
+                    "shrink-0 transition-colors",
+                    item.sub ? "h-4 w-4" : "h-5 w-5",
                     isActive
                       ? "text-emerald-500"
                       : "text-gray-400 dark:text-gray-500 group-hover:text-emerald-500",

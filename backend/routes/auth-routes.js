@@ -10,6 +10,7 @@ import {
   deletePendingSignup,
   requestManualVerification,
   getCsrfToken,
+  updateProfile,
 } from "../controllers/auth-controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { handleValidationErrors } from "../middleware/handleValidationErrors.js";
@@ -62,4 +63,7 @@ router.post(
   requireCsrf,
   requestManualVerification,
 );
+
+router.put("/profile", verifyToken, requireCsrf, updateProfile);
+
 export default router;

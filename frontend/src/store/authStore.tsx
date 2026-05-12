@@ -105,6 +105,7 @@ type AuthState = {
     role: "doctor" | "patient",
     doctorProfile?: DoctorProfile,
   ) => Promise<void>;
+  updateDoctorProfile: (data: { name?: string; doctorProfile?: DoctorProfile }) => Promise<void>;
   createDoctorInvite: (name: string, email: string) => Promise<void>;
   deletePendingSignup: () => Promise<void>;
   requestManualVerification: () => Promise<void>;
@@ -582,6 +583,27 @@ export const useAuthStore = create<AuthState>((set) => ({
         isLoading: false,
       });
 
+      throw err;
+    }
+  },
+
+  updateDoctorProfile: async (data): Promise<void> => {
+    set({ isLoading: true, error: null, message: null, fieldErrors: {} });
+    try {
+      const res = (await withCsrfRetry(() =>
+        api.put("/auth/profile", data),
+      )) as { data: { user: User; message?: string } };
+
+      set((state) => ({
+        user: state.user ? { ...state.user, ...res.data.user } : state.user,
+        isLoading: false,
+        error: null,
+        message: res.data.message || "Profile updated successfully",
+        fieldErrors: {},
+      }));
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to update profile");
+      set({ error: msg, isLoading: false });
       throw err;
     }
   },

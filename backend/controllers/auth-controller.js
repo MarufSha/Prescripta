@@ -364,3 +364,41 @@ export const getCsrfToken = async (req, res) => {
     });
   }
 };
+
+export const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    const { name, doctorProfile } = req.body;
+
+    if (name !== undefined) {
+      const trimmed = String(name).trim();
+      if (trimmed.length < 2 || trimmed.length > 50)
+        return res.status(400).json({ success: false, message: "Name must be 2–50 characters" });
+      user.name = trimmed;
+    }
+
+    if (doctorProfile !== undefined && user.role === "doctor") {
+      const dp = doctorProfile;
+      user.doctorProfile = {
+        specialties: Array.isArray(dp.specialties) ? dp.specialties.map(String).filter(Boolean) : user.doctorProfile?.specialties ?? [],
+        bmdcNo: dp.bmdcNo !== undefined ? String(dp.bmdcNo ?? "").trim() : user.doctorProfile?.bmdcNo ?? "",
+        mobileNumber: dp.mobileNumber !== undefined ? String(dp.mobileNumber ?? "").trim() : user.doctorProfile?.mobileNumber ?? "",
+        designations: Array.isArray(dp.designations) ? dp.designations.map(String).filter(Boolean) : user.doctorProfile?.designations ?? [],
+        degrees: Array.isArray(dp.degrees) ? dp.degrees.map(String).filter(Boolean) : user.doctorProfile?.degrees ?? [],
+        chambers: Array.isArray(dp.chambers)
+          ? dp.chambers.filter((c) => c?.name?.trim() && c?.location?.trim()).map((c) => ({ name: String(c.name).trim(), location: String(c.location).trim() }))
+          : user.doctorProfile?.chambers ?? [],
+      };
+    }
+
+    await user.save();
+
+    return res.json({ success: true, message: "Profile updated", user: sanitizeUser(user) });
+  } catch (error) {
+    console.error("updateProfile error:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
