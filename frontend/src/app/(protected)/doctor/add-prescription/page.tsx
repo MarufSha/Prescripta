@@ -340,10 +340,10 @@ function MedicineSearchInput({
 
       {/* Selected medicine info card */}
       {selectedMed && (
-        <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2.5 text-xs space-y-0.5">
+        <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2.5 text-medium space-y-0.5">
           <div className="flex items-start justify-between gap-2">
             <p className="font-semibold text-emerald-800 dark:text-emerald-300">
-              {selectedMed.medicine_name}
+              {selectedMed.medicine_name} [{selectedMed.company_name}]
             </p>
             <button
               type="button"
