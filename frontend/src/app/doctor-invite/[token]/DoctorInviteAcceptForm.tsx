@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuthStore } from "@/store/authStore";
+import PhoneInputField, { isValidPhoneNumber } from "@/components/PhoneInputField";
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api`;
 
@@ -78,6 +79,10 @@ export default function DoctorInviteAcceptForm({ token }: Props) {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (mobileNumber && !isValidPhoneNumber(mobileNumber)) {
+      toast.error("Enter a valid mobile number.");
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -200,11 +205,12 @@ export default function DoctorInviteAcceptForm({ token }: Props) {
             className="w-full rounded-xl border border-gray-700 bg-gray-900/80 px-4 py-3 text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
           />
 
-          <input
-            placeholder="Mobile Number"
+          <PhoneInputField
+            variant="dark"
             value={mobileNumber}
-            onChange={(e) => setMobileNumber(e.target.value)}
-            className="w-full rounded-xl border border-gray-700 bg-gray-900/80 px-4 py-3 text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+            onChange={setMobileNumber}
+            placeholder="Mobile Number"
+            error={mobileNumber && !isValidPhoneNumber(mobileNumber) ? "Enter a valid mobile number." : undefined}
           />
 
           <input

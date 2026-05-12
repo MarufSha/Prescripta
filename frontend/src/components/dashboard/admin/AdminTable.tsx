@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/pagination";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Check, Plus, ShieldCheck, Trash2, X } from "lucide-react";
+import PhoneInputField, { isValidPhoneNumber } from "@/components/PhoneInputField";
 import {
   Tooltip,
   TooltipContent,
@@ -374,8 +375,8 @@ const AdminTable = ({
       return;
     }
 
-    if (!doctorProfile.mobileNumber) {
-      setDoctorModalError("Mobile number is required.");
+    if (!doctorProfile.mobileNumber || !isValidPhoneNumber(doctorProfile.mobileNumber)) {
+      setDoctorModalError("Enter a valid mobile number.");
       return;
     }
 
@@ -1212,16 +1213,12 @@ const AdminTable = ({
                         <label className="text-sm font-medium text-gray-300">
                           Mobile Number
                         </label>
-                        <input
+                        <PhoneInputField
+                          variant="dark"
                           value={doctorForm.mobileNumber}
-                          onChange={(e) =>
-                            updateDoctorFormField(
-                              "mobileNumber",
-                              e.target.value,
-                            )
-                          }
+                          onChange={(v) => updateDoctorFormField("mobileNumber", v)}
                           placeholder="Enter mobile number"
-                          className="w-full rounded-xl border border-gray-700 bg-gray-900/80 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                          error={doctorForm.mobileNumber && !isValidPhoneNumber(doctorForm.mobileNumber) ? "Enter a valid mobile number." : undefined}
                         />
                       </div>
 

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Save, Plus, X, User, Stethoscope, Building2 } from "lucide-react";
 import { useAuthStore, type DoctorChamber } from "@/store/authStore";
+import PhoneInputField, { isValidPhoneNumber } from "@/components/PhoneInputField";
 
 // ── Reusable small components ─────────────────────────────────────────────────
 
@@ -226,7 +227,12 @@ export default function SettingsPage() {
             </Field>
             <Field>
               <FieldLabel text="Mobile Number" />
-              <TextInput value={form.mobileNumber} onChange={(v) => set("mobileNumber", v)} placeholder="+880..." />
+              <PhoneInputField
+                value={form.mobileNumber}
+                onChange={(v) => set("mobileNumber", v)}
+                placeholder="Enter mobile number"
+                error={form.mobileNumber && !isValidPhoneNumber(form.mobileNumber) ? "Enter a valid mobile number." : undefined}
+              />
             </Field>
           </div>
 

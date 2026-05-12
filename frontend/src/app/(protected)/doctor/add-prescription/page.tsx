@@ -9,6 +9,7 @@ import {
   type Medication,
 } from "@/store/prescriptionStore";
 import axios from "axios";
+import PhoneInputField, { isValidPhoneNumber } from "@/components/PhoneInputField";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -686,7 +687,7 @@ export default function AddPrescriptionPage() {
       e.patientName = "Name must be at least 2 characters.";
     if (!form.age || isNaN(Number(form.age))) e.age = "Age is required.";
     if (!form.sex) e.sex = "Please select a gender.";
-    if (!form.mobile.trim()) e.mobile = "Mobile number is required.";
+    if (!form.mobile || !isValidPhoneNumber(form.mobile)) e.mobile = "Enter a valid mobile number.";
     if (!form.chiefComplaints.some((c) => c.trim()))
       e.chiefComplaints = "Add at least one C/C.";
     setErrors(e);
@@ -858,14 +859,12 @@ export default function AddPrescriptionPage() {
               </div>
               <div>
                 <FieldLabel text="Mobile" required />
-                <FormInput
-                  placeholder="Enter Mobile Number"
+                <PhoneInputField
                   value={form.mobile}
                   onChange={(v) => setField("mobile", v)}
+                  placeholder="Enter mobile number"
+                  error={errors.mobile}
                 />
-                {errors.mobile && (
-                  <p className="mt-1 text-xs text-red-500">{errors.mobile}</p>
-                )}
               </div>
               <div>
                 <FieldLabel text="Weight (kg)" />
