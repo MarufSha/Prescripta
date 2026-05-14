@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
-import { Plus, X, Save, Trash2, Download, ClipboardList } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, X, Save, Trash2, Download, ClipboardList, History, ChevronDown, ChevronUp } from "lucide-react";
 import {
   usePrescriptionStore,
   type Medication,
+  type Prescription,
+  type PatientHistory,
 } from "@/store/prescriptionStore";
 import axios from "axios";
 
@@ -392,6 +394,161 @@ function MedicineSearchInput({
   );
 }
 
+// ── Patient history modal ─────────────────────────────────────────────────────
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function HistoryPrescriptionRow({ p }: { p: Prescription }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+      >
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
+          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+            Visit #{p.visitNumber}
+          </span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            {formatDate(p.date || p.createdAt)}
+          </span>
+          {p.chiefComplaints.length > 0 && (
+            <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
+              CC: {p.chiefComplaints.slice(0, 2).join(", ")}
+              {p.chiefComplaints.length > 2 && ` +${p.chiefComplaints.length - 2}`}
+            </span>
+          )}
+        </div>
+        {open ? (
+          <ChevronUp className="h-4 w-4 shrink-0 text-gray-400" />
+        ) : (
+          <ChevronDown className="h-4 w-4 shrink-0 text-gray-400" />
+        )}
+      </button>
+
+      {open && (
+        <div className="px-4 pb-4 space-y-3 border-t border-gray-200 dark:border-gray-700 pt-3 text-sm">
+          {/* Vitals */}
+          {[p.pulse, p.bp, p.spo2, p.weight, p.others].some(Boolean) && (
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-400">
+              {p.pulse && <span><b>Pulse:</b> {p.pulse}</span>}
+              {p.bp && <span><b>BP:</b> {p.bp}</span>}
+              {p.spo2 && <span><b>SpO2:</b> {p.spo2}</span>}
+              {p.weight && <span><b>Weight:</b> {p.weight} kg</span>}
+              {p.others && <span><b>Other:</b> {p.others}</span>}
+            </div>
+          )}
+          {p.chiefComplaints.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">C/C</p>
+              <ul className="list-disc list-inside text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
+                {p.chiefComplaints.map((c, i) => <li key={i}>{c}</li>)}
+              </ul>
+            </div>
+          )}
+          {p.diagnosis.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">D/x</p>
+              <ul className="list-disc list-inside text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
+                {p.diagnosis.map((d, i) => <li key={i}>{d}</li>)}
+              </ul>
+            </div>
+          )}
+          {p.medications.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">R/X</p>
+              <div className="space-y-1">
+                {p.medications.map((m, i) => (
+                  <div key={i} className="text-xs text-gray-600 dark:text-gray-400">
+                    <span className="font-medium text-gray-800 dark:text-gray-200">{m.medicine}</span>
+                    {(m.days || m.timesPerDay || m.timing) && (
+                      <span className="ml-1 text-gray-500">
+                        {[m.days && `${m.days} days`, m.timesPerDay && `${m.timesPerDay}x/day`, m.timing].filter(Boolean).join(" · ")}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {p.investigations.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Investigations</p>
+              <ul className="list-disc list-inside text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
+                {p.investigations.map((v, i) => <li key={i}>{v}</li>)}
+              </ul>
+            </div>
+          )}
+          {p.advice.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Advice</p>
+              <ul className="list-disc list-inside text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
+                {p.advice.map((a, i) => <li key={i}>{a}</li>)}
+              </ul>
+            </div>
+          )}
+          {p.followUpDays && (
+            <p className="text-xs text-emerald-600 dark:text-emerald-400">
+              Follow up in {p.followUpDays} days
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PatientHistoryModal({
+  history,
+  onClose,
+}: {
+  history: PatientHistory;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="w-full max-w-lg rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl flex flex-col max-h-[85vh]"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700 shrink-0">
+          <div>
+            <h2 className="text-base font-bold text-gray-900 dark:text-white">Visit History</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              {history.prescriptions[0]?.patientName} · {history.patientUid} · {history.visitCount} visit{history.visitCount !== 1 ? "s" : ""}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors cursor-pointer"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Visits list */}
+        <div className="overflow-y-auto flex-1 p-4 space-y-2">
+          {history.prescriptions.map((p) => (
+            <HistoryPrescriptionRow key={p._id} p={p} />
+          ))}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 // ── Print template (hidden on screen) ────────────────────────────────────────
 
 function PrintView({
@@ -554,6 +711,7 @@ export default function AddPrescriptionPage() {
     createPrescription,
     updatePrescription,
     getPrescriptionById,
+    getPatientHistory,
     isSaving,
     error,
     clearError,
@@ -567,6 +725,11 @@ export default function AddPrescriptionPage() {
   const [successMsg, setSuccessMsg] = useState("");
   const [savedPuid, setSavedPuid] = useState<string | undefined>();
   const [isLoadingEdit, setIsLoadingEdit] = useState(!!editId);
+
+  // Returning patient state
+  const [patientHistory, setPatientHistory] = useState<PatientHistory | null>(null);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const lookupRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Parallel array to form.medications — tracks selected medicine details per row
   const [selectedMedicines, setSelectedMedicines] = useState<
@@ -605,6 +768,33 @@ export default function AddPrescriptionPage() {
       .catch(() => router.push("/doctor/add-prescription"))
       .finally(() => setIsLoadingEdit(false));
   }, [editId, getPrescriptionById, router]);
+
+  // Debounced patient lookup (only when not editing an existing prescription)
+  useEffect(() => {
+    if (editId) return;
+    if (lookupRef.current) clearTimeout(lookupRef.current);
+
+    const name = form.patientName.trim();
+    const mobile = form.mobile.trim();
+
+    if (name.length < 2 || mobile.length < 3) {
+      setPatientHistory(null);
+      return;
+    }
+
+    lookupRef.current = setTimeout(async () => {
+      try {
+        const result = await getPatientHistory(name, mobile);
+        setPatientHistory(result.found ? result : null);
+      } catch {
+        setPatientHistory(null);
+      }
+    }, 500);
+
+    return () => {
+      if (lookupRef.current) clearTimeout(lookupRef.current);
+    };
+  }, [form.patientName, form.mobile, editId, getPatientHistory]);
 
   // ── field helpers ──────────────────────────────────────────────────────────
 
@@ -743,6 +933,7 @@ export default function AddPrescriptionPage() {
     setErrors({});
     clearError();
     setSavedPuid(undefined);
+    setPatientHistory(null);
     if (editId) router.push("/doctor/add-prescription");
   };
 
@@ -767,6 +958,15 @@ export default function AddPrescriptionPage() {
 
   return (
     <>
+      <AnimatePresence>
+        {showHistoryModal && patientHistory && (
+          <PatientHistoryModal
+            history={patientHistory}
+            onClose={() => setShowHistoryModal(false)}
+          />
+        )}
+      </AnimatePresence>
+
       <PrintView form={form} patientUid={savedPuid} />
 
       <motion.div
@@ -808,6 +1008,39 @@ export default function AddPrescriptionPage() {
             {error}
           </div>
         )}
+
+        {/* Returning patient banner */}
+        <AnimatePresence>
+          {patientHistory && !editId && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center justify-between gap-3 rounded-xl border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 px-4 py-3"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <History className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+                <p className="text-sm text-blue-800 dark:text-blue-300">
+                  <span className="font-semibold">Returning Patient</span>
+                  <span className="mx-1.5 text-blue-400">·</span>
+                  <span className="font-medium">{patientHistory.patientUid}</span>
+                  <span className="mx-1.5 text-blue-400">·</span>
+                  {patientHistory.visitCount} previous visit{patientHistory.visitCount !== 1 ? "s" : ""}
+                  <span className="ml-1 text-blue-600 dark:text-blue-400 text-xs">(this will be visit #{(patientHistory.visitCount ?? 0) + 1})</span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowHistoryModal(true)}
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-blue-300 dark:border-blue-500/40 bg-white dark:bg-blue-900/20 px-3 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors cursor-pointer"
+              >
+                <History className="h-3.5 w-3.5" />
+                View History
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Form card */}
         <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/70 shadow-sm p-5 space-y-6">

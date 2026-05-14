@@ -8,6 +8,7 @@ import {
   getPrescriptionById,
   updatePrescription,
   deletePrescription,
+  getPatientHistory,
 } from "../controllers/prescription-controller.js";
 
 const router = express.Router();
@@ -15,6 +16,7 @@ const router = express.Router();
 router.use(verifyToken, requireRole("doctor"));
 
 router.get("/", getDoctorPrescriptions);
+router.get("/patient-history", getPatientHistory);
 router.get("/:id", getPrescriptionById);
 router.post("/", requireCsrf, createPrescription);
 router.put("/:id", requireCsrf, updatePrescription);

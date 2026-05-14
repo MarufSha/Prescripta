@@ -210,6 +210,46 @@ export const updatePrescription = async (req, res) => {
   }
 };
 
+// ── Patient History ───────────────────────────────────────────────────────────
+
+export const getPatientHistory = async (req, res) => {
+  try {
+    const doctorId = req.userId;
+    const { name, mobile } = req.query;
+
+    if (!name || String(name).trim().length < 2)
+      return res.status(400).json({ success: false, message: "Patient name is required" });
+
+    if (!mobile || String(mobile).trim().length < 3)
+      return res.status(400).json({ success: false, message: "Mobile number is required" });
+
+    const mobileClean = String(mobile).trim();
+    const nameEscaped = String(name).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    const prescriptions = await Prescription.find({
+      doctorId,
+      mobile: mobileClean,
+      patientName: { $regex: new RegExp(`^${nameEscaped}$`, "i") },
+    })
+      .sort({ visitNumber: -1 })
+      .lean();
+
+    if (!prescriptions.length)
+      return res.json({ success: true, found: false, prescriptions: [] });
+
+    res.json({
+      success: true,
+      found: true,
+      patientUid: prescriptions[0].patientUid,
+      visitCount: prescriptions[0].visitNumber,
+      prescriptions,
+    });
+  } catch (err) {
+    console.error("getPatientHistory error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 // ── Delete ────────────────────────────────────────────────────────────────────
 
 export const deletePrescription = async (req, res) => {
