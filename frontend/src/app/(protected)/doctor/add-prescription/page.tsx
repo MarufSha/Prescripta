@@ -167,12 +167,13 @@ function PhoneInput({
       onChange: ({ phone }) => onChange(phone),
     });
 
-  const filtered = search.trim()
+  const q = search.trim().toLowerCase();
+  const filtered = q
     ? ALL_COUNTRIES.filter(
         (c) =>
-          c.name.toLowerCase().includes(search.toLowerCase()) ||
-          c.dialCode.includes(search) ||
-          c.iso2.toLowerCase().includes(search.toLowerCase()),
+          c.name.toLowerCase().startsWith(q) ||
+          c.dialCode.startsWith(q.startsWith("+") ? q : `+${q}`) ||
+          c.iso2.toLowerCase() === q,
       )
     : ALL_COUNTRIES;
 
