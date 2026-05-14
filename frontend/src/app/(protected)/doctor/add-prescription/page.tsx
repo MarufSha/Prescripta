@@ -18,6 +18,36 @@ const TIMING_OPTIONS = ["Before meal", "After meal", "Anytime"];
 
 const SEX_OPTIONS = ["Male", "Female", "Other"];
 
+type Country = { code: string; flag: string; dialCode: string; name: string };
+
+const COUNTRIES: Country[] = [
+  { code: "BD", flag: "🇧🇩", dialCode: "+880", name: "Bangladesh" },
+  { code: "IN", flag: "🇮🇳", dialCode: "+91",  name: "India" },
+  { code: "PK", flag: "🇵🇰", dialCode: "+92",  name: "Pakistan" },
+  { code: "NP", flag: "🇳🇵", dialCode: "+977", name: "Nepal" },
+  { code: "LK", flag: "🇱🇰", dialCode: "+94",  name: "Sri Lanka" },
+  { code: "MM", flag: "🇲🇲", dialCode: "+95",  name: "Myanmar" },
+  { code: "BT", flag: "🇧🇹", dialCode: "+975", name: "Bhutan" },
+  { code: "MV", flag: "🇲🇻", dialCode: "+960", name: "Maldives" },
+  { code: "SA", flag: "🇸🇦", dialCode: "+966", name: "Saudi Arabia" },
+  { code: "AE", flag: "🇦🇪", dialCode: "+971", name: "UAE" },
+  { code: "QA", flag: "🇶🇦", dialCode: "+974", name: "Qatar" },
+  { code: "KW", flag: "🇰🇼", dialCode: "+965", name: "Kuwait" },
+  { code: "BH", flag: "🇧🇭", dialCode: "+973", name: "Bahrain" },
+  { code: "OM", flag: "🇴🇲", dialCode: "+968", name: "Oman" },
+  { code: "MY", flag: "🇲🇾", dialCode: "+60",  name: "Malaysia" },
+  { code: "SG", flag: "🇸🇬", dialCode: "+65",  name: "Singapore" },
+  { code: "US", flag: "🇺🇸", dialCode: "+1",   name: "USA" },
+  { code: "GB", flag: "🇬🇧", dialCode: "+44",  name: "UK" },
+  { code: "AU", flag: "🇦🇺", dialCode: "+61",  name: "Australia" },
+  { code: "CA", flag: "🇨🇦", dialCode: "+1",   name: "Canada" },
+  { code: "DE", flag: "🇩🇪", dialCode: "+49",  name: "Germany" },
+  { code: "FR", flag: "🇫🇷", dialCode: "+33",  name: "France" },
+  { code: "IT", flag: "🇮🇹", dialCode: "+39",  name: "Italy" },
+];
+
+const DEFAULT_DIAL_CODE = "+880";
+
 const todayStr = () => new Date().toISOString().split("T")[0];
 
 const DEFAULT_MED: Medication = {
@@ -31,6 +61,7 @@ const DEFAULT_FORM = {
   patientName: "",
   age: "",
   sex: "",
+  mobileDialCode: DEFAULT_DIAL_CODE,
   mobile: "",
   weight: "",
   pulse: "",
@@ -133,6 +164,123 @@ function FormSelect({
         </option>
       ))}
     </select>
+  );
+}
+
+function PhoneInput({
+  dialCode,
+  onDialCodeChange,
+  value,
+  onChange,
+}: {
+  dialCode: string;
+  onDialCodeChange: (code: string) => void;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const selected = COUNTRIES.find((c) => c.dialCode === dialCode) ?? COUNTRIES[0];
+
+  const filtered = search.trim()
+    ? COUNTRIES.filter(
+        (c) =>
+          c.name.toLowerCase().includes(search.toLowerCase()) ||
+          c.dialCode.includes(search) ||
+          c.code.toLowerCase().includes(search.toLowerCase()),
+      )
+    : COUNTRIES;
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    if (open) setTimeout(() => searchRef.current?.focus(), 50);
+  }, [open]);
+
+  const pick = (c: Country) => {
+    onDialCodeChange(c.dialCode);
+    setOpen(false);
+    setSearch("");
+  };
+
+  // Only allow digits (and spaces/dashes for readability)
+  const handleNumberChange = (raw: string) => {
+    const cleaned = raw.replace(/[^\d\s\-]/g, "");
+    onChange(cleaned);
+  };
+
+  return (
+    <div ref={containerRef} className="relative flex">
+      {/* Country selector */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 shrink-0 rounded-l-lg border border-r-0 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2.5 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer select-none"
+      >
+        <span className="text-base leading-none">{selected.flag}</span>
+        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{selected.dialCode}</span>
+        <ChevronDown className={`h-3 w-3 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {/* Number input */}
+      <input
+        type="tel"
+        inputMode="numeric"
+        placeholder="Enter number"
+        value={value}
+        onChange={(e) => handleNumberChange(e.target.value)}
+        className="flex-1 min-w-0 rounded-r-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors"
+      />
+
+      {/* Dropdown */}
+      {open && (
+        <div className="absolute top-full left-0 z-50 mt-1 w-64 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg shadow-black/10 overflow-hidden">
+          <div className="p-2 border-b border-gray-100 dark:border-gray-800">
+            <input
+              ref={searchRef}
+              type="text"
+              placeholder="Search country…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white px-2.5 py-1.5 text-xs placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-colors"
+            />
+          </div>
+          <ul className="max-h-48 overflow-y-auto divide-y divide-gray-50 dark:divide-gray-800">
+            {filtered.length === 0 ? (
+              <li className="px-3 py-3 text-xs text-gray-400 text-center">No results</li>
+            ) : (
+              filtered.map((c) => (
+                <li key={c.code}>
+                  <button
+                    type="button"
+                    onMouseDown={() => pick(c)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors ${
+                      c.dialCode === dialCode ? "bg-emerald-50 dark:bg-emerald-900/10" : ""
+                    }`}
+                  >
+                    <span className="text-base leading-none">{c.flag}</span>
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 w-10 shrink-0">{c.dialCode}</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-200 truncate">{c.name}</span>
+                  </button>
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -744,11 +892,24 @@ export default function AddPrescriptionPage() {
         const meds = p.medications.length
           ? p.medications
           : [{ ...DEFAULT_MED }];
+        // Parse stored mobile back into dial code + local number
+        const sortedCodes = COUNTRIES.map((c) => c.dialCode).sort((a, b) => b.length - a.length);
+        let parsedDialCode = DEFAULT_DIAL_CODE;
+        let parsedLocal = p.mobile;
+        for (const dc of sortedCodes) {
+          if (p.mobile.startsWith(dc)) {
+            parsedDialCode = dc;
+            parsedLocal = p.mobile.slice(dc.length);
+            break;
+          }
+        }
+
         setFormState({
           patientName: p.patientName,
           age: String(p.age),
           sex: p.sex,
-          mobile: p.mobile,
+          mobileDialCode: parsedDialCode,
+          mobile: parsedLocal,
           weight: p.weight != null ? String(p.weight) : "",
           pulse: p.pulse,
           bp: p.bp,
@@ -769,22 +930,25 @@ export default function AddPrescriptionPage() {
       .finally(() => setIsLoadingEdit(false));
   }, [editId, getPrescriptionById, router]);
 
-  // Debounced patient lookup (only when not editing an existing prescription)
+  // Debounced patient lookup — requires name + mobile (local part) + sex all filled
   useEffect(() => {
     if (editId) return;
     if (lookupRef.current) clearTimeout(lookupRef.current);
 
     const name = form.patientName.trim();
-    const mobile = form.mobile.trim();
+    const localNumber = form.mobile.replace(/[\s\-]/g, "");
+    const sex = form.sex;
 
-    if (name.length < 2 || mobile.length < 3) {
+    if (name.length < 2 || localNumber.length < 4 || !sex) {
       setPatientHistory(null);
       return;
     }
 
+    const fullMobile = form.mobileDialCode + localNumber;
+
     lookupRef.current = setTimeout(async () => {
       try {
-        const result = await getPatientHistory(name, mobile);
+        const result = await getPatientHistory(name, fullMobile, sex);
         setPatientHistory(result.found ? result : null);
       } catch {
         setPatientHistory(null);
@@ -794,7 +958,7 @@ export default function AddPrescriptionPage() {
     return () => {
       if (lookupRef.current) clearTimeout(lookupRef.current);
     };
-  }, [form.patientName, form.mobile, editId, getPatientHistory]);
+  }, [form.patientName, form.mobile, form.mobileDialCode, form.sex, editId, getPatientHistory]);
 
   // ── field helpers ──────────────────────────────────────────────────────────
 
@@ -876,7 +1040,11 @@ export default function AddPrescriptionPage() {
       e.patientName = "Name must be at least 2 characters.";
     if (!form.age || isNaN(Number(form.age))) e.age = "Age is required.";
     if (!form.sex) e.sex = "Please select a gender.";
-    if (!form.mobile.trim()) e.mobile = "Mobile number is required.";
+    const digitsOnly = form.mobile.replace(/[\s\-]/g, "");
+    if (!digitsOnly || digitsOnly.length < 4)
+      e.mobile = "Enter a valid phone number.";
+    else if (digitsOnly.length > 13)
+      e.mobile = "Number is too long.";
     if (!form.chiefComplaints.some((c) => c.trim()))
       e.chiefComplaints = "Add at least one C/C.";
     setErrors(e);
@@ -893,7 +1061,7 @@ export default function AddPrescriptionPage() {
       patientName: form.patientName.trim(),
       age: Number(form.age),
       sex: form.sex as "Male" | "Female" | "Other",
-      mobile: form.mobile.trim(),
+      mobile: form.mobileDialCode + form.mobile.replace(/[\s\-]/g, ""),
       weight: form.weight ? Number(form.weight) : null,
       pulse: form.pulse,
       bp: form.bp,
@@ -1091,8 +1259,9 @@ export default function AddPrescriptionPage() {
               </div>
               <div>
                 <FieldLabel text="Mobile" required />
-                <FormInput
-                  placeholder="Enter Mobile Number"
+                <PhoneInput
+                  dialCode={form.mobileDialCode}
+                  onDialCodeChange={(v) => setField("mobileDialCode", v)}
                   value={form.mobile}
                   onChange={(v) => setField("mobile", v)}
                 />

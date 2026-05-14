@@ -112,7 +112,7 @@ type PrescriptionState = {
   updatePrescription: (id: string, data: PrescriptionFormData) => Promise<Prescription>;
   deletePrescription: (id: string) => Promise<void>;
   getPrescriptionById: (id: string) => Promise<Prescription>;
-  getPatientHistory: (name: string, mobile: string) => Promise<PatientHistory>;
+  getPatientHistory: (name: string, mobile: string, sex: string) => Promise<PatientHistory>;
   clearError: () => void;
 };
 
@@ -197,8 +197,8 @@ export const usePrescriptionStore = create<PrescriptionState>((set) => ({
     return res.data.prescription as Prescription;
   },
 
-  getPatientHistory: async (name, mobile) => {
-    const res = await api.get("/prescriptions/patient-history", { params: { name, mobile } });
+  getPatientHistory: async (name, mobile, sex) => {
+    const res = await api.get("/prescriptions/patient-history", { params: { name, mobile, sex } });
     return res.data as PatientHistory;
   },
 
