@@ -10,8 +10,12 @@ import {
   type Prescription,
   type PatientHistory,
 } from "@/store/prescriptionStore";
-import { PhoneInput as IntlPhoneInput } from "react-international-phone";
-import "react-international-phone/style.css";
+import {
+  usePhoneInput,
+  FlagImage,
+  defaultCountries,
+  parseCountry,
+} from "react-international-phone";
 import axios from "axios";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -22,6 +26,8 @@ const SEX_OPTIONS = ["Male", "Female", "Other"];
 
 
 const todayStr = () => new Date().toISOString().split("T")[0];
+
+const ALL_COUNTRIES = defaultCountries.map(parseCountry);
 
 const DEFAULT_MED: Medication = {
   medicine: "",
@@ -136,6 +142,134 @@ function FormSelect({
         </option>
       ))}
     </select>
+  );
+}
+
+// ── Phone input with searchable country dropdown ──────────────────────────────
+
+function PhoneInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const { inputValue, handlePhoneValueChange, inputRef, country, setCountry } =
+    usePhoneInput({
+      defaultCountry: "bd",
+      value,
+      countries: defaultCountries,
+      onChange: ({ phone }) => onChange(phone),
+    });
+
+  const filtered = search.trim()
+    ? ALL_COUNTRIES.filter(
+        (c) =>
+          c.name.toLowerCase().includes(search.toLowerCase()) ||
+          c.dialCode.includes(search) ||
+          c.iso2.toLowerCase().includes(search.toLowerCase()),
+      )
+    : ALL_COUNTRIES;
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    if (open) setTimeout(() => searchRef.current?.focus(), 40);
+  }, [open]);
+
+  return (
+    <div ref={wrapperRef} className="relative flex w-full">
+      {/* Country selector button */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 shrink-0 rounded-l-lg border border-r-0 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2.5 py-2 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer"
+      >
+        <FlagImage iso2={country.iso2} size="20px" />
+        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+          +{country.dialCode}
+        </span>
+        <ChevronDown
+          className={`h-3 w-3 text-gray-400 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {/* Phone number input */}
+      <input
+        ref={inputRef}
+        value={inputValue}
+        onChange={handlePhoneValueChange}
+        type="tel"
+        placeholder="Enter number"
+        className="flex-1 min-w-0 rounded-r-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors"
+      />
+
+      {/* Dropdown */}
+      {open && (
+        <div className="absolute top-full left-0 z-50 mt-1 w-72 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl shadow-black/10 flex flex-col overflow-hidden">
+          {/* Search input */}
+          <div className="p-2 border-b border-gray-100 dark:border-gray-800 shrink-0">
+            <input
+              ref={searchRef}
+              type="text"
+              placeholder="Search country…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white px-2.5 py-1.5 text-xs placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-colors"
+            />
+          </div>
+
+          {/* Scrollable country list */}
+          <ul className="overflow-y-auto max-h-52 divide-y divide-gray-50 dark:divide-gray-800/50">
+            {filtered.length === 0 ? (
+              <li className="px-3 py-3 text-xs text-gray-400 dark:text-gray-500 text-center">
+                No results
+              </li>
+            ) : (
+              filtered.map((c) => (
+                <li key={c.iso2}>
+                  <button
+                    type="button"
+                    onMouseDown={() => {
+                      setCountry(c.iso2);
+                      setOpen(false);
+                      setSearch("");
+                    }}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${
+                      c.iso2 === country.iso2
+                        ? "bg-emerald-50 dark:bg-emerald-900/20"
+                        : "hover:bg-gray-50 dark:hover:bg-gray-800/60"
+                    }`}
+                  >
+                    <FlagImage iso2={c.iso2} size="20px" className="shrink-0" />
+                    <span className="flex-1 text-sm text-gray-700 dark:text-gray-200 truncate">
+                      {c.name}
+                    </span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">
+                      +{c.dialCode}
+                    </span>
+                  </button>
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1097,16 +1231,9 @@ export default function AddPrescriptionPage() {
               </div>
               <div>
                 <FieldLabel text="Mobile" required />
-                <IntlPhoneInput
-                  defaultCountry="bd"
+                <PhoneInput
                   value={form.mobile}
-                  onChange={(v) => setField("mobile", v ?? "")}
-                  inputClassName="!w-full !rounded-r-lg !border !border-gray-200 dark:!border-gray-700 !bg-white dark:!bg-gray-800 !text-gray-900 dark:!text-white !px-3 !py-2 !text-sm !placeholder-gray-400 focus:!outline-none focus:!ring-2 focus:!ring-emerald-500/50 focus:!border-emerald-500"
-                  countrySelectorStyleProps={{
-                    buttonClassName: "!rounded-l-lg !border !border-r-0 !border-gray-200 dark:!border-gray-700 !bg-white dark:!bg-gray-800 !h-full !px-2.5",
-                  }}
-                  showDisabledDialCodeAndPrefix
-                  className="!flex !w-full phone-input-wrapper"
+                  onChange={(v) => setField("mobile", v)}
                 />
                 {errors.mobile && (
                   <p className="mt-1 text-xs text-red-500">{errors.mobile}</p>
