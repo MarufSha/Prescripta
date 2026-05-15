@@ -112,7 +112,15 @@ type PrescriptionState = {
   updatePrescription: (id: string, data: PrescriptionFormData) => Promise<Prescription>;
   deletePrescription: (id: string) => Promise<void>;
   getPrescriptionById: (id: string) => Promise<Prescription>;
+  getPatientHistory: (name: string, mobile: string, sex: string) => Promise<PatientHistory>;
   clearError: () => void;
+};
+
+export type PatientHistory = {
+  found: boolean;
+  patientUid?: string;
+  visitCount?: number;
+  prescriptions: Prescription[];
 };
 
 // ── Store ─────────────────────────────────────────────────────────────────────
@@ -187,6 +195,11 @@ export const usePrescriptionStore = create<PrescriptionState>((set) => ({
   getPrescriptionById: async (id) => {
     const res = await api.get(`/prescriptions/${id}`);
     return res.data.prescription as Prescription;
+  },
+
+  getPatientHistory: async (name, mobile, sex) => {
+    const res = await api.get("/prescriptions/patient-history", { params: { name, mobile, sex } });
+    return res.data as PatientHistory;
   },
 
   clearError: () => set({ error: null }),

@@ -41,7 +41,7 @@ export const createPrescription = async (req, res) => {
     if (!sex || !["Male", "Female", "Other"].includes(sex))
       return res.status(400).json({ success: false, message: "Valid sex is required" });
 
-    if (!mobile || String(mobile).trim().length < 3)
+    if (!mobile || String(mobile).trim().length < 5)
       return res.status(400).json({ success: false, message: "Mobile number is required" });
 
     const cleanedComplaints = clean(chiefComplaints);
@@ -57,6 +57,7 @@ export const createPrescription = async (req, res) => {
       doctorId,
       mobile: mobileClean,
       patientName: { $regex: new RegExp(`^${nameEscaped}$`, "i") },
+      sex,
     })
       .select("patientUid visitNumber")
       .sort({ visitNumber: -1 })
@@ -206,6 +207,50 @@ export const updatePrescription = async (req, res) => {
     res.json({ success: true, message: "Prescription updated", prescription });
   } catch (err) {
     console.error("updatePrescription error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// ── Patient History ───────────────────────────────────────────────────────────
+
+export const getPatientHistory = async (req, res) => {
+  try {
+    const doctorId = req.userId;
+    const { name, mobile, sex } = req.query;
+
+    if (!name || String(name).trim().length < 2)
+      return res.status(400).json({ success: false, message: "Patient name is required" });
+
+    if (!mobile || String(mobile).trim().length < 5)
+      return res.status(400).json({ success: false, message: "Mobile number is required" });
+
+    if (!sex || !["Male", "Female", "Other"].includes(sex))
+      return res.status(400).json({ success: false, message: "Sex is required" });
+
+    const mobileClean = String(mobile).trim();
+    const nameEscaped = String(name).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    const prescriptions = await Prescription.find({
+      doctorId,
+      mobile: mobileClean,
+      patientName: { $regex: new RegExp(`^${nameEscaped}$`, "i") },
+      sex,
+    })
+      .sort({ visitNumber: -1 })
+      .lean();
+
+    if (!prescriptions.length)
+      return res.json({ success: true, found: false, prescriptions: [] });
+
+    res.json({
+      success: true,
+      found: true,
+      patientUid: prescriptions[0].patientUid,
+      visitCount: prescriptions[0].visitNumber,
+      prescriptions,
+    });
+  } catch (err) {
+    console.error("getPatientHistory error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
