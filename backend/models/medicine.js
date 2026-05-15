@@ -7,6 +7,7 @@ const medicineSchema = new mongoose.Schema(
     generic_name: { type: String },
     strength: { type: String },
     dosage_form: { type: String },
+    unit_type: { type: String },
     unit_price: { type: Number },
   },
   { collection: "medicines", timestamps: false }

@@ -13,7 +13,7 @@ export const searchMedicines = async (req, res) => {
     const rx = new RegExp(`^${escaped}`, "i");
 
     const medicines = await Medicine.find({ medicine_name: rx })
-      .select("medicine_name generic_name strength dosage_form company_name unit_price")
+      .select("medicine_name generic_name strength dosage_form unit_type company_name unit_price")
       .limit(10)
       .lean();
 
@@ -49,7 +49,7 @@ export const listMedicines = async (req, res) => {
     const skip = (page - 1) * limit;
     const [medicines, total] = await Promise.all([
       Medicine.find(filter)
-        .select("medicine_name generic_name strength dosage_form company_name unit_price")
+        .select("medicine_name generic_name strength dosage_form unit_type company_name unit_price")
         .sort({ [sortBy]: sortOrder })
         .skip(skip)
         .limit(limit)

@@ -14,6 +14,7 @@ type Medicine = {
   generic_name?: string;
   strength?: string;
   dosage_form?: string;
+  unit_type?: string;
   company_name?: string;
   unit_price?: number;
 };
@@ -260,6 +261,7 @@ export default function AdminPrescriptionsPage() {
                   </th>
                   <th className="px-4 py-3">Strength</th>
                   <th className="px-4 py-3">Form</th>
+                  <th className="px-4 py-3">Unit Type</th>
                   <th
                     className="px-4 py-3 cursor-pointer hover:text-gray-300 transition-colors"
                     onClick={() => handleSort("company_name")}
@@ -278,7 +280,7 @@ export default function AdminPrescriptionsPage() {
                 {isLoading
                   ? Array.from({ length: 8 }).map((_, i) => (
                       <tr key={i} className="border-b border-gray-800/50 animate-pulse">
-                        {Array.from({ length: 6 }).map((_, j) => (
+                        {Array.from({ length: 7 }).map((_, j) => (
                           <td key={j} className="px-4 py-3">
                             <div className="h-3 rounded bg-gray-800" style={{ width: `${60 + Math.random() * 30}%` }} />
                           </td>
@@ -288,7 +290,7 @@ export default function AdminPrescriptionsPage() {
                   : medicines.length === 0
                   ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
+                        <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
                           No medicines found.
                         </td>
                       </tr>
@@ -308,6 +310,7 @@ export default function AdminPrescriptionsPage() {
                             </span>
                           ) : "—"}
                         </td>
+                        <td className="px-4 py-3 text-gray-400">{med.unit_type || "—"}</td>
                         <td className="px-4 py-3 text-gray-400">{med.company_name || "—"}</td>
                         <td className="px-4 py-3 text-right">
                           {med.unit_price != null ? (
