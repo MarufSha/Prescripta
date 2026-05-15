@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
 import SuperAdminGuard from "@/components/auth/SuperAdminGuard";
-import { ChevronDown, ChevronUp, ChevronsUpDown, Search, X } from "lucide-react";
+import { ChevronUp, ChevronDown, ChevronsUpDown, Search, X } from "lucide-react";
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api`;
 const api = axios.create({ baseURL: API_BASE_URL, withCredentials: true });
@@ -22,12 +22,13 @@ type Pagination = { page: number; limit: number; total: number; totalPages: numb
 
 type SortField = "medicine_name" | "company_name" | "unit_price" | "generic_name";
 type SortOrder = "asc" | "desc";
-type SearchField = "medicine_name" | "company_name" | "generic_name";
+type SearchField = "medicine_name" | "company_name" | "generic_name" | "dosage_form";
 
 const SEARCH_FIELD_LABELS: Record<SearchField, string> = {
   medicine_name: "Medicine Name",
   company_name: "Company",
   generic_name: "Generic Name",
+  dosage_form: "Form",
 };
 
 const SORT_FIELD_LABELS: Record<SortField, string> = {
@@ -54,10 +55,8 @@ export default function AdminPrescriptionsPage() {
   const [searchField, setSearchField] = useState<SearchField>("medicine_name");
   const [sortBy, setSortBy] = useState<SortField>("medicine_name");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
-  const [fieldDropdownOpen, setFieldDropdownOpen] = useState(false);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const fieldDropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchMedicines = useCallback(async (params: {
     page?: number; search?: string; searchField?: SearchField;
@@ -74,17 +73,6 @@ export default function AdminPrescriptionsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (fieldDropdownRef.current && !fieldDropdownRef.current.contains(e.target as Node)) {
-        setFieldDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   // Initial load
@@ -132,64 +120,55 @@ export default function AdminPrescriptionsPage() {
         </div>
 
         {/* Controls */}
-        <div className="rounded-3xl border border-gray-800 bg-gray-900/70 p-4 shadow-xl backdrop-blur-xl">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            {/* Search field selector + input */}
-            <div className="flex flex-1 items-center gap-0 rounded-xl border border-gray-700 bg-gray-800/60 overflow-hidden">
-              {/* Field selector */}
-              <div ref={fieldDropdownRef} className="relative shrink-0">
-                <button
-                  onClick={() => setFieldDropdownOpen((o) => !o)}
-                  className="flex items-center gap-1.5 px-3 py-2.5 text-sm text-gray-300 border-r border-gray-700 hover:bg-gray-700/50 transition-colors whitespace-nowrap"
-                >
-                  <Search className="h-3.5 w-3.5 text-emerald-400" />
-                  {SEARCH_FIELD_LABELS[searchField]}
-                  <ChevronDown className="h-3 w-3 text-gray-500" />
-                </button>
-                {fieldDropdownOpen && (
-                  <div className="absolute top-full left-0 z-20 mt-1 w-40 rounded-xl border border-gray-700 bg-gray-900 shadow-xl">
-                    {(Object.entries(SEARCH_FIELD_LABELS) as [SearchField, string][]).map(([key, label]) => (
-                      <button
-                        key={key}
-                        onClick={() => { setSearchField(key); setFieldDropdownOpen(false); }}
-                        className={`w-full px-3 py-2 text-left text-sm transition-colors hover:bg-gray-800 ${
-                          searchField === key ? "text-emerald-400" : "text-gray-300"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+        <div className="rounded-3xl border border-gray-800 bg-gray-900/70 p-4 shadow-xl backdrop-blur-xl space-y-3">
+          {/* Search input */}
+          <div className="flex items-center gap-0 rounded-xl border border-gray-700 bg-gray-800/60 overflow-hidden">
+            <Search className="ml-3 h-4 w-4 shrink-0 text-emerald-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={`Search by ${SEARCH_FIELD_LABELS[searchField].toLowerCase()}…`}
+              className="flex-1 bg-transparent px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="mr-2 text-gray-500 hover:text-gray-300"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
 
-              {/* Text input */}
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder={`Search by ${SEARCH_FIELD_LABELS[searchField].toLowerCase()}…`}
-                  className="w-full bg-transparent px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none"
-                />
-                {search && (
-                  <button
-                    onClick={() => setSearch("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
+          {/* Search field pills + sort buttons */}
+          <div className="flex flex-wrap items-center justify-between gap-y-2 gap-x-3">
+            {/* Search field pills */}
+            <div className="flex flex-wrap gap-1.5">
+              <span className="self-center text-xs text-gray-500 mr-1">Search in:</span>
+              {(Object.entries(SEARCH_FIELD_LABELS) as [SearchField, string][]).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setSearchField(key)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    searchField === key
+                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                      : "bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
             {/* Sort buttons */}
-            <div className="flex flex-wrap gap-2 shrink-0">
+            <div className="flex flex-wrap gap-1.5">
+              <span className="self-center text-xs text-gray-500 mr-1">Sort by:</span>
               {(Object.entries(SORT_FIELD_LABELS) as [SortField, string][]).map(([field, label]) => (
                 <button
                   key={field}
                   onClick={() => handleSort(field)}
-                  className={`flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                  className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                     sortBy === field
                       ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
                       : "bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700"

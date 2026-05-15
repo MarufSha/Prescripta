@@ -25,7 +25,7 @@ export const searchMedicines = async (req, res) => {
 };
 
 const ALLOWED_SORT_FIELDS = ["medicine_name", "company_name", "unit_price", "generic_name"];
-const ALLOWED_SEARCH_FIELDS = ["medicine_name", "company_name", "generic_name"];
+const ALLOWED_SEARCH_FIELDS = ["medicine_name", "company_name", "generic_name", "dosage_form"];
 
 export const listMedicines = async (req, res) => {
   try {
