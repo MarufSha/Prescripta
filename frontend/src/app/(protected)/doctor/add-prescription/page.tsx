@@ -923,8 +923,9 @@ export default function AddPrescriptionPage() {
 
     // Need at least dial code + 4 digits, so minimum ~7 chars like "+8801X"
     if (name.length < 2 || mobile.length < 7 || !sex) {
-      setPatientHistory(null);
-      return;
+      // Schedule the clear so it doesn't run synchronously inside the effect
+      const t = setTimeout(() => setPatientHistory(null), 0);
+      return () => clearTimeout(t);
     }
 
     lookupRef.current = setTimeout(async () => {
@@ -1451,9 +1452,14 @@ export default function AddPrescriptionPage() {
                       onSelect={(m) => setSelectedMed(i, m)}
                     />
                     <FormInput
+                      type="number"
                       placeholder="Days e.g. 7"
+                      min="1"
+                      step="1"
                       value={med.days}
-                      onChange={(v) => setMed(i, "days", v)}
+                      onChange={(v) =>
+                        setMed(i, "days", v.replace(/[^0-9]/g, ""))
+                      }
                     />
                     <TimesPerDayInput
                       value={med.timesPerDay}
