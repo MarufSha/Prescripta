@@ -49,8 +49,9 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
           fontSize: "11pt",
           fontFamily: FONT,
           color: C.text,
-          borderBottom: `0.6px solid ${C.text}`,
-          paddingBottom: "1px",
+          textDecoration: "underline",
+          textDecorationThickness: "0.6px",
+          textUnderlineOffset: "2px",
         }}
       >
         {children}
@@ -153,6 +154,7 @@ export function PrescriptionTemplate({
       id={PRESCRIPTION_TEMPLATE_ID}
       style={{
         width: "794px",
+        minHeight: "1123px",
         backgroundColor: "#ffffff",
         padding: "40px",
         fontFamily: FONT,
@@ -375,11 +377,11 @@ export function PrescriptionTemplate({
                     display: "inline-block",
                     width: 0,
                     height: 0,
-                    borderLeft: `6px solid ${C.text}`,
-                    borderTop: "4px solid transparent",
-                    borderBottom: "4px solid transparent",
+                    borderLeft: "5px solid transparent",
+                    borderRight: "5px solid transparent",
+                    borderBottom: `8px solid ${C.text}`,
                     flexShrink: 0,
-                    marginTop: "5px",
+                    marginTop: "4px",
                   }}
                 />
                 <span
@@ -447,8 +449,9 @@ export function PrescriptionTemplate({
                 fontWeight: "bold",
                 fontSize: "14pt",
                 fontFamily: FONT,
-                borderBottom: `0.6px solid ${C.text}`,
-                paddingBottom: "1px",
+                textDecoration: "underline",
+                textDecorationThickness: "0.6px",
+                textUnderlineOffset: "2px",
               }}
             >
               Rx.
