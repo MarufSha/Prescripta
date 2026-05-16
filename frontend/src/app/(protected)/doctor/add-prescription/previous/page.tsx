@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,6 +15,12 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { usePrescriptionStore, type Prescription } from "@/store/prescriptionStore";
+import { useAuthStore } from "@/store/authStore";
+import { generatePrescriptionPdfFromElement, type PdfFormData } from "@/lib/pdf";
+import {
+  PrescriptionTemplate,
+  PRESCRIPTION_TEMPLATE_ID,
+} from "@/components/prescription/PrescriptionTemplate";
 
 // ── Sort options ──────────────────────────────────────────────────────────────
 
@@ -193,63 +199,40 @@ function PrescriptionCard({
   );
 }
 
-// ── Print single prescription ─────────────────────────────────────────────────
+// ── Map Prescription → PdfFormData ───────────────────────────────────────────
 
-function printPrescription(p: Prescription) {
-  const fuDate =
-    p.followUpDays && p.date ? followUpDate(p.date, p.followUpDays) : null;
-
-  const win = window.open("", "_blank", "width=800,height=600");
-  if (!win) return;
-
-  win.document.write(`
-    <!DOCTYPE html><html><head>
-    <title>Prescription – ${p.patientName}</title>
-    <style>
-      body { font-family: sans-serif; font-size: 13px; padding: 32px; color: #000; }
-      h1 { font-size: 18px; margin: 0; }
-      .sub { font-size: 11px; color: #555; margin-bottom: 16px; }
-      .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px 16px; margin-bottom: 12px; font-size: 12px; }
-      .vitals { display: flex; gap: 16px; font-size: 12px; margin-bottom: 12px; }
-      h3 { font-size: 13px; margin: 8px 0 4px; }
-      ul { margin: 0 0 8px 16px; padding: 0; }
-      table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 8px; }
-      th,td { text-align: left; padding: 4px 8px 4px 0; border-bottom: 1px solid #ddd; }
-      th { font-weight: 600; }
-      .fu { font-weight: 600; margin-top: 16px; }
-      hr { border: none; border-top: 2px solid #333; margin-bottom: 12px; }
-    </style></head><body>
-    <h1>Prescripta</h1><p class="sub">Medical Prescription</p><hr/>
-    <div class="grid">
-      <div><b>Patient:</b> ${p.patientName}</div>
-      <div><b>Age:</b> ${p.age}</div>
-      <div><b>Sex:</b> ${p.sex}</div>
-      <div><b>Mobile:</b> ${p.mobile}</div>
-      ${p.weight ? `<div><b>Weight:</b> ${p.weight} kg</div>` : ""}
-      <div><b>Date:</b> ${formatDate(p.date || p.createdAt)}</div>
-      <div><b>PUID:</b> ${p.patientUid}</div>
-      <div><b>Visit:</b> ${p.visitNumber}</div>
-    </div>
-    ${[p.pulse, p.bp, p.spo2].some(Boolean) ? `
-    <div class="vitals">
-      ${p.pulse ? `<span><b>Pulse:</b> ${p.pulse}</span>` : ""}
-      ${p.bp ? `<span><b>BP:</b> ${p.bp}</span>` : ""}
-      ${p.spo2 ? `<span><b>SpO2:</b> ${p.spo2}</span>` : ""}
-    </div>` : ""}
-    ${p.chiefComplaints.length ? `<h3>C/C:</h3><ul>${p.chiefComplaints.map((c) => `<li>${c}</li>`).join("")}</ul>` : ""}
-    ${p.diagnosis.length ? `<h3>D/x:</h3><ul>${p.diagnosis.map((d) => `<li>${d}</li>`).join("")}</ul>` : ""}
-    ${p.medications.length ? `
-    <h3>R/X:</h3>
-    <table><thead><tr><th>Medicine</th><th>Days</th><th>Times/Day</th><th>Timing</th></tr></thead>
-    <tbody>${p.medications.map((m) => `<tr><td>${m.medicine}</td><td>${m.days}</td><td>${m.timesPerDay}</td><td>${m.timing}</td></tr>`).join("")}</tbody>
-    </table>` : ""}
-    ${p.investigations.length ? `<h3>Investigations:</h3><ul>${p.investigations.map((v) => `<li>${v}</li>`).join("")}</ul>` : ""}
-    ${p.advice.length ? `<h3>Advice:</h3><ul>${p.advice.map((a) => `<li>${a}</li>`).join("")}</ul>` : ""}
-    ${fuDate ? `<p class="fu">Follow up: ${fuDate}</p>` : ""}
-    <script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();}</script>
-    </body></html>
-  `);
-  win.document.close();
+function prescriptionToPdfData(p: Prescription): PdfFormData {
+  const timingMap = (t: string): "before" | "after" | "both" | undefined => {
+    if (t === "Before meal") return "before";
+    if (t === "After meal") return "after";
+    return undefined;
+  };
+  const puidNum = parseInt(p.patientUid.replace(/\D/g, ""), 10);
+  return {
+    name: p.patientName,
+    age: p.age,
+    sex: p.sex,
+    mobile: p.mobile,
+    weight: p.weight ?? undefined,
+    pulse: p.pulse,
+    bp: p.bp,
+    sp02: p.spo2,
+    date: p.date || p.createdAt,
+    cc: p.chiefComplaints.filter(Boolean),
+    dx: p.diagnosis.filter(Boolean),
+    rx: p.medications
+      .filter((m) => m.medicine.trim())
+      .map((m) => ({
+        drug: m.medicine,
+        durationDays: m.days ? Number(m.days) : undefined,
+        timesPerDay: m.timesPerDay || undefined,
+        timing: timingMap(m.timing),
+      })),
+    investigations: p.investigations.filter(Boolean),
+    advice: p.advice.filter(Boolean),
+    puid: isNaN(puidNum) ? undefined : puidNum,
+    followupDays: p.followUpDays ?? undefined,
+  };
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -259,6 +242,26 @@ export default function PreviousPrescriptionsPage() {
   const { prescriptions, pagination, isLoading, fetchPrescriptions, deletePrescription } =
     usePrescriptionStore();
 
+  const user = useAuthStore((s) => s.user);
+
+  const pdfDoctor = useMemo(() => {
+    if (!user) return null;
+    const profile = user.doctorProfile;
+    return {
+      name: user.name,
+      degrees: profile?.degrees ?? [],
+      designation: profile?.designations?.[0] ?? "",
+      bmdcNo: profile?.bmdcNo ?? "",
+      chamberName: profile?.chambers?.[0]?.name ?? "",
+      chamberAddress: profile?.chambers?.[0]?.location ?? "",
+      mobile: profile?.mobileNumber ?? "",
+    };
+  }, [user]);
+
+  const [showPdfTemplate, setShowPdfTemplate] = useState(false);
+  const [pdfPrescription, setPdfPrescription] = useState<Prescription | null>(null);
+  const pdfMountedRef = useRef<(() => void) | null>(null);
+
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -266,6 +269,28 @@ export default function PreviousPrescriptionsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Prescription | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [clearConfirm, setClearConfirm] = useState(false);
+
+  const downloadPrescriptionPdf = async (p: Prescription) => {
+    await new Promise<void>((resolve) => {
+      pdfMountedRef.current = resolve;
+      setPdfPrescription(p);
+      setShowPdfTemplate(true);
+    });
+
+    try {
+      const bytes = await generatePrescriptionPdfFromElement(PRESCRIPTION_TEMPLATE_ID);
+      const blob = new Blob([bytes as unknown as BlobPart], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `prescription-${p.patientName || "patient"}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setShowPdfTemplate(false);
+      setPdfPrescription(null);
+    }
+  };
 
   const load = useCallback(() => {
     void fetchPrescriptions({ page, limit: 15, search, sortBy, sortOrder });
@@ -310,6 +335,19 @@ export default function PreviousPrescriptionsPage() {
 
   return (
     <>
+      {showPdfTemplate && pdfPrescription && (
+        <div style={{ position: "fixed", left: "-9999px", top: 0 }} aria-hidden>
+          <PrescriptionTemplate
+            data={prescriptionToPdfData(pdfPrescription)}
+            doctor={pdfDoctor}
+            onMount={() => {
+              pdfMountedRef.current?.();
+              pdfMountedRef.current = null;
+            }}
+          />
+        </div>
+      )}
+
       {deleteTarget && (
         <DeleteDialog
           name={deleteTarget.patientName}
@@ -430,7 +468,7 @@ export default function PreviousPrescriptionsPage() {
                   index={(page - 1) * 15 + i}
                   onEdit={() => router.push(`/doctor/add-prescription?edit=${p._id}`)}
                   onDelete={() => setDeleteTarget(p)}
-                  onPrint={() => printPrescription(p)}
+                  onPrint={() => void downloadPrescriptionPdf(p)}
                 />
               ))}
             </div>

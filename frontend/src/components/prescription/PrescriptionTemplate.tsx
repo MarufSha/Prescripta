@@ -256,7 +256,7 @@ export function PrescriptionTemplate({
       <div
         style={{
           borderBottom: `1px solid ${C.line}`,
-          marginBottom: "8px",
+          marginBottom: "14px",
         }}
       />
 
@@ -266,9 +266,11 @@ export function PrescriptionTemplate({
           display: "grid",
           gridTemplateColumns: "1fr auto auto auto",
           columnGap: "20px",
-          rowGap: "6px",
+          rowGap: "8px",
           alignItems: "baseline",
-          marginBottom: "8px",
+          paddingTop: "6px",
+          paddingBottom: "10px",
+          marginBottom: "0px",
         }}
       >
         <InfoPair label="Name:" value={data.name || "—"} />
@@ -297,7 +299,7 @@ export function PrescriptionTemplate({
       <div
         style={{
           borderBottom: `1px solid ${C.line}`,
-          marginBottom: "18px",
+          marginBottom: "24px",
         }}
       />
 
