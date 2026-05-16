@@ -17,6 +17,11 @@ import {
   parseCountry,
 } from "react-international-phone";
 import axios from "axios";
+import { useAuthStore } from "@/store/authStore";
+import {
+  generatePrescriptionPdfBuffer,
+  type PdfDoctorData,
+} from "@/lib/pdf";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -1078,6 +1083,72 @@ export default function AddPrescriptionPage() {
     if (editId) router.push("/doctor/add-prescription");
   };
 
+  const handleDownloadPdf = async () => {
+    const user = useAuthStore.getState().user;
+    const profile = user?.doctorProfile;
+
+    const doctor: PdfDoctorData = user
+      ? {
+          name: user.name,
+          degrees: profile?.degrees ?? [],
+          designation: profile?.designations?.[0] ?? "",
+          bmdcNo: profile?.bmdcNo ?? "",
+          chamberName: profile?.chambers?.[0]?.name ?? "",
+          chamberAddress: profile?.chambers?.[0]?.location ?? "",
+          mobile: profile?.mobileNumber ?? "",
+        }
+      : null;
+
+    const timingMap = (
+      t: string
+    ): "before" | "after" | "both" | undefined => {
+      if (t === "Before meal") return "before";
+      if (t === "After meal") return "after";
+      return undefined;
+    };
+
+    const puidNum = savedPuid
+      ? parseInt(savedPuid.replace(/\D/g, ""), 10)
+      : undefined;
+
+    const bytes = await generatePrescriptionPdfBuffer(
+      {
+        name: form.patientName,
+        age: form.age ? Number(form.age) : undefined,
+        sex: form.sex,
+        mobile: form.mobile,
+        weight: form.weight ? Number(form.weight) : undefined,
+        pulse: form.pulse,
+        bp: form.bp,
+        sp02: form.spo2,
+        date: form.date,
+        cc: form.chiefComplaints.filter(Boolean),
+        dx: form.diagnosis.filter(Boolean),
+        rx: form.medications
+          .filter((m) => m.medicine.trim())
+          .map((m) => ({
+            drug: m.medicine,
+            durationDays: m.days ? Number(m.days) : undefined,
+            timesPerDay: m.timesPerDay || undefined,
+            timing: timingMap(m.timing),
+          })),
+        investigations: form.investigations.filter(Boolean),
+        advice: form.advice.filter(Boolean),
+        puid: isNaN(puidNum ?? NaN) ? undefined : puidNum,
+        followupDays: form.followUpDays ? Number(form.followUpDays) : undefined,
+      },
+      doctor
+    );
+
+    const blob = new Blob([bytes as unknown as BlobPart], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `prescription-${form.patientName || "patient"}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const followUpDate =
     form.followUpDays && form.date
       ? new Date(
@@ -1484,7 +1555,7 @@ export default function AddPrescriptionPage() {
 
             <button
               type="button"
-              onClick={() => window.print()}
+              onClick={() => void handleDownloadPdf()}
               className="ml-auto inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:border-gray-400 active:scale-95 transition-all cursor-pointer"
             >
               <Download className="h-4 w-4" />
