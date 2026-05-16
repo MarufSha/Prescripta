@@ -50,6 +50,16 @@ export async function generatePrescriptionPdfFromElement(
     useCORS: true,
     backgroundColor: "#ffffff",
     logging: false,
+    onclone: (clonedDoc) => {
+      // PrescriptionTemplate uses only inline rgb() styles.
+      // Strip every <link rel="stylesheet"> and <style> from the clone so
+      // html2canvas never encounters Tailwind v4's oklch()/lab() colors,
+      // which it can't parse. Already-loaded fonts remain available because
+      // document.fonts.ready was awaited before this call.
+      clonedDoc
+        .querySelectorAll('link[rel="stylesheet"], style')
+        .forEach((el) => el.remove());
+    },
   });
 
   const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
