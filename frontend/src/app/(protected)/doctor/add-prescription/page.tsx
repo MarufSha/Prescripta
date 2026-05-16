@@ -69,6 +69,7 @@ type MedicineResult = {
   strength?: string;
   dosage_form?: string;
   company_name?: string;
+  unit_type?: string;
   unit_price?: number;
 };
 
@@ -470,6 +471,11 @@ function MedicineSearchInput({
                 {(m.generic_name || m.strength) && (
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {[m.generic_name, m.strength].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                {(m.unit_type || m.unit_price != null) && (
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                    {[m.unit_type, m.unit_price != null ? `৳${m.unit_price}` : null].filter(Boolean).join(" · ")}
                   </p>
                 )}
               </button>
