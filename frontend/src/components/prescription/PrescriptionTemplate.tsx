@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import type { PdfFormData, PdfDoctorData } from "@/lib/pdf";
 
 export const PRESCRIPTION_TEMPLATE_ID = "rx-pdf-capture";
@@ -113,10 +113,18 @@ function InfoPair({
 export function PrescriptionTemplate({
   data,
   doctor,
+  onMount,
 }: {
   data: PdfFormData;
   doctor: PdfDoctorData;
+  onMount?: () => void;
 }) {
+  // Signal the parent after first paint so html2canvas captures a fully rendered element
+  useEffect(() => {
+    onMount?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const degreesArr = (doctor?.degrees ?? []).filter(Boolean);
   const degLine1 = degreesArr.slice(0, 2).join(", ");
   const degLine2 = degreesArr.slice(2, 4).join(", ");

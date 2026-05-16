@@ -882,6 +882,11 @@ export default function AddPrescriptionPage() {
     (MedicineResult | null)[]
   >([null]);
 
+  // On-demand PDF template state — only mounted during capture to avoid
+  // html2canvas parsing oklch/lab CSS colors from Tailwind on page load
+  const [showPdfTemplate, setShowPdfTemplate] = useState(false);
+  const pdfMountedRef = useRef<(() => void) | null>(null);
+
   // Derived data passed to the hidden PrescriptionTemplate for PDF capture
   const pdfDoctor = useMemo(() => {
     const profile = user?.doctorProfile;
@@ -1141,18 +1146,30 @@ export default function AddPrescriptionPage() {
   };
 
   const handleDownloadPdf = async () => {
-    const bytes = await generatePrescriptionPdfFromElement(
-      PRESCRIPTION_TEMPLATE_ID
-    );
-    const blob = new Blob([bytes as unknown as BlobPart], {
-      type: "application/pdf",
+    // Mount the template, wait for its useEffect to fire (after first paint),
+    // then capture — then unmount. This prevents html2canvas from encountering
+    // oklch/lab CSS colors inherited from the page on load.
+    await new Promise<void>((resolve) => {
+      pdfMountedRef.current = resolve;
+      setShowPdfTemplate(true);
     });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `prescription-${form.patientName || "patient"}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+
+    try {
+      const bytes = await generatePrescriptionPdfFromElement(
+        PRESCRIPTION_TEMPLATE_ID
+      );
+      const blob = new Blob([bytes as unknown as BlobPart], {
+        type: "application/pdf",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `prescription-${form.patientName || "patient"}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setShowPdfTemplate(false);
+    }
   };
 
   const followUpDate =
@@ -1187,13 +1204,23 @@ export default function AddPrescriptionPage() {
 
       <PrintView form={form} patientUid={savedPuid} />
 
-      {/* Hidden prescription template used for PDF/Bengali capture via html2canvas */}
-      <div
-        style={{ position: "fixed", left: "-9999px", top: 0, opacity: 0 }}
-        aria-hidden
-      >
-        <PrescriptionTemplate data={pdfData} doctor={pdfDoctor} />
-      </div>
+      {/* Prescription template — only mounted during PDF capture to avoid
+           html2canvas encountering oklch/lab colors from Tailwind on page load */}
+      {showPdfTemplate && (
+        <div
+          style={{ position: "fixed", left: "-9999px", top: 0 }}
+          aria-hidden
+        >
+          <PrescriptionTemplate
+            data={pdfData}
+            doctor={pdfDoctor}
+            onMount={() => {
+              pdfMountedRef.current?.();
+              pdfMountedRef.current = null;
+            }}
+          />
+        </div>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 10 }}
