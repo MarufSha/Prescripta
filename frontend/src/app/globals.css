@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wdth,wght@75..125,100..900&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
