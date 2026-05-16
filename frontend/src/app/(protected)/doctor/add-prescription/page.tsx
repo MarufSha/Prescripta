@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, Save, Trash2, Download, ClipboardList, History, ChevronDown, ChevronUp } from "lucide-react";
@@ -18,10 +18,11 @@ import {
 } from "react-international-phone";
 import axios from "axios";
 import { useAuthStore } from "@/store/authStore";
+import { generatePrescriptionPdfFromElement } from "@/lib/pdf";
 import {
-  generatePrescriptionPdfBuffer,
-  type PdfDoctorData,
-} from "@/lib/pdf";
+  PrescriptionTemplate,
+  PRESCRIPTION_TEMPLATE_ID,
+} from "@/components/prescription/PrescriptionTemplate";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -860,6 +861,8 @@ export default function AddPrescriptionPage() {
     clearError,
   } = usePrescriptionStore();
 
+  const user = useAuthStore((s) => s.user);
+
   const [form, setFormState] = useState<FormState>({
     ...DEFAULT_FORM,
     date: todayStr(),
@@ -878,6 +881,59 @@ export default function AddPrescriptionPage() {
   const [selectedMedicines, setSelectedMedicines] = useState<
     (MedicineResult | null)[]
   >([null]);
+
+  // Derived data passed to the hidden PrescriptionTemplate for PDF capture
+  const pdfDoctor = useMemo(() => {
+    const profile = user?.doctorProfile;
+    if (!user) return null;
+    return {
+      name: user.name,
+      degrees: profile?.degrees ?? [],
+      designation: profile?.designations?.[0] ?? "",
+      bmdcNo: profile?.bmdcNo ?? "",
+      chamberName: profile?.chambers?.[0]?.name ?? "",
+      chamberAddress: profile?.chambers?.[0]?.location ?? "",
+      mobile: profile?.mobileNumber ?? "",
+    };
+  }, [user]);
+
+  const pdfData = useMemo(() => {
+    const timingMap = (
+      t: string
+    ): "before" | "after" | "both" | undefined => {
+      if (t === "Before meal") return "before";
+      if (t === "After meal") return "after";
+      return undefined;
+    };
+    const puidNum = savedPuid
+      ? parseInt(savedPuid.replace(/\D/g, ""), 10)
+      : undefined;
+    return {
+      name: form.patientName,
+      age: form.age ? Number(form.age) : undefined,
+      sex: form.sex,
+      mobile: form.mobile,
+      weight: form.weight ? Number(form.weight) : undefined,
+      pulse: form.pulse,
+      bp: form.bp,
+      sp02: form.spo2,
+      date: form.date,
+      cc: form.chiefComplaints.filter(Boolean),
+      dx: form.diagnosis.filter(Boolean),
+      rx: form.medications
+        .filter((m) => m.medicine.trim())
+        .map((m) => ({
+          drug: m.medicine,
+          durationDays: m.days ? Number(m.days) : undefined,
+          timesPerDay: m.timesPerDay || undefined,
+          timing: timingMap(m.timing),
+        })),
+      investigations: form.investigations.filter(Boolean),
+      advice: form.advice.filter(Boolean),
+      puid: isNaN(puidNum ?? NaN) ? undefined : puidNum,
+      followupDays: form.followUpDays ? Number(form.followUpDays) : undefined,
+    };
+  }, [form, savedPuid]);
 
   // Pre-fill form when editing
   useEffect(() => {
@@ -1085,63 +1141,12 @@ export default function AddPrescriptionPage() {
   };
 
   const handleDownloadPdf = async () => {
-    const user = useAuthStore.getState().user;
-    const profile = user?.doctorProfile;
-
-    const doctor: PdfDoctorData = user
-      ? {
-          name: user.name,
-          degrees: profile?.degrees ?? [],
-          designation: profile?.designations?.[0] ?? "",
-          bmdcNo: profile?.bmdcNo ?? "",
-          chamberName: profile?.chambers?.[0]?.name ?? "",
-          chamberAddress: profile?.chambers?.[0]?.location ?? "",
-          mobile: profile?.mobileNumber ?? "",
-        }
-      : null;
-
-    const timingMap = (
-      t: string
-    ): "before" | "after" | "both" | undefined => {
-      if (t === "Before meal") return "before";
-      if (t === "After meal") return "after";
-      return undefined;
-    };
-
-    const puidNum = savedPuid
-      ? parseInt(savedPuid.replace(/\D/g, ""), 10)
-      : undefined;
-
-    const bytes = await generatePrescriptionPdfBuffer(
-      {
-        name: form.patientName,
-        age: form.age ? Number(form.age) : undefined,
-        sex: form.sex,
-        mobile: form.mobile,
-        weight: form.weight ? Number(form.weight) : undefined,
-        pulse: form.pulse,
-        bp: form.bp,
-        sp02: form.spo2,
-        date: form.date,
-        cc: form.chiefComplaints.filter(Boolean),
-        dx: form.diagnosis.filter(Boolean),
-        rx: form.medications
-          .filter((m) => m.medicine.trim())
-          .map((m) => ({
-            drug: m.medicine,
-            durationDays: m.days ? Number(m.days) : undefined,
-            timesPerDay: m.timesPerDay || undefined,
-            timing: timingMap(m.timing),
-          })),
-        investigations: form.investigations.filter(Boolean),
-        advice: form.advice.filter(Boolean),
-        puid: isNaN(puidNum ?? NaN) ? undefined : puidNum,
-        followupDays: form.followUpDays ? Number(form.followUpDays) : undefined,
-      },
-      doctor
+    const bytes = await generatePrescriptionPdfFromElement(
+      PRESCRIPTION_TEMPLATE_ID
     );
-
-    const blob = new Blob([bytes as unknown as BlobPart], { type: "application/pdf" });
+    const blob = new Blob([bytes as unknown as BlobPart], {
+      type: "application/pdf",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -1181,6 +1186,14 @@ export default function AddPrescriptionPage() {
       </AnimatePresence>
 
       <PrintView form={form} patientUid={savedPuid} />
+
+      {/* Hidden prescription template used for PDF/Bengali capture via html2canvas */}
+      <div
+        style={{ position: "fixed", left: "-9999px", top: 0, opacity: 0 }}
+        aria-hidden
+      >
+        <PrescriptionTemplate data={pdfData} doctor={pdfDoctor} />
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 10 }}
