@@ -364,9 +364,9 @@ function TimesPerDayInput({
   };
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-2 w-full">
       {slots.map((slot, idx) => (
-        <span key={idx} className="flex items-center gap-1">
+        <span key={idx} className="contents">
           <input
             ref={refs[idx]}
             type="text"
@@ -379,10 +379,10 @@ function TimesPerDayInput({
               if (v === "0" || v === "1" || v === "") update(idx, v);
             }}
             onKeyDown={(e) => handleKey(idx, e)}
-            className="w-8 text-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors"
+            className="flex-1 min-w-0 text-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors"
           />
           {idx < 2 && (
-            <span className="text-gray-400 font-bold text-xs select-none">
+            <span className="text-gray-400 font-bold text-xs select-none shrink-0">
               +
             </span>
           )}
@@ -1561,7 +1561,33 @@ export default function AddPrescriptionPage() {
                   {/* Mobile layout: stacked with labels; Desktop: grid */}
                   <div className="flex flex-col gap-2 sm:grid sm:grid-cols-[2fr_1fr_130px_1.2fr_auto] sm:items-start">
                     <div className="sm:contents">
-                      <p className="text-xs font-medium text-gray-400 dark:text-gray-500 sm:hidden">Medicine</p>
+                      <div className="flex items-center justify-between sm:hidden">
+                        <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Medicine</span>
+                        <div className="flex overflow-hidden rounded-md border border-gray-200 dark:border-gray-700 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => setMedicineSearchBy("brand")}
+                            className={`px-2.5 py-0.5 font-medium transition-colors cursor-pointer ${
+                              medicineSearchBy === "brand"
+                                ? "bg-emerald-500 text-white"
+                                : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            }`}
+                          >
+                            Brand
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setMedicineSearchBy("generic")}
+                            className={`px-2.5 py-0.5 font-medium transition-colors border-l border-gray-200 dark:border-gray-700 cursor-pointer ${
+                              medicineSearchBy === "generic"
+                                ? "bg-emerald-500 text-white"
+                                : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            }`}
+                          >
+                            Generic
+                          </button>
+                        </div>
+                      </div>
                       <MedicineSearchInput
                         value={med.medicine}
                         onChange={(v) => setMed(i, "medicine", v)}
