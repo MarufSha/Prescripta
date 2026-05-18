@@ -1561,7 +1561,7 @@ export default function AddPrescriptionPage() {
                   {/* Mobile layout: stacked with labels; Desktop: grid */}
                   <div className="flex flex-col gap-2 sm:grid sm:grid-cols-[2fr_1fr_130px_1.2fr_auto] sm:items-start">
                     <div className="sm:contents">
-                      <div className="flex items-center justify-between sm:hidden">
+                      <div className="flex items-center justify-between sm:hidden mb-2">
                         <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Medicine</span>
                         <div className="flex overflow-hidden rounded-md border border-gray-200 dark:border-gray-700 text-xs">
                           <button
