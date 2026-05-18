@@ -256,7 +256,7 @@ export function PrescriptionTemplate({
       <div
         style={{
           borderBottom: `1px solid ${C.line}`,
-          marginBottom: "14px",
+          marginBottom: "8px",
         }}
       />
 
@@ -268,8 +268,8 @@ export function PrescriptionTemplate({
           columnGap: "20px",
           rowGap: "8px",
           alignItems: "baseline",
-          paddingTop: "6px",
-          paddingBottom: "10px",
+          paddingTop: "3px",
+          paddingBottom: "14px",
           marginBottom: "0px",
         }}
       >

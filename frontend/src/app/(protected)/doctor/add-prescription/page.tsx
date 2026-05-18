@@ -393,10 +393,11 @@ function MedicineSearchInput({
   const [suggestions, setSuggestions] = useState<MedicineResult[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [searchBy, setSearchBy] = useState<"brand" | "generic">("brand");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const search = useCallback(async (q: string) => {
+  const search = useCallback(async (q: string, by: "brand" | "generic") => {
     if (q.length < 2) {
       setSuggestions([]);
       setOpen(false);
@@ -405,7 +406,7 @@ function MedicineSearchInput({
     setLoading(true);
     try {
       const res = await axios.get(`${API_BASE}/medicines/search`, {
-        params: { q },
+        params: { q, field: by === "generic" ? "generic_name" : "medicine_name" },
         withCredentials: true,
       });
       setSuggestions(res.data.medicines ?? []);
@@ -421,7 +422,17 @@ function MedicineSearchInput({
     onChange(v);
     onSelect(null);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => search(v), 280);
+    debounceRef.current = setTimeout(() => search(v, searchBy), 280);
+  };
+
+  const handleSearchByChange = (by: "brand" | "generic") => {
+    setSearchBy(by);
+    setSuggestions([]);
+    setOpen(false);
+    if (value.length >= 2) {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => search(value, by), 280);
+    }
   };
 
   const pick = (med: MedicineResult) => {
@@ -447,10 +458,36 @@ function MedicineSearchInput({
 
   return (
     <div ref={containerRef} className="relative flex flex-col gap-1.5 w-full">
+      {/* Brand / Generic toggle */}
+      <div className="flex w-fit overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 text-xs">
+        <button
+          type="button"
+          onClick={() => handleSearchByChange("brand")}
+          className={`px-3 py-1 font-medium transition-colors cursor-pointer ${
+            searchBy === "brand"
+              ? "bg-emerald-500 text-white"
+              : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+          }`}
+        >
+          Brand
+        </button>
+        <button
+          type="button"
+          onClick={() => handleSearchByChange("generic")}
+          className={`px-3 py-1 font-medium transition-colors border-l border-gray-200 dark:border-gray-700 cursor-pointer ${
+            searchBy === "generic"
+              ? "bg-emerald-500 text-white"
+              : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+          }`}
+        >
+          Generic
+        </button>
+      </div>
+
       <div className="relative">
         <input
           type="text"
-          placeholder="Search medicine…"
+          placeholder={searchBy === "generic" ? "Search by generic name…" : "Search medicine…"}
           value={value}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => suggestions.length > 0 && setOpen(true)}

@@ -2,17 +2,24 @@ import { Medicine } from "../models/medicine.js";
 
 export const searchMedicines = async (req, res) => {
   try {
-    const { q = "" } = req.query;
+    const { q = "", field = "medicine_name" } = req.query;
     const query = String(q).trim();
+    const searchField = ["medicine_name", "generic_name"].includes(field)
+      ? field
+      : "medicine_name";
 
     if (!query || query.length < 2) {
       return res.json({ success: true, medicines: [] });
     }
 
     const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const rx = new RegExp(`^${escaped}`, "i");
+    // Brand name: prefix match; generic name: substring match
+    const rx =
+      searchField === "generic_name"
+        ? new RegExp(escaped, "i")
+        : new RegExp(`^${escaped}`, "i");
 
-    const medicines = await Medicine.find({ medicine_name: rx })
+    const medicines = await Medicine.find({ [searchField]: rx })
       .select("medicine_name generic_name strength dosage_form unit_type company_name unit_price")
       .limit(10)
       .lean();
