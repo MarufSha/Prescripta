@@ -253,46 +253,40 @@ export function PrescriptionTemplate({
       </div>
 
       {/* Header divider */}
-      <div
-        style={{
-          borderBottom: `1px solid ${C.line}`,
-          marginBottom: "8px",
-        }}
-      />
+      <div style={{ borderBottom: `1px solid ${C.line}` }} />
 
       {/* ── PATIENT INFO ────────────────────────────────────────────── */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr auto auto auto",
-          columnGap: "20px",
-          rowGap: "8px",
-          alignItems: "baseline",
-          paddingTop: "3px",
-          paddingBottom: "14px",
-          marginBottom: "0px",
-        }}
-      >
-        <InfoPair label="Name:" value={data.name || "—"} />
-        <InfoPair label="Sex:" value={sexLabel} />
-        <InfoPair label="PUID:" value={puidText} />
-        <InfoPair label="Mobile:" value={data.mobile || "—"} />
+      <div style={{ padding: "10px 0" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr auto auto auto",
+            columnGap: "20px",
+            rowGap: "8px",
+            alignItems: "baseline",
+          }}
+        >
+          <InfoPair label="Name:" value={data.name || "—"} />
+          <InfoPair label="Sex:" value={sexLabel} />
+          <InfoPair label="PUID:" value={puidText} />
+          <InfoPair label="Mobile:" value={data.mobile || "—"} />
 
-        {/* Row 2 */}
-        <div />
-        <InfoPair label="Age:" value={data.age ?? "—"} />
-        <InfoPair
-          label="Weight:"
-          value={
-            data.weight != null && data.weight !== "" ? String(data.weight) : "—"
-          }
-        />
-        <InfoPair
-          label="Date:"
-          value={
-            data.date ? new Date(data.date).toLocaleDateString() : "—"
-          }
-        />
+          {/* Row 2 */}
+          <div />
+          <InfoPair label="Age:" value={data.age ?? "—"} />
+          <InfoPair
+            label="Weight:"
+            value={
+              data.weight != null && data.weight !== "" ? String(data.weight) : "—"
+            }
+          />
+          <InfoPair
+            label="Date:"
+            value={
+              data.date ? new Date(data.date).toLocaleDateString() : "—"
+            }
+          />
+        </div>
       </div>
 
       {/* Patient info divider */}

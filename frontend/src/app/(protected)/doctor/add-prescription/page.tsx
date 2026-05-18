@@ -384,16 +384,17 @@ function MedicineSearchInput({
   onChange,
   selectedMed,
   onSelect,
+  searchBy,
 }: {
   value: string;
   onChange: (v: string) => void;
   selectedMed: MedicineResult | null;
   onSelect: (med: MedicineResult | null) => void;
+  searchBy: "brand" | "generic";
 }) {
   const [suggestions, setSuggestions] = useState<MedicineResult[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [searchBy, setSearchBy] = useState<"brand" | "generic">("brand");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -425,15 +426,17 @@ function MedicineSearchInput({
     debounceRef.current = setTimeout(() => search(v, searchBy), 280);
   };
 
-  const handleSearchByChange = (by: "brand" | "generic") => {
-    setSearchBy(by);
-    setSuggestions([]);
-    setOpen(false);
+  // Re-search when searchBy changes externally while there's a value
+  useEffect(() => {
     if (value.length >= 2) {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => search(value, by), 280);
+      debounceRef.current = setTimeout(() => search(value, searchBy), 280);
+    } else {
+      setSuggestions([]);
+      setOpen(false);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchBy]);
 
   const pick = (med: MedicineResult) => {
     onChange(med.medicine_name);
@@ -457,37 +460,11 @@ function MedicineSearchInput({
   }, []);
 
   return (
-    <div ref={containerRef} className="relative flex flex-col gap-1.5 w-full">
-      {/* Brand / Generic toggle */}
-      <div className="flex w-fit overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 text-xs">
-        <button
-          type="button"
-          onClick={() => handleSearchByChange("brand")}
-          className={`px-3 py-1 font-medium transition-colors cursor-pointer ${
-            searchBy === "brand"
-              ? "bg-emerald-500 text-white"
-              : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-          }`}
-        >
-          Brand
-        </button>
-        <button
-          type="button"
-          onClick={() => handleSearchByChange("generic")}
-          className={`px-3 py-1 font-medium transition-colors border-l border-gray-200 dark:border-gray-700 cursor-pointer ${
-            searchBy === "generic"
-              ? "bg-emerald-500 text-white"
-              : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-          }`}
-        >
-          Generic
-        </button>
-      </div>
-
+    <div ref={containerRef} className="relative w-full">
       <div className="relative">
         <input
           type="text"
-          placeholder={searchBy === "generic" ? "Search by generic name…" : "Search medicine…"}
+          placeholder={searchBy === "generic" ? "Search by generic name…" : "Search by brand name…"}
           value={value}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => suggestions.length > 0 && setOpen(true)}
@@ -919,6 +896,8 @@ export default function AddPrescriptionPage() {
   const [patientHistory, setPatientHistory] = useState<PatientHistory | null>(null);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const lookupRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [medicineSearchBy, setMedicineSearchBy] = useState<"brand" | "generic">("brand");
 
   // Parallel array to form.medications — tracks selected medicine details per row
   const [selectedMedicines, setSelectedMedicines] = useState<
@@ -1511,8 +1490,36 @@ export default function AddPrescriptionPage() {
             <SectionHeader title="R/X  (Medications)" onAdd={addMed} />
             <div className="space-y-3">
               {/* Column headers — hidden on mobile */}
-              <div className="hidden sm:grid grid-cols-[2fr_1fr_120px_1.2fr_auto] gap-2 px-1">
-                {["Medicine", "Days", "Times/Day", "Timing", ""].map((h) => (
+              <div className="hidden sm:grid grid-cols-[2fr_1fr_120px_1.2fr_auto] gap-2 px-1 items-center">
+                {/* Medicine header with Brand/Generic toggle */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Medicine</span>
+                  <div className="flex overflow-hidden rounded-md border border-gray-200 dark:border-gray-700 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setMedicineSearchBy("brand")}
+                      className={`px-2.5 py-0.5 font-medium transition-colors cursor-pointer ${
+                        medicineSearchBy === "brand"
+                          ? "bg-emerald-500 text-white"
+                          : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      Brand
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMedicineSearchBy("generic")}
+                      className={`px-2.5 py-0.5 font-medium transition-colors border-l border-gray-200 dark:border-gray-700 cursor-pointer ${
+                        medicineSearchBy === "generic"
+                          ? "bg-emerald-500 text-white"
+                          : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      Generic
+                    </button>
+                  </div>
+                </div>
+                {["Days", "Times/Day", "Timing", ""].map((h) => (
                   <span
                     key={h}
                     className="text-xs font-medium text-gray-400 dark:text-gray-500"
@@ -1533,6 +1540,7 @@ export default function AddPrescriptionPage() {
                       onChange={(v) => setMed(i, "medicine", v)}
                       selectedMed={selectedMedicines[i] ?? null}
                       onSelect={(m) => setSelectedMed(i, m)}
+                      searchBy={medicineSearchBy}
                     />
                     <FormInput
                       type="number"
