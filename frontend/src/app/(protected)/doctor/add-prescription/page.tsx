@@ -166,13 +166,30 @@ function PhoneInput({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
+  // Keep a ref so the onChange closure always sees the current dial code
+  // even if the user switches country mid-session
+  const countryRef = useRef({ dialCode: "880" });
+
   const { inputValue, handlePhoneValueChange, inputRef, country, setCountry } =
     usePhoneInput({
       defaultCountry: "bd",
+      forceDialCode: true,
       value,
       countries: defaultCountries,
-      onChange: ({ phone }) => onChange(phone),
+      onChange: ({ phone }) => {
+        const dc = countryRef.current.dialCode;
+        const prefix = `+${dc}`;
+        // Strip trunk-prefix 0: e.g. +88001711… → +8801711…
+        if (phone.startsWith(`${prefix}0`) && phone.length > prefix.length + 1) {
+          onChange(`${prefix}${phone.slice(prefix.length + 1)}`);
+        } else {
+          onChange(phone);
+        }
+      },
     });
+
+  // Always keep countryRef current (set during render, safe for sync reads in callbacks)
+  countryRef.current = country;
 
   const q = search.trim().toLowerCase();
   const filtered = q
