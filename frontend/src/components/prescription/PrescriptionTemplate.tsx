@@ -77,13 +77,7 @@ function BulletLine({ text }: { text: string }) {
   );
 }
 
-function InfoPair({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
+function InfoPair({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
       <span
@@ -146,7 +140,7 @@ export function PrescriptionTemplate({
 
   const rxList = (data.rx ?? []).filter(
     (r) =>
-      (r.drug && r.drug.trim()) || r.durationDays || r.timesPerDay || r.timing
+      (r.drug && r.drug.trim()) || r.durationDays || r.timesPerDay || r.timing,
   );
 
   return (
@@ -169,7 +163,7 @@ export function PrescriptionTemplate({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          marginBottom: "6px",
+          marginBottom: "8px",
         }}
       >
         {/* Left: doctor */}
@@ -256,7 +250,7 @@ export function PrescriptionTemplate({
       <div style={{ borderBottom: `1px solid ${C.line}` }} />
 
       {/* ── PATIENT INFO ────────────────────────────────────────────── */}
-      <div style={{ padding: "10px 0" }}>
+      <div style={{ paddingTop: "8px", paddingBottom: "20px" }}>
         <div
           style={{
             display: "grid",
@@ -277,14 +271,14 @@ export function PrescriptionTemplate({
           <InfoPair
             label="Weight:"
             value={
-              data.weight != null && data.weight !== "" ? String(data.weight) : "—"
+              data.weight != null && data.weight !== ""
+                ? String(data.weight)
+                : "—"
             }
           />
           <InfoPair
             label="Date:"
-            value={
-              data.date ? new Date(data.date).toLocaleDateString() : "—"
-            }
+            value={data.date ? new Date(data.date).toLocaleDateString() : "—"}
           />
         </div>
       </div>
@@ -459,13 +453,15 @@ export function PrescriptionTemplate({
               r.timing === "before"
                 ? "Before meal"
                 : r.timing === "after"
-                ? "After meal"
-                : r.timing === "both"
-                ? "Before/After meal"
-                : "";
+                  ? "After meal"
+                  : r.timing === "both"
+                    ? "Before/After meal"
+                    : "";
 
             const timePart = prettyTimes(r.timesPerDay);
-            const sub = [timePart, timingLabel].filter(Boolean).join("   ::   ");
+            const sub = [timePart, timingLabel]
+              .filter(Boolean)
+              .join("   ::   ");
             const dur =
               r.durationDays && r.durationDays > 0
                 ? `- ${r.durationDays} day${r.durationDays > 1 ? "s" : ""}`
