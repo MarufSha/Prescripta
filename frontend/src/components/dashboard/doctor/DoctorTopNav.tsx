@@ -45,7 +45,7 @@ export default function DoctorTopNav({ onToggle }: Props) {
             <Menu className="h-5 w-5 text-emerald-500" />
           </button>
 
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10">
+          <div className="hidden lg:flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10">
             <Stethoscope className="h-4 w-4 text-emerald-500" />
           </div>
 

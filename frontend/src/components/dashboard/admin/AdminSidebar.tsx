@@ -16,6 +16,8 @@ import {
 type Props = {
   collapsed: boolean;
   onToggle: () => void;
+  mobileOpen: boolean;
+  onMobileClose: () => void;
 };
 
 const navItems: {
@@ -56,7 +58,7 @@ const navItems: {
   },
 ];
 
-export default function AdminSidebar({ collapsed, onToggle }: Props) {
+export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Props) {
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
 
@@ -73,10 +75,23 @@ export default function AdminSidebar({ collapsed, onToggle }: Props) {
       : "Full system control and user management.";
 
   return (
+    <>
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={onMobileClose}
+          aria-hidden="true"
+        />
+      )}
     <aside
       className={[
-        "hidden md:flex h-screen shrink-0 border-r border-gray-800 bg-gray-950/70 backdrop-blur-xl transition-all duration-300",
-        collapsed ? "w-24" : "w-72",
+        "fixed inset-y-0 left-0 z-50 flex h-screen shrink-0 border-r border-gray-800 bg-gray-950/70 backdrop-blur-xl transition-all duration-300",
+        // Mobile: slide in/out via transform; desktop: static position, always visible
+        "md:relative md:z-auto md:translate-x-0",
+        mobileOpen ? "translate-x-0" : "-translate-x-full",
+        // Width: mobile always full, desktop based on collapsed
+        collapsed ? "w-72 md:w-24" : "w-72",
       ].join(" ")}
     >
       <div className="flex h-full w-full flex-col px-4 py-6">
@@ -158,5 +173,6 @@ export default function AdminSidebar({ collapsed, onToggle }: Props) {
         </div>
       </div>
     </aside>
+    </>
   );
 }

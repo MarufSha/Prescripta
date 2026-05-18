@@ -364,9 +364,9 @@ function TimesPerDayInput({
   };
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-2 w-full">
       {slots.map((slot, idx) => (
-        <span key={idx} className="flex items-center gap-1">
+        <span key={idx} className="contents">
           <input
             ref={refs[idx]}
             type="text"
@@ -379,10 +379,10 @@ function TimesPerDayInput({
               if (v === "0" || v === "1" || v === "") update(idx, v);
             }}
             onKeyDown={(e) => handleKey(idx, e)}
-            className="w-8 text-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors"
+            className="flex-1 min-w-0 text-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors"
           />
           {idx < 2 && (
-            <span className="text-gray-400 font-bold text-xs select-none">
+            <span className="text-gray-400 font-bold text-xs select-none shrink-0">
               +
             </span>
           )}
@@ -1558,34 +1558,72 @@ export default function AddPrescriptionPage() {
                   key={i}
                   className="rounded-xl bg-gray-50 dark:bg-gray-800/50 p-3 space-y-2"
                 >
-                  {/* Mobile layout: stacked; Desktop: grid */}
+                  {/* Mobile layout: stacked with labels; Desktop: grid */}
                   <div className="flex flex-col gap-2 sm:grid sm:grid-cols-[2fr_1fr_130px_1.2fr_auto] sm:items-start">
-                    <MedicineSearchInput
-                      value={med.medicine}
-                      onChange={(v) => setMed(i, "medicine", v)}
-                      selectedMed={selectedMedicines[i] ?? null}
-                      onSelect={(m) => setSelectedMed(i, m)}
-                      searchBy={medicineSearchBy}
-                    />
-                    <FormInput
-                      type="number"
-                      placeholder="Days e.g. 7"
-                      min="1"
-                      step="1"
-                      value={med.days}
-                      onChange={(v) =>
-                        setMed(i, "days", v.replace(/[^0-9]/g, ""))
-                      }
-                    />
-                    <TimesPerDayInput
-                      value={med.timesPerDay}
-                      onChange={(v) => setMed(i, "timesPerDay", v)}
-                    />
-                    <FormSelect
-                      value={med.timing}
-                      onChange={(v) => setMed(i, "timing", v)}
-                      options={TIMING_OPTIONS}
-                    />
+                    <div className="sm:contents">
+                      <div className="flex items-center justify-between sm:hidden mb-2">
+                        <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Medicine</span>
+                        <div className="flex overflow-hidden rounded-md border border-gray-200 dark:border-gray-700 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => setMedicineSearchBy("brand")}
+                            className={`px-2.5 py-0.5 font-medium transition-colors cursor-pointer ${
+                              medicineSearchBy === "brand"
+                                ? "bg-emerald-500 text-white"
+                                : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            }`}
+                          >
+                            Brand
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setMedicineSearchBy("generic")}
+                            className={`px-2.5 py-0.5 font-medium transition-colors border-l border-gray-200 dark:border-gray-700 cursor-pointer ${
+                              medicineSearchBy === "generic"
+                                ? "bg-emerald-500 text-white"
+                                : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            }`}
+                          >
+                            Generic
+                          </button>
+                        </div>
+                      </div>
+                      <MedicineSearchInput
+                        value={med.medicine}
+                        onChange={(v) => setMed(i, "medicine", v)}
+                        selectedMed={selectedMedicines[i] ?? null}
+                        onSelect={(m) => setSelectedMed(i, m)}
+                        searchBy={medicineSearchBy}
+                      />
+                    </div>
+                    <div className="sm:contents">
+                      <p className="text-xs font-medium text-gray-400 dark:text-gray-500 sm:hidden">Days</p>
+                      <FormInput
+                        type="number"
+                        placeholder="Days e.g. 7"
+                        min="1"
+                        step="1"
+                        value={med.days}
+                        onChange={(v) =>
+                          setMed(i, "days", v.replace(/[^0-9]/g, ""))
+                        }
+                      />
+                    </div>
+                    <div className="sm:contents">
+                      <p className="text-xs font-medium text-gray-400 dark:text-gray-500 sm:hidden">Times/Day</p>
+                      <TimesPerDayInput
+                        value={med.timesPerDay}
+                        onChange={(v) => setMed(i, "timesPerDay", v)}
+                      />
+                    </div>
+                    <div className="sm:contents">
+                      <p className="text-xs font-medium text-gray-400 dark:text-gray-500 sm:hidden">Timing</p>
+                      <FormSelect
+                        value={med.timing}
+                        onChange={(v) => setMed(i, "timing", v)}
+                        options={TIMING_OPTIONS}
+                      />
+                    </div>
                     <div className="flex justify-end sm:justify-center sm:pt-2">
                       <RemoveBtn onClick={() => removeMed(i)} />
                     </div>
@@ -1663,7 +1701,7 @@ export default function AddPrescriptionPage() {
               type="button"
               onClick={() => void handleSubmit()}
               disabled={isSaving}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90 active:scale-95 transition-all disabled:opacity-60 cursor-pointer"
+              className="flex-1 sm:flex-none inline-flex justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90 active:scale-95 transition-all disabled:opacity-60 cursor-pointer"
             >
               <Save className="h-4 w-4" />
               {isSaving ? "Saving…" : editId ? "Update" : "Save"}
@@ -1672,7 +1710,7 @@ export default function AddPrescriptionPage() {
             <button
               type="button"
               onClick={handleClear}
-              className="inline-flex items-center gap-2 rounded-xl border border-red-200 dark:border-red-800/50 bg-white dark:bg-gray-800 px-5 py-2.5 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-95 transition-all cursor-pointer"
+              className="flex-1 sm:flex-none inline-flex justify-center items-center gap-2 rounded-xl border border-red-200 dark:border-red-800/50 bg-white dark:bg-gray-800 px-5 py-2.5 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-95 transition-all cursor-pointer"
             >
               <Trash2 className="h-4 w-4" />
               Clear Form
@@ -1681,7 +1719,7 @@ export default function AddPrescriptionPage() {
             <button
               type="button"
               onClick={() => void handleDownloadPdf()}
-              className="ml-auto inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:border-gray-400 active:scale-95 transition-all cursor-pointer"
+              className="w-full sm:w-auto sm:ml-auto inline-flex justify-center items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:border-gray-400 active:scale-95 transition-all cursor-pointer"
             >
               <Download className="h-4 w-4" />
               Download PDF

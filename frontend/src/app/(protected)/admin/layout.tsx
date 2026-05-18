@@ -9,19 +9,31 @@ export default function AdminDashboardLayout({
   children: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleToggle = () => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setMobileOpen((prev) => !prev);
+    } else {
+      setCollapsed((prev) => !prev);
+    }
+  };
+
   return (
     <AdminGuard>
       <div className="flex h-screen w-full overflow-hidden text-white">
         <AdminSidebar
           collapsed={collapsed}
           onToggle={() => setCollapsed((prev) => !prev)}
+          mobileOpen={mobileOpen}
+          onMobileClose={() => setMobileOpen(false)}
         />
 
         <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
           <div className="shrink-0">
             <AdminTopNav
               collapsed={collapsed}
-              onToggle={() => setCollapsed((prev) => !prev)}
+              onToggle={handleToggle}
             />
           </div>
 
