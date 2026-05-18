@@ -63,7 +63,7 @@ const DEFAULT_FORM = {
 
 type FormState = typeof DEFAULT_FORM;
 type Errors = Partial<
-  Record<"patientName" | "age" | "sex" | "mobile" | "chiefComplaints", string>
+  Record<"patientName" | "age" | "sex" | "mobile" | "chiefComplaints" | "medications", string>
 >;
 
 // ── Medicine types ────────────────────────────────────────────────────────────
@@ -166,13 +166,30 @@ function PhoneInput({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
+  // Keep a ref so the onChange closure always sees the current dial code
+  // even if the user switches country mid-session
+  const countryRef = useRef({ dialCode: "880" });
+
   const { inputValue, handlePhoneValueChange, inputRef, country, setCountry } =
     usePhoneInput({
       defaultCountry: "bd",
+      forceDialCode: true,
       value,
       countries: defaultCountries,
-      onChange: ({ phone }) => onChange(phone),
+      onChange: ({ phone }) => {
+        const dc = countryRef.current.dialCode;
+        const prefix = `+${dc}`;
+        // Strip trunk-prefix 0: e.g. +88001711… → +8801711…
+        if (phone.startsWith(`${prefix}0`) && phone.length > prefix.length + 1) {
+          onChange(`${prefix}${phone.slice(prefix.length + 1)}`);
+        } else {
+          onChange(phone);
+        }
+      },
     });
+
+  // Always keep countryRef current (set during render, safe for sync reads in callbacks)
+  countryRef.current = country;
 
   const q = search.trim().toLowerCase();
   const filtered = q
@@ -384,11 +401,13 @@ function MedicineSearchInput({
   onChange,
   selectedMed,
   onSelect,
+  searchBy,
 }: {
   value: string;
   onChange: (v: string) => void;
   selectedMed: MedicineResult | null;
   onSelect: (med: MedicineResult | null) => void;
+  searchBy: "brand" | "generic";
 }) {
   const [suggestions, setSuggestions] = useState<MedicineResult[]>([]);
   const [open, setOpen] = useState(false);
@@ -396,7 +415,7 @@ function MedicineSearchInput({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const search = useCallback(async (q: string) => {
+  const search = useCallback(async (q: string, by: "brand" | "generic") => {
     if (q.length < 2) {
       setSuggestions([]);
       setOpen(false);
@@ -405,7 +424,7 @@ function MedicineSearchInput({
     setLoading(true);
     try {
       const res = await axios.get(`${API_BASE}/medicines/search`, {
-        params: { q },
+        params: { q, field: by === "generic" ? "generic_name" : "medicine_name" },
         withCredentials: true,
       });
       setSuggestions(res.data.medicines ?? []);
@@ -421,8 +440,20 @@ function MedicineSearchInput({
     onChange(v);
     onSelect(null);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => search(v), 280);
+    debounceRef.current = setTimeout(() => search(v, searchBy), 280);
   };
+
+  // Re-search when searchBy changes externally while there's a value
+  useEffect(() => {
+    if (value.length >= 2) {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => search(value, searchBy), 280);
+    } else {
+      setSuggestions([]);
+      setOpen(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchBy]);
 
   const pick = (med: MedicineResult) => {
     onChange(med.medicine_name);
@@ -446,11 +477,11 @@ function MedicineSearchInput({
   }, []);
 
   return (
-    <div ref={containerRef} className="relative flex flex-col gap-1.5 w-full">
+    <div ref={containerRef} className="relative w-full">
       <div className="relative">
         <input
           type="text"
-          placeholder="Search medicine…"
+          placeholder={searchBy === "generic" ? "Search by generic name…" : "Search by brand name…"}
           value={value}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => suggestions.length > 0 && setOpen(true)}
@@ -883,6 +914,8 @@ export default function AddPrescriptionPage() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const lookupRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [medicineSearchBy, setMedicineSearchBy] = useState<"brand" | "generic">("brand");
+
   // Parallel array to form.medications — tracks selected medicine details per row
   const [selectedMedicines, setSelectedMedicines] = useState<
     (MedicineResult | null)[]
@@ -1093,6 +1126,12 @@ export default function AddPrescriptionPage() {
       e.mobile = "Enter a valid phone number.";
     if (!form.chiefComplaints.some((c) => c.trim()))
       e.chiefComplaints = "Add at least one C/C.";
+    const filledMeds = form.medications.filter((m) => m.medicine.trim());
+    if (
+      filledMeds.length > 0 &&
+      filledMeds.some((m) => !m.timesPerDay.split("+").some((p) => p === "1"))
+    )
+      e.medications = "Each medicine needs at least one time selected (Morning, Noon, or Night).";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -1152,6 +1191,8 @@ export default function AddPrescriptionPage() {
   };
 
   const handleDownloadPdf = async () => {
+    if (!validate()) return;
+
     // Mount the template, wait for its useEffect to fire (after first paint),
     // then capture — then unmount. This prevents html2canvas from encountering
     // oklch/lab CSS colors inherited from the page on load.
@@ -1474,8 +1515,36 @@ export default function AddPrescriptionPage() {
             <SectionHeader title="R/X  (Medications)" onAdd={addMed} />
             <div className="space-y-3">
               {/* Column headers — hidden on mobile */}
-              <div className="hidden sm:grid grid-cols-[2fr_1fr_120px_1.2fr_auto] gap-2 px-1">
-                {["Medicine", "Days", "Times/Day", "Timing", ""].map((h) => (
+              <div className="hidden sm:grid grid-cols-[2fr_1fr_120px_1.2fr_auto] gap-2 px-1 items-center">
+                {/* Medicine header with Brand/Generic toggle */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Medicine</span>
+                  <div className="flex overflow-hidden rounded-md border border-gray-200 dark:border-gray-700 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setMedicineSearchBy("brand")}
+                      className={`px-2.5 py-0.5 font-medium transition-colors cursor-pointer ${
+                        medicineSearchBy === "brand"
+                          ? "bg-emerald-500 text-white"
+                          : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      Brand
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMedicineSearchBy("generic")}
+                      className={`px-2.5 py-0.5 font-medium transition-colors border-l border-gray-200 dark:border-gray-700 cursor-pointer ${
+                        medicineSearchBy === "generic"
+                          ? "bg-emerald-500 text-white"
+                          : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      Generic
+                    </button>
+                  </div>
+                </div>
+                {["Days", "Times/Day", "Timing", ""].map((h) => (
                   <span
                     key={h}
                     className="text-xs font-medium text-gray-400 dark:text-gray-500"
@@ -1496,6 +1565,7 @@ export default function AddPrescriptionPage() {
                       onChange={(v) => setMed(i, "medicine", v)}
                       selectedMed={selectedMedicines[i] ?? null}
                       onSelect={(m) => setSelectedMed(i, m)}
+                      searchBy={medicineSearchBy}
                     />
                     <FormInput
                       type="number"
@@ -1523,6 +1593,9 @@ export default function AddPrescriptionPage() {
                 </div>
               ))}
             </div>
+            {errors.medications && (
+              <p className="mt-1 text-xs text-red-500">{errors.medications}</p>
+            )}
           </section>
 
           {/* Investigations */}
