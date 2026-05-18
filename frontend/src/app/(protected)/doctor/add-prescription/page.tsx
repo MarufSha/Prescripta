@@ -1191,6 +1191,8 @@ export default function AddPrescriptionPage() {
   };
 
   const handleDownloadPdf = async () => {
+    if (!validate()) return;
+
     // Mount the template, wait for its useEffect to fire (after first paint),
     // then capture — then unmount. This prevents html2canvas from encountering
     // oklch/lab CSS colors inherited from the page on load.
