@@ -456,7 +456,7 @@ export function PrescriptionTemplate({
                   ? "After meal"
                   : r.timing === "both"
                     ? "Before/After meal"
-                    : "";
+                    : "Before or After meal";
 
             const timePart = prettyTimes(r.timesPerDay);
             const sub = [timePart, timingLabel]

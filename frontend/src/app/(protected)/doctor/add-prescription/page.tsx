@@ -63,7 +63,7 @@ const DEFAULT_FORM = {
 
 type FormState = typeof DEFAULT_FORM;
 type Errors = Partial<
-  Record<"patientName" | "age" | "sex" | "mobile" | "chiefComplaints", string>
+  Record<"patientName" | "age" | "sex" | "mobile" | "chiefComplaints" | "medications", string>
 >;
 
 // ── Medicine types ────────────────────────────────────────────────────────────
@@ -1126,6 +1126,12 @@ export default function AddPrescriptionPage() {
       e.mobile = "Enter a valid phone number.";
     if (!form.chiefComplaints.some((c) => c.trim()))
       e.chiefComplaints = "Add at least one C/C.";
+    const filledMeds = form.medications.filter((m) => m.medicine.trim());
+    if (
+      filledMeds.length > 0 &&
+      filledMeds.some((m) => !m.timesPerDay.split("+").some((p) => p === "1"))
+    )
+      e.medications = "Each medicine needs at least one time selected (Morning, Noon, or Night).";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -1585,6 +1591,9 @@ export default function AddPrescriptionPage() {
                 </div>
               ))}
             </div>
+            {errors.medications && (
+              <p className="mt-1 text-xs text-red-500">{errors.medications}</p>
+            )}
           </section>
 
           {/* Investigations */}
