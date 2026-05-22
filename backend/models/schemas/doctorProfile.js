@@ -1,5 +1,36 @@
 import mongoose from "mongoose";
 
+const DAYS_OF_WEEK = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
+export const availabilitySchema = new mongoose.Schema(
+  {
+    day: {
+      type: String,
+      required: [true, "Day is required"],
+      enum: DAYS_OF_WEEK,
+    },
+    startTime: {
+      type: String,
+      required: [true, "Start time is required"],
+      trim: true,
+    },
+    endTime: {
+      type: String,
+      required: [true, "End time is required"],
+      trim: true,
+    },
+  },
+  { _id: false },
+);
+
 export const chamberSchema = new mongoose.Schema(
   {
     name: {
@@ -55,6 +86,11 @@ export const doctorProfileSchema = new mongoose.Schema(
 
     chambers: {
       type: [chamberSchema],
+      default: [],
+    },
+
+    availability: {
+      type: [availabilitySchema],
       default: [],
     },
   },

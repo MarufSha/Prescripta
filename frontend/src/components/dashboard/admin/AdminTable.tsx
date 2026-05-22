@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useEffect, useState } from "react";
-import { AdminUser, DoctorProfile, UserRole } from "@/store/authStore";
+import { AdminUser, DoctorProfile, DoctorAvailability, UserRole } from "@/store/authStore";
 import { capitalize, formatDate } from "@/utils/date";
 import { createPortal } from "react-dom";
 import {
@@ -32,6 +32,12 @@ import {
 } from "@/components/ui/pagination";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Check, Plus, ShieldCheck, Trash2, X } from "lucide-react";
+import AvailabilityScheduler, {
+  type DaySchedule,
+  initDaySchedules,
+  toDaySchedules,
+  fromDaySchedules,
+} from "@/components/AvailabilityScheduler";
 import {
   Tooltip,
   TooltipContent,
@@ -76,6 +82,7 @@ type DoctorFormState = {
     name: string;
     location: string;
   }[];
+  schedule: DaySchedule[];
 };
 
 const ROW_OPTIONS = [5, 10, 20, 50, 100] as const;
@@ -134,6 +141,9 @@ const getInitialDoctorForm = (
           location: chamber.location || "",
         }))
       : [{ name: "", location: "" }],
+  schedule: doctorProfile?.availability?.length
+    ? toDaySchedules(doctorProfile.availability)
+    : initDaySchedules(),
 });
 
 const AdminTable = ({
@@ -308,7 +318,7 @@ const AdminTable = ({
   };
 
   const updateDoctorFormField = (
-    field: keyof Omit<DoctorFormState, "chambers">,
+    field: keyof Omit<DoctorFormState, "chambers" | "schedule">,
     value: string,
   ) => {
     setDoctorForm((prev) => ({
@@ -350,6 +360,8 @@ const AdminTable = ({
   const submitDoctorConversion = async () => {
     if (!doctorModalUser) return;
 
+    const availability: DoctorAvailability[] = fromDaySchedules(doctorForm.schedule);
+
     const doctorProfile: DoctorProfile = {
       specialties: parseCommaSeparated(doctorForm.specialtiesInput),
       bmdcNo: doctorForm.bmdcNo.trim(),
@@ -362,6 +374,7 @@ const AdminTable = ({
           location: chamber.location.trim(),
         }))
         .filter((chamber) => chamber.name || chamber.location),
+      availability,
     };
 
     if (doctorProfile.specialties.length === 0) {
@@ -1333,6 +1346,22 @@ const AdminTable = ({
                         </div>
                       </div>
                     </div>
+
+                      {/* Weekly Availability */}
+                      <div className="space-y-3 md:col-span-2">
+                        <label className="text-sm font-medium text-gray-300">
+                          Weekly Availability{" "}
+                          <span className="text-gray-500 font-normal">(optional)</span>
+                        </label>
+                        <p className="text-xs text-gray-500">
+                          Toggle the days available and set time slots. You can add multiple slots per day.
+                        </p>
+                        <AvailabilityScheduler
+                          value={doctorForm.schedule}
+                          onChange={(v) => setDoctorForm((prev) => ({ ...prev, schedule: v }))}
+                          forceDark
+                        />
+                      </div>
 
                     {doctorModalError && (
                       <p className="mt-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-300">

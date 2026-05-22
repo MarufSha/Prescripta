@@ -1,0 +1,588 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuthStore, type PublicDoctor } from "@/store/authStore";
+import { createPortal } from "react-dom";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import {
+  Stethoscope,
+  Phone,
+  MapPin,
+  Clock,
+  GraduationCap,
+  CalendarPlus,
+  X,
+  CheckCircle2,
+  Hash,
+  CalendarCheck,
+  ChevronRight,
+  ChevronLeft,
+  FileText,
+} from "lucide-react";
+
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api`;
+
+const DAYS_OF_WEEK = [
+  "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday",
+];
+
+const DAYS_SHORT: Record<string, string> = {
+  Monday: "Mon", Tuesday: "Tue", Wednesday: "Wed", Thursday: "Thu",
+  Friday: "Fri", Saturday: "Sat", Sunday: "Sun",
+};
+
+type TimeSlot = { startTime: string; endTime: string };
+type SelectedSlot = { day: string; timeSlot: TimeSlot };
+type Step = "slot" | "symptoms" | "success";
+
+// ── Step indicator ─────────────────────────────────────────────────────────────
+
+function StepBar({ step }: { step: Step }) {
+  const steps: { id: Step; label: string }[] = [
+    { id: "slot", label: "Choose slot" },
+    { id: "symptoms", label: "Your symptoms" },
+  ];
+  const currentIdx = step === "success" ? 2 : steps.findIndex((s) => s.id === step);
+
+  return (
+    <div className="flex items-center gap-2 px-5 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 shrink-0">
+      {steps.map((s, i) => (
+        <div key={s.id} className="flex items-center gap-2 flex-1">
+          <div className="flex items-center gap-2">
+            <div
+              className={[
+                "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-colors",
+                i < currentIdx
+                  ? "bg-blue-500 text-white"
+                  : i === currentIdx
+                    ? "bg-blue-500 text-white ring-2 ring-blue-500/20"
+                    : "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500",
+              ].join(" ")}
+            >
+              {i < currentIdx ? "✓" : i + 1}
+            </div>
+            <span
+              className={[
+                "text-xs font-medium",
+                i <= currentIdx
+                  ? "text-gray-700 dark:text-gray-200"
+                  : "text-gray-400 dark:text-gray-500",
+              ].join(" ")}
+            >
+              {s.label}
+            </span>
+          </div>
+          {i < steps.length - 1 && (
+            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700 mx-2" />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Booking Modal ──────────────────────────────────────────────────────────────
+
+function BookingModal({ doctor, onClose }: { doctor: PublicDoctor; onClose: () => void }) {
+  const router = useRouter();
+  const [step, setStep] = useState<Step>("slot");
+  const [selected, setSelected] = useState<SelectedSlot | null>(null);
+  const [symptoms, setSymptoms] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [serialNumber, setSerialNumber] = useState<number | null>(null);
+
+  const p = doctor.doctorProfile;
+
+  const byDay = DAYS_OF_WEEK.reduce<Record<string, TimeSlot[]>>((acc, day) => {
+    const slots = p?.availability?.filter((a) => a.day === day) ?? [];
+    if (slots.length > 0)
+      acc[day] = slots.map(({ startTime, endTime }) => ({ startTime, endTime }));
+    return acc;
+  }, {});
+
+  const availableDays = DAYS_OF_WEEK.filter((d) => byDay[d]);
+
+  const handleBook = async () => {
+    if (!selected) return;
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const csrfRes = await axios.get(`${API_BASE_URL}/auth/csrf-token`, {
+        withCredentials: true,
+      });
+      const csrfToken = String(csrfRes.data?.csrfToken ?? "");
+
+      const res = await axios.post<{ success: boolean; serialNumber: number }>(
+        `${API_BASE_URL}/appointments`,
+        {
+          doctorId: doctor._id,
+          day: selected.day,
+          timeSlot: selected.timeSlot,
+          symptoms: symptoms.trim(),
+        },
+        { withCredentials: true, headers: { "x-csrf-token": csrfToken } },
+      );
+      setSerialNumber(res.data.serialNumber);
+      setStep("success");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(
+          (err.response?.data?.message as string) ?? "Failed to book appointment",
+        );
+      } else {
+        setError("Failed to book appointment");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const initials = doctor.name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="flex flex-col w-full sm:w-[min(540px,calc(100%-2rem))] max-h-[92dvh] rounded-t-3xl sm:rounded-3xl bg-white dark:bg-gray-950 border-0 sm:border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden">
+
+        {/* Modal header */}
+        <div className="flex items-start justify-between gap-3 px-5 py-4 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-bold text-white shadow">
+              {initials}
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
+                {doctor.name}
+              </h3>
+              {!!p?.specialties?.length && (
+                <p className="text-xs text-blue-600 dark:text-blue-400 leading-tight">
+                  {p.specialties.join(" · ")}
+                </p>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors cursor-pointer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Step bar — hidden on success */}
+        {step !== "success" && <StepBar step={step} />}
+
+        {/* ── Step: slot selection ── */}
+        {step === "slot" && (
+          <>
+            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5 min-h-0">
+              {availableDays.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 py-12 text-center text-sm text-gray-400">
+                  This doctor has no availability set yet.
+                </div>
+              ) : (
+                availableDays.map((day) => (
+                  <div key={day}>
+                    {/* Day label */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
+                        {day}
+                      </span>
+                      <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
+                    </div>
+
+                    {/* Slot cards */}
+                    <div className="flex flex-wrap gap-2">
+                      {byDay[day].map((slot) => {
+                        const isActive =
+                          selected?.day === day &&
+                          selected.timeSlot.startTime === slot.startTime &&
+                          selected.timeSlot.endTime === slot.endTime;
+                        return (
+                          <button
+                            key={`${day}-${slot.startTime}`}
+                            type="button"
+                            onClick={() => setSelected({ day, timeSlot: slot })}
+                            className={[
+                              "group flex flex-col items-start rounded-2xl border px-4 py-3 transition-all cursor-pointer min-w-[130px]",
+                              isActive
+                                ? "border-blue-500 bg-blue-500 shadow-md shadow-blue-500/20"
+                                : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-blue-300 dark:hover:border-blue-500/40 hover:shadow-sm",
+                            ].join(" ")}
+                          >
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <Clock
+                                className={[
+                                  "h-3.5 w-3.5 shrink-0",
+                                  isActive
+                                    ? "text-blue-100"
+                                    : "text-blue-500 dark:text-blue-400",
+                                ].join(" ")}
+                              />
+                              <span
+                                className={[
+                                  "text-[10px] font-semibold uppercase tracking-wider",
+                                  isActive
+                                    ? "text-blue-100"
+                                    : "text-blue-500 dark:text-blue-400",
+                                ].join(" ")}
+                              >
+                                {DAYS_SHORT[day]}
+                              </span>
+                            </div>
+                            <span
+                              className={[
+                                "text-sm font-bold tabular-nums",
+                                isActive
+                                  ? "text-white"
+                                  : "text-gray-800 dark:text-gray-200",
+                              ].join(" ")}
+                            >
+                              {slot.startTime}
+                            </span>
+                            <span
+                              className={[
+                                "text-xs",
+                                isActive
+                                  ? "text-blue-100"
+                                  : "text-gray-400 dark:text-gray-500",
+                              ].join(" ")}
+                            >
+                              until {slot.endTime}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t border-gray-100 dark:border-gray-800 px-5 py-4 shrink-0">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-sm font-semibold text-gray-600 dark:text-gray-300 transition hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep("symptoms")}
+                disabled={!selected}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* ── Step: symptoms ── */}
+        {step === "symptoms" && (
+          <>
+            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5 min-h-0">
+              {/* Selected slot recap */}
+              {selected && (
+                <div className="flex items-center gap-3 rounded-2xl border border-blue-100 dark:border-blue-500/20 bg-blue-50 dark:bg-blue-500/10 px-4 py-3">
+                  <CalendarCheck className="h-5 w-5 shrink-0 text-blue-500" />
+                  <div>
+                    <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                      Selected slot
+                    </p>
+                    <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                      {selected.day} · {selected.timeSlot.startTime}–{selected.timeSlot.endTime}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Symptoms textarea */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                  <FileText className="h-4 w-4 text-blue-500" />
+                  Describe your symptoms
+                  <span className="font-normal text-gray-400 dark:text-gray-500">(optional)</span>
+                </label>
+                <textarea
+                  value={symptoms}
+                  onChange={(e) => setSymptoms(e.target.value)}
+                  placeholder="e.g. Persistent headache for 3 days, mild fever, fatigue…"
+                  rows={5}
+                  maxLength={500}
+                  className="w-full resize-none rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-400/20 transition-colors"
+                />
+                <p className="text-right text-xs text-gray-400 dark:text-gray-500">
+                  {symptoms.length}/500
+                </p>
+              </div>
+
+              {error && (
+                <p className="rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400">
+                  {error}
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between gap-3 border-t border-gray-100 dark:border-gray-800 px-5 py-4 shrink-0">
+              <button
+                type="button"
+                onClick={() => { setStep("slot"); setError(null); }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-sm font-semibold text-gray-600 dark:text-gray-300 transition hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleBook()}
+                disabled={isSubmitting}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+              >
+                <CalendarPlus className="h-4 w-4" />
+                {isSubmitting ? "Booking…" : "Confirm Booking"}
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* ── Step: success ── */}
+        {step === "success" && (
+          <div className="flex flex-col items-center justify-center gap-5 p-8 text-center flex-1">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10">
+              <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+            </div>
+            <div>
+              <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+                Appointment Booked!
+              </h4>
+              <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
+                Your appointment with{" "}
+                <span className="font-semibold text-gray-700 dark:text-gray-300">
+                  {doctor.name}
+                </span>{" "}
+                on{" "}
+                <span className="font-semibold text-gray-700 dark:text-gray-300">
+                  {selected?.day}
+                </span>{" "}
+                ({selected?.timeSlot.startTime}–{selected?.timeSlot.endTime}) has been confirmed.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-2xl border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 px-6 py-4 w-full">
+              <Hash className="h-6 w-6 text-blue-600 dark:text-blue-400 shrink-0" />
+              <div className="text-left flex-1">
+                <p className="text-xs font-medium text-blue-500 dark:text-blue-400">
+                  Your Serial Number
+                </p>
+                <p className="text-3xl font-bold text-blue-700 dark:text-blue-300 leading-tight">
+                  #{serialNumber}
+                </p>
+              </div>
+              <p className="text-xs text-blue-500 dark:text-blue-400 max-w-[110px] text-right leading-snug">
+                {serialNumber === 1
+                  ? "You're first in queue"
+                  : `${serialNumber! - 1} patient${serialNumber! - 1 > 1 ? "s" : ""} ahead of you`}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => router.push("/patient/appointments")}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 cursor-pointer"
+            >
+              <CalendarCheck className="h-4 w-4" />
+              View My Appointments
+            </button>
+          </div>
+        )}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+// ── Doctor Card ────────────────────────────────────────────────────────────────
+
+function DoctorCard({ doctor, onBook }: { doctor: PublicDoctor; onBook: () => void }) {
+  const p = doctor.doctorProfile;
+  const initials = doctor.name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  const byDay = DAYS_OF_WEEK.reduce<Record<string, TimeSlot[]>>((acc, day) => {
+    const slots = p?.availability?.filter((a) => a.day === day) ?? [];
+    if (slots.length > 0) acc[day] = slots;
+    return acc;
+  }, {});
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-col rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/70 shadow-sm backdrop-blur-xl overflow-hidden"
+    >
+      <div className="flex items-center gap-4 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-b border-gray-100 dark:border-gray-800 p-5">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-bold text-white shadow">
+          {initials}
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white truncate">
+            {doctor.name}
+          </h3>
+          {!!p?.specialties?.length && (
+            <p className="text-xs text-blue-600 dark:text-blue-400 truncate">
+              {p.specialties.join(" · ")}
+            </p>
+          )}
+          {!!p?.designations?.length && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+              {p.designations[0]}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3 p-5 flex-1">
+        {!!p?.degrees?.length && (
+          <div className="flex items-start gap-2">
+            <GraduationCap className="h-4 w-4 shrink-0 text-indigo-500 mt-0.5" />
+            <p className="text-xs text-gray-600 dark:text-gray-400">{p.degrees.join(", ")}</p>
+          </div>
+        )}
+        {!!p?.mobileNumber && (
+          <div className="flex items-center gap-2">
+            <Phone className="h-4 w-4 shrink-0 text-indigo-500" />
+            <p className="text-xs text-gray-600 dark:text-gray-400">{p.mobileNumber}</p>
+          </div>
+        )}
+        {!!p?.chambers?.length && (
+          <div className="flex items-start gap-2">
+            <MapPin className="h-4 w-4 shrink-0 text-indigo-500 mt-0.5" />
+            <div className="space-y-0.5">
+              {p.chambers.slice(0, 2).map((c, i) => (
+                <p key={i} className="text-xs text-gray-600 dark:text-gray-400">
+                  <span className="font-medium text-gray-800 dark:text-gray-300">{c.name}</span>
+                  {" — "}{c.location}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+        {Object.keys(byDay).length > 0 && (
+          <div className="flex items-start gap-2">
+            <Clock className="h-4 w-4 shrink-0 text-indigo-500 mt-0.5" />
+            <div className="flex flex-wrap gap-1">
+              {DAYS_OF_WEEK.filter((d) => byDay[d]).flatMap((day) =>
+                byDay[day].map((slot) => (
+                  <span
+                    key={`${day}-${slot.startTime}`}
+                    className="inline-flex items-center gap-1 rounded-full border border-blue-200 dark:border-blue-500/20 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 text-xs text-blue-700 dark:text-blue-300"
+                  >
+                    {DAYS_SHORT[day]} {slot.startTime}–{slot.endTime}
+                  </span>
+                )),
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-gray-100 dark:border-gray-800 p-4">
+        <button
+          type="button"
+          onClick={onBook}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md active:scale-95 cursor-pointer"
+        >
+          <CalendarPlus className="h-4 w-4" />
+          Book Appointment
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Page ───────────────────────────────────────────────────────────────────────
+
+export default function BookAppointmentPage() {
+  const { doctors, fetchDoctors, isLoading, error } = useAuthStore();
+  const [bookingDoctor, setBookingDoctor] = useState<PublicDoctor | null>(null);
+
+  useEffect(() => {
+    void fetchDoctors();
+  }, [fetchDoctors]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="mx-auto max-w-6xl space-y-6"
+    >
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Book an Appointment</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Browse available doctors and schedule your visit
+        </p>
+      </div>
+
+      {error && (
+        <div className="rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-64 animate-pulse rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900/50"
+            />
+          ))}
+        </div>
+      )}
+
+      {!isLoading && doctors.length === 0 && !error && (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/70 py-20 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/10">
+            <Stethoscope className="h-8 w-8 text-blue-500" />
+          </div>
+          <h2 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">
+            No doctors available
+          </h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Please check back later</p>
+        </div>
+      )}
+
+      {!isLoading && doctors.length > 0 && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {doctors.map((doctor) => (
+            <DoctorCard
+              key={doctor._id}
+              doctor={doctor}
+              onBook={() => setBookingDoctor(doctor)}
+            />
+          ))}
+        </div>
+      )}
+
+      {bookingDoctor && (
+        <BookingModal doctor={bookingDoctor} onClose={() => setBookingDoctor(null)} />
+      )}
+    </motion.div>
+  );
+}

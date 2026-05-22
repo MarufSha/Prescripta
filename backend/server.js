@@ -10,6 +10,7 @@ import adminRoutes from "./routes/admin-routes.js";
 import doctorInviteRoutes from "./routes/doctor-invite-routes.js";
 import prescriptionRoutes from "./routes/prescription-routes.js";
 import medicineRoutes from "./routes/medicine-routes.js";
+import appointmentRoutes from "./routes/appointment-routes.js";
 
 dotenv.config();
 
@@ -94,6 +95,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/doctor-invites", doctorInviteRoutes);
 app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/medicines", medicineRoutes);
+app.use("/api/appointments", appointmentRoutes);
 
 app.listen(port, async () => {
   await connectDB();

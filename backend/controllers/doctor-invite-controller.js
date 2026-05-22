@@ -12,6 +12,21 @@ const normalizeStringArray = (value) => {
   return value.map((item) => String(item).trim()).filter(Boolean);
 };
 
+const DAYS_OF_WEEK = [
+  "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+];
+
+const sanitizeAvailability = (availability) => {
+  if (!Array.isArray(availability)) return [];
+  return availability
+    .filter((a) => a?.day && DAYS_OF_WEEK.includes(a.day) && a?.startTime && a?.endTime)
+    .map((a) => ({
+      day: String(a.day),
+      startTime: String(a.startTime).trim(),
+      endTime: String(a.endTime).trim(),
+    }));
+};
+
 const sanitizeDoctorProfile = (doctorProfile) => ({
   specialties: normalizeStringArray(doctorProfile.specialties),
   bmdcNo: String(doctorProfile.bmdcNo || "").trim(),
@@ -26,6 +41,7 @@ const sanitizeDoctorProfile = (doctorProfile) => ({
         }))
         .filter((chamber) => chamber.name && chamber.location)
     : [],
+  availability: sanitizeAvailability(doctorProfile.availability),
 });
 const sanitizeUser = (user) => ({
   ...user._doc,
