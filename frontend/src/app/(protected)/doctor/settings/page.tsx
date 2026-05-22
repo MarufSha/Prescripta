@@ -3,9 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Save, Plus, X, User, Stethoscope, Building2, Clock } from "lucide-react";
-import { useAuthStore, type DoctorChamber, type DoctorAvailability } from "@/store/authStore";
+import { useAuthStore, type DoctorChamber } from "@/store/authStore";
+import AvailabilityScheduler, {
+  type DaySchedule,
+  toDaySchedules,
+  fromDaySchedules,
+  initDaySchedules,
+} from "@/components/AvailabilityScheduler";
 
-// ── Reusable small components ─────────────────────────────────────────────────
+// ── Small reusable components ─────────────────────────────────────────────────
 
 function FieldLabel({ text, required }: { text: string; required?: boolean }) {
   return (
@@ -21,9 +27,15 @@ function Field({ children }: { children: React.ReactNode }) {
 }
 
 function TextInput({
-  value, onChange, placeholder, type = "text",
+  value,
+  onChange,
+  placeholder,
+  type = "text",
 }: {
-  value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: string;
 }) {
   return (
     <input
@@ -37,17 +49,19 @@ function TextInput({
 }
 
 function TagListEditor({
-  tags, onChange, placeholder,
+  tags,
+  onChange,
+  placeholder,
 }: {
-  tags: string[]; onChange: (tags: string[]) => void; placeholder?: string;
+  tags: string[];
+  onChange: (tags: string[]) => void;
+  placeholder?: string;
 }) {
   const [input, setInput] = useState("");
 
   const add = () => {
     const trimmed = input.trim();
-    if (trimmed && !tags.includes(trimmed)) {
-      onChange([...tags, trimmed]);
-    }
+    if (trimmed && !tags.includes(trimmed)) onChange([...tags, trimmed]);
     setInput("");
   };
 
@@ -61,7 +75,12 @@ function TagListEditor({
           value={input}
           placeholder={placeholder}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              add();
+            }
+          }}
           className="flex-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors"
         />
         <button
@@ -75,9 +94,16 @@ function TagListEditor({
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {tags.map((tag, i) => (
-            <span key={i} className="inline-flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-300">
+            <span
+              key={i}
+              className="inline-flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-300"
+            >
               {tag}
-              <button type="button" onClick={() => remove(i)} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
+              <button
+                type="button"
+                onClick={() => remove(i)}
+                className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+              >
                 <X className="h-3 w-3" />
               </button>
             </span>
@@ -88,12 +114,14 @@ function TagListEditor({
   );
 }
 
-// ── Section card ──────────────────────────────────────────────────────────────
-
 function SectionCard({
-  icon: Icon, title, children,
+  icon: Icon,
+  title,
+  children,
 }: {
-  icon: React.ElementType; title: string; children: React.ReactNode;
+  icon: React.ElementType;
+  title: string;
+  children: React.ReactNode;
 }) {
   return (
     <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/70 shadow-sm">
@@ -110,17 +138,6 @@ function SectionCard({
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-const DAYS_OF_WEEK = [
-  "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
-] as const;
-
-type AvailabilityRow = {
-  day: string;
-  available: boolean;
-  startTime: string;
-  endTime: string;
-};
-
 type FormState = {
   name: string;
   specialties: string[];
@@ -129,40 +146,43 @@ type FormState = {
   designations: string[];
   degrees: string[];
   chambers: DoctorChamber[];
-  availability: AvailabilityRow[];
+  schedule: DaySchedule[];
 };
 
 export default function SettingsPage() {
-  const { user, updateDoctorProfile, isLoading, error, message, clearError } = useAuthStore();
+  const { user, updateDoctorProfile, isLoading, error, message, clearError } =
+    useAuthStore();
 
-  const buildForm = useCallback((): FormState => ({
-    name: user?.name ?? "",
-    specialties: user?.doctorProfile?.specialties ?? [],
-    bmdcNo: user?.doctorProfile?.bmdcNo ?? "",
-    mobileNumber: user?.doctorProfile?.mobileNumber ?? "",
-    designations: user?.doctorProfile?.designations ?? [],
-    degrees: user?.doctorProfile?.degrees ?? [],
-    chambers: user?.doctorProfile?.chambers ?? [],
-    availability: DAYS_OF_WEEK.map((day) => {
-      const existing = user?.doctorProfile?.availability?.find((a) => a.day === day);
-      return {
-        day,
-        available: !!existing,
-        startTime: existing?.startTime ?? "09:00",
-        endTime: existing?.endTime ?? "17:00",
-      };
+  const buildForm = useCallback(
+    (): FormState => ({
+      name: user?.name ?? "",
+      specialties: user?.doctorProfile?.specialties ?? [],
+      bmdcNo: user?.doctorProfile?.bmdcNo ?? "",
+      mobileNumber: user?.doctorProfile?.mobileNumber ?? "",
+      designations: user?.doctorProfile?.designations ?? [],
+      degrees: user?.doctorProfile?.degrees ?? [],
+      chambers: user?.doctorProfile?.chambers ?? [],
+      schedule: user?.doctorProfile?.availability?.length
+        ? toDaySchedules(user.doctorProfile.availability)
+        : initDaySchedules(),
     }),
-  }), [user]);
+    [user],
+  );
 
   const [form, setForm] = useState<FormState>(buildForm);
   const [localMsg, setLocalMsg] = useState("");
 
-  useEffect(() => { setForm(buildForm()); }, [buildForm]);
+  useEffect(() => {
+    setForm(buildForm());
+  }, [buildForm]);
 
   useEffect(() => {
     if (message) {
       setLocalMsg(message);
-      const t = setTimeout(() => { setLocalMsg(""); clearError(); }, 3500);
+      const t = setTimeout(() => {
+        setLocalMsg("");
+        clearError();
+      }, 3500);
       return () => clearTimeout(t);
     }
   }, [message, clearError]);
@@ -178,24 +198,19 @@ export default function SettingsPage() {
     });
 
   const addChamber = () =>
-    setForm((prev) => ({ ...prev, chambers: [...prev.chambers, { name: "", location: "" }] }));
+    setForm((prev) => ({
+      ...prev,
+      chambers: [...prev.chambers, { name: "", location: "" }],
+    }));
 
   const removeChamber = (idx: number) =>
-    setForm((prev) => ({ ...prev, chambers: prev.chambers.filter((_, i) => i !== idx) }));
-
-  const setAvailability = (idx: number, field: keyof AvailabilityRow, value: string | boolean) =>
-    setForm((prev) => {
-      const next = [...prev.availability];
-      next[idx] = { ...next[idx], [field]: value };
-      return { ...prev, availability: next };
-    });
+    setForm((prev) => ({
+      ...prev,
+      chambers: prev.chambers.filter((_, i) => i !== idx),
+    }));
 
   const handleSave = async () => {
     clearError();
-    const availability: DoctorAvailability[] = form.availability
-      .filter((a) => a.available)
-      .map((a) => ({ day: a.day, startTime: a.startTime, endTime: a.endTime }));
-
     await updateDoctorProfile({
       name: form.name,
       doctorProfile: {
@@ -205,7 +220,7 @@ export default function SettingsPage() {
         designations: form.designations,
         degrees: form.degrees,
         chambers: form.chambers.filter((c) => c.name.trim() && c.location.trim()),
-        availability,
+        availability: fromDaySchedules(form.schedule),
       },
     });
   };
@@ -220,7 +235,9 @@ export default function SettingsPage() {
     >
       <div>
         <h1 className="text-xl font-bold text-gray-900 dark:text-white">Settings</h1>
-        <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Manage your profile and doctor information</p>
+        <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+          Manage your profile and doctor information
+        </p>
       </div>
 
       {localMsg && (
@@ -239,12 +256,18 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field>
             <FieldLabel text="Full Name" required />
-            <TextInput value={form.name} onChange={(v) => set("name", v)} placeholder="Dr. John Doe" />
+            <TextInput
+              value={form.name}
+              onChange={(v) => set("name", v)}
+              placeholder="Dr. John Doe"
+            />
           </Field>
           <Field>
             <FieldLabel text="Email" />
             <TextInput value={user?.email ?? ""} onChange={() => {}} type="email" />
-            <p className="text-xs text-gray-400 dark:text-gray-500">Email cannot be changed here</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Email cannot be changed here
+            </p>
           </Field>
         </div>
       </SectionCard>
@@ -255,11 +278,19 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field>
               <FieldLabel text="BMDC Registration No." />
-              <TextInput value={form.bmdcNo} onChange={(v) => set("bmdcNo", v)} placeholder="e.g. A-12345" />
+              <TextInput
+                value={form.bmdcNo}
+                onChange={(v) => set("bmdcNo", v)}
+                placeholder="e.g. A-12345"
+              />
             </Field>
             <Field>
               <FieldLabel text="Mobile Number" />
-              <TextInput value={form.mobileNumber} onChange={(v) => set("mobileNumber", v)} placeholder="+880..." />
+              <TextInput
+                value={form.mobileNumber}
+                onChange={(v) => set("mobileNumber", v)}
+                placeholder="+880..."
+              />
             </Field>
           </div>
 
@@ -296,7 +327,10 @@ export default function SettingsPage() {
       <SectionCard icon={Building2} title="Chambers">
         <div className="space-y-3">
           {form.chambers.map((chamber, i) => (
-            <div key={i} className="group grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto] rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-3">
+            <div
+              key={i}
+              className="group grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto] rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-3"
+            >
               <TextInput
                 value={chamber.name}
                 onChange={(v) => setChamber(i, "name", v)}
@@ -328,43 +362,16 @@ export default function SettingsPage() {
         </div>
       </SectionCard>
 
-      {/* Availability */}
+      {/* Weekly Availability */}
       <SectionCard icon={Clock} title="Weekly Availability">
-        <div className="space-y-2">
-          {form.availability.map((row, i) => (
-            <div
-              key={row.day}
-              className="grid grid-cols-[120px_1fr] items-center gap-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 px-3 py-2.5"
-            >
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={row.available}
-                  onChange={(e) => setAvailability(i, "available", e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-emerald-500 focus:ring-emerald-500/30 cursor-pointer"
-                />
-                <span className={`text-sm font-medium ${row.available ? "text-gray-900 dark:text-white" : "text-gray-400 dark:text-gray-500"}`}>
-                  {row.day}
-                </span>
-              </label>
-              <div className={`flex items-center gap-2 transition-opacity ${row.available ? "opacity-100" : "opacity-30 pointer-events-none"}`}>
-                <input
-                  type="time"
-                  value={row.startTime}
-                  onChange={(e) => setAvailability(i, "startTime", e.target.value)}
-                  className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
-                />
-                <span className="text-xs text-gray-400">to</span>
-                <input
-                  type="time"
-                  value={row.endTime}
-                  onChange={(e) => setAvailability(i, "endTime", e.target.value)}
-                  className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
-                />
-              </div>
-            </div>
-          ))}
-        </div>
+        <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+          Toggle each day you are available and set one or more time slots. You can add
+          multiple slots per day for split schedules (e.g. 07:00–10:00 and 20:00–22:00).
+        </p>
+        <AvailabilityScheduler
+          value={form.schedule}
+          onChange={(v) => set("schedule", v)}
+        />
       </SectionCard>
 
       {/* Save button */}

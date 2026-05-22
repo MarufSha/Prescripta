@@ -4,9 +4,14 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuthStore } from "@/store/authStore";
+import AvailabilityScheduler, {
+  type DaySchedule,
+  fromDaySchedules,
+  initDaySchedules,
+} from "@/components/AvailabilityScheduler";
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api`;
 
@@ -14,9 +19,21 @@ type Props = {
   token: string;
 };
 
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-xs font-bold uppercase tracking-widest text-emerald-400 mt-6 mb-2">
+      {children}
+    </p>
+  );
+}
+
+const inputCls =
+  "w-full rounded-xl border border-gray-700 bg-gray-900/80 px-4 py-3 text-white outline-none transition placeholder-gray-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20";
+
 export default function DoctorInviteAcceptForm({ token }: Props) {
   const router = useRouter();
   const fetchCsrfToken = useAuthStore((state) => state.fetchCsrfToken);
+
   const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,6 +44,7 @@ export default function DoctorInviteAcceptForm({ token }: Props) {
   const [designations, setDesignations] = useState("");
   const [degrees, setDegrees] = useState("");
   const [chambers, setChambers] = useState([{ name: "", location: "" }]);
+  const [schedule, setSchedule] = useState<DaySchedule[]>(initDaySchedules);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,31 +62,19 @@ export default function DoctorInviteAcceptForm({ token }: Props) {
         setIsLoading(false);
       }
     };
-
     void loadInvite();
   }, [token]);
 
-  const updateChamber = (
-    index: number,
-    field: "name" | "location",
-    value: string,
-  ) => {
+  const updateChamber = (index: number, field: "name" | "location", value: string) => {
     setChambers((prev) =>
-      prev.map((chamber, chamberIndex) =>
-        chamberIndex === index ? { ...chamber, [field]: value } : chamber,
-      ),
+      prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)),
     );
   };
 
-  const addChamber = () => {
-    setChambers((prev) => [...prev, { name: "", location: "" }]);
-  };
+  const addChamber = () => setChambers((prev) => [...prev, { name: "", location: "" }]);
 
-  const removeChamber = (index: number) => {
-    setChambers((prev) =>
-      prev.filter((_, chamberIndex) => chamberIndex !== index),
-    );
-  };
+  const removeChamber = (index: number) =>
+    setChambers((prev) => prev.filter((_, i) => i !== index));
 
   const parseList = (value: string) =>
     value
@@ -97,20 +103,17 @@ export default function DoctorInviteAcceptForm({ token }: Props) {
             mobileNumber,
             designations: parseList(designations),
             degrees: parseList(degrees),
-            chambers: chambers.filter(
-              (chamber) => chamber.name.trim() && chamber.location.trim(),
-            ),
+            chambers: chambers.filter((c) => c.name.trim() && c.location.trim()),
+            availability: fromDaySchedules(schedule),
           },
         },
         {
           withCredentials: true,
-          headers: {
-            "x-csrf-token": tokenFromServer,
-          },
+          headers: { "x-csrf-token": tokenFromServer },
         },
       );
-      const acceptedUser = acceptResponse.data?.user;
 
+      const acceptedUser = acceptResponse.data?.user;
       if (acceptedUser) {
         useAuthStore.setState({
           user: acceptedUser,
@@ -122,14 +125,12 @@ export default function DoctorInviteAcceptForm({ token }: Props) {
       }
 
       await fetchCsrfToken();
-      
       toast.success("Doctor account created successfully");
       router.replace("/doctor");
     } catch (error) {
       if (axios.isAxiosError(error)) {
         toast.error(
-          error.response?.data?.message ||
-            "Failed to complete doctor onboarding",
+          error.response?.data?.message || "Failed to complete doctor onboarding",
         );
       } else {
         toast.error("Failed to complete doctor onboarding");
@@ -142,7 +143,7 @@ export default function DoctorInviteAcceptForm({ token }: Props) {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center">
-        <LoadingSpinner />;{" "}
+        <LoadingSpinner />
       </div>
     );
   }
@@ -172,91 +173,81 @@ export default function DoctorInviteAcceptForm({ token }: Props) {
             <span className="font-semibold text-white">Name:</span> {inviteName}
           </p>
           <p className="mt-1">
-            <span className="font-semibold text-white">Email:</span>{" "}
-            {inviteEmail}
+            <span className="font-semibold text-white">Email:</span> {inviteEmail}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          {/* ── Account ── */}
+          <SectionHeading>Account</SectionHeading>
           <input
             type="password"
-            placeholder="Create password"
+            placeholder="Create password *"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border border-gray-700 bg-gray-900/80 px-4 py-3 text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+            className={inputCls}
+            required
           />
 
+          {/* ── Professional info ── */}
+          <SectionHeading>Professional Information</SectionHeading>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <input
+              placeholder="Specialties (comma separated) *"
+              value={specialties}
+              onChange={(e) => setSpecialties(e.target.value)}
+              className={inputCls}
+              required
+            />
+            <input
+              placeholder="BMDC No. *"
+              value={bmdcNo}
+              onChange={(e) => setBmdcNo(e.target.value)}
+              className={inputCls}
+              required
+            />
+            <input
+              placeholder="Mobile Number *"
+              value={mobileNumber}
+              onChange={(e) => setMobileNumber(e.target.value)}
+              className={inputCls}
+              required
+            />
+            <input
+              placeholder="Designations (comma separated) *"
+              value={designations}
+              onChange={(e) => setDesignations(e.target.value)}
+              className={inputCls}
+              required
+            />
+          </div>
           <input
-            placeholder="Specialties (comma separated)"
-            value={specialties}
-            onChange={(e) => setSpecialties(e.target.value)}
-            className="w-full rounded-xl border border-gray-700 bg-gray-900/80 px-4 py-3 text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-          />
-
-          <input
-            placeholder="BMDC No."
-            value={bmdcNo}
-            onChange={(e) => setBmdcNo(e.target.value)}
-            className="w-full rounded-xl border border-gray-700 bg-gray-900/80 px-4 py-3 text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-          />
-
-          <input
-            placeholder="Mobile Number"
-            value={mobileNumber}
-            onChange={(e) => setMobileNumber(e.target.value)}
-            className="w-full rounded-xl border border-gray-700 bg-gray-900/80 px-4 py-3 text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-          />
-
-          <input
-            placeholder="Designations (comma separated)"
-            value={designations}
-            onChange={(e) => setDesignations(e.target.value)}
-            className="w-full rounded-xl border border-gray-700 bg-gray-900/80 px-4 py-3 text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-          />
-
-          <input
-            placeholder="Degrees (comma separated)"
+            placeholder="Degrees (comma separated) *"
             value={degrees}
             onChange={(e) => setDegrees(e.target.value)}
-            className="w-full rounded-xl border border-gray-700 bg-gray-900/80 px-4 py-3 text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+            className={inputCls}
+            required
           />
 
+          {/* ── Chambers ── */}
+          <SectionHeading>Chambers</SectionHeading>
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-white">Chambers</p>
-
-              <button
-                type="button"
-                onClick={addChamber}
-                className="inline-flex items-center gap-2 rounded-xl border border-gray-700 bg-gray-900/80 px-4 py-2 text-sm font-semibold text-white transition hover:border-emerald-500/30 hover:bg-emerald-500/10 cursor-pointer"
-              >
-                <span className="text-base leading-none">+</span>
-                Add
-              </button>
-            </div>
-
             {chambers.map((chamber, index) => (
               <div key={index} className="flex items-center gap-3">
-                <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-2">
+                <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
                   <input
-                    placeholder="Chamber Name"
+                    placeholder="Chamber Name *"
                     value={chamber.name}
-                    onChange={(e) =>
-                      updateChamber(index, "name", e.target.value)
-                    }
-                    className="w-full rounded-xl border border-gray-700 bg-gray-900/80 px-4 py-3 text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                    onChange={(e) => updateChamber(index, "name", e.target.value)}
+                    className={inputCls}
                   />
-
                   <input
-                    placeholder="Chamber Location"
+                    placeholder="Chamber Location *"
                     value={chamber.location}
-                    onChange={(e) =>
-                      updateChamber(index, "location", e.target.value)
-                    }
-                    className="w-full rounded-xl border border-gray-700 bg-gray-900/80 px-4 py-3 text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                    onChange={(e) => updateChamber(index, "location", e.target.value)}
+                    className={inputCls}
                   />
                 </div>
-
                 {index > 0 && (
                   <button
                     type="button"
@@ -268,15 +259,36 @@ export default function DoctorInviteAcceptForm({ token }: Props) {
                 )}
               </div>
             ))}
+            <button
+              type="button"
+              onClick={addChamber}
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-700 bg-gray-900/80 px-4 py-2 text-sm font-semibold text-white transition hover:border-emerald-500/30 hover:bg-emerald-500/10 cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              Add Chamber
+            </button>
           </div>
 
-          <div className="flex flex-col">
+          {/* ── Weekly Availability ── */}
+          <SectionHeading>Weekly Availability</SectionHeading>
+          <p className="text-xs text-gray-500">
+            Toggle the days you are available and set your time slots. You can add multiple
+            slots per day (e.g. 07:00–10:00 and 20:00–22:00).
+          </p>
+          <AvailabilityScheduler
+            value={schedule}
+            onChange={setSchedule}
+            forceDark
+          />
+
+          {/* ── Submit ── */}
+          <div className="pt-2">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 px-5 py-3 font-semibold text-white transition hover:from-green-600 hover:to-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+              className="w-full rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 px-5 py-3 font-semibold text-white transition hover:from-green-600 hover:to-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
             >
-              {isSubmitting ? "Completing Setup..." : "Complete Setup"}
+              {isSubmitting ? "Completing Setup…" : "Complete Setup"}
             </button>
           </div>
         </form>

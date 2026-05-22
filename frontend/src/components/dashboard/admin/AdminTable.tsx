@@ -32,6 +32,12 @@ import {
 } from "@/components/ui/pagination";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Check, Plus, ShieldCheck, Trash2, X } from "lucide-react";
+import AvailabilityScheduler, {
+  type DaySchedule,
+  initDaySchedules,
+  toDaySchedules,
+  fromDaySchedules,
+} from "@/components/AvailabilityScheduler";
 import {
   Tooltip,
   TooltipContent,
@@ -66,17 +72,6 @@ type ConfirmActionState = {
   onConfirm: () => Promise<void> | void;
 };
 
-const DAYS_OF_WEEK = [
-  "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
-] as const;
-
-type AvailabilityRow = {
-  day: string;
-  available: boolean;
-  startTime: string;
-  endTime: string;
-};
-
 type DoctorFormState = {
   specialtiesInput: string;
   bmdcNo: string;
@@ -87,7 +82,7 @@ type DoctorFormState = {
     name: string;
     location: string;
   }[];
-  availability: AvailabilityRow[];
+  schedule: DaySchedule[];
 };
 
 const ROW_OPTIONS = [5, 10, 20, 50, 100] as const;
@@ -146,15 +141,9 @@ const getInitialDoctorForm = (
           location: chamber.location || "",
         }))
       : [{ name: "", location: "" }],
-  availability: DAYS_OF_WEEK.map((day) => {
-    const existing = doctorProfile?.availability?.find((a) => a.day === day);
-    return {
-      day,
-      available: !!existing,
-      startTime: existing?.startTime ?? "09:00",
-      endTime: existing?.endTime ?? "17:00",
-    };
-  }),
+  schedule: doctorProfile?.availability?.length
+    ? toDaySchedules(doctorProfile.availability)
+    : initDaySchedules(),
 });
 
 const AdminTable = ({
@@ -329,7 +318,7 @@ const AdminTable = ({
   };
 
   const updateDoctorFormField = (
-    field: keyof Omit<DoctorFormState, "chambers">,
+    field: keyof Omit<DoctorFormState, "chambers" | "schedule">,
     value: string,
   ) => {
     setDoctorForm((prev) => ({
@@ -368,25 +357,10 @@ const AdminTable = ({
     }));
   };
 
-  const updateAvailabilityRow = (
-    index: number,
-    field: keyof AvailabilityRow,
-    value: string | boolean,
-  ) => {
-    setDoctorForm((prev) => ({
-      ...prev,
-      availability: prev.availability.map((row, i) =>
-        i === index ? { ...row, [field]: value } : row,
-      ),
-    }));
-  };
-
   const submitDoctorConversion = async () => {
     if (!doctorModalUser) return;
 
-    const availability: DoctorAvailability[] = doctorForm.availability
-      .filter((a) => a.available)
-      .map((a) => ({ day: a.day, startTime: a.startTime, endTime: a.endTime }));
+    const availability: DoctorAvailability[] = fromDaySchedules(doctorForm.schedule);
 
     const doctorProfile: DoctorProfile = {
       specialties: parseCommaSeparated(doctorForm.specialtiesInput),
@@ -1379,55 +1353,14 @@ const AdminTable = ({
                           Weekly Availability{" "}
                           <span className="text-gray-500 font-normal">(optional)</span>
                         </label>
-                        <div className="space-y-2">
-                          {doctorForm.availability.map((row, index) => (
-                            <div
-                              key={row.day}
-                              className="grid grid-cols-[140px_1fr] items-center gap-3 rounded-xl border border-gray-800 bg-gray-900/60 px-3 py-2.5"
-                            >
-                              <label className="flex items-center gap-2 cursor-pointer select-none">
-                                <input
-                                  type="checkbox"
-                                  checked={row.available}
-                                  onChange={(e) =>
-                                    updateAvailabilityRow(index, "available", e.target.checked)
-                                  }
-                                  className="h-4 w-4 rounded border-gray-600 text-emerald-500 focus:ring-emerald-500/30 cursor-pointer"
-                                />
-                                <span
-                                  className={`text-sm font-medium ${
-                                    row.available ? "text-white" : "text-gray-500"
-                                  }`}
-                                >
-                                  {row.day}
-                                </span>
-                              </label>
-                              <div
-                                className={`flex items-center gap-2 transition-opacity ${
-                                  row.available ? "opacity-100" : "opacity-30 pointer-events-none"
-                                }`}
-                              >
-                                <input
-                                  type="time"
-                                  value={row.startTime}
-                                  onChange={(e) =>
-                                    updateAvailabilityRow(index, "startTime", e.target.value)
-                                  }
-                                  className="rounded-lg border border-gray-700 bg-gray-900/80 px-2 py-1.5 text-sm text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                                />
-                                <span className="text-xs text-gray-500">to</span>
-                                <input
-                                  type="time"
-                                  value={row.endTime}
-                                  onChange={(e) =>
-                                    updateAvailabilityRow(index, "endTime", e.target.value)
-                                  }
-                                  className="rounded-lg border border-gray-700 bg-gray-900/80 px-2 py-1.5 text-sm text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                                />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                        <p className="text-xs text-gray-500">
+                          Toggle the days available and set time slots. You can add multiple slots per day.
+                        </p>
+                        <AvailabilityScheduler
+                          value={doctorForm.schedule}
+                          onChange={(v) => setDoctorForm((prev) => ({ ...prev, schedule: v }))}
+                          forceDark
+                        />
                       </div>
 
                     {doctorModalError && (

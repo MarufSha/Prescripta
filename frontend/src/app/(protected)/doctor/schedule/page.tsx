@@ -14,7 +14,14 @@ export default function SchedulePage() {
   const router = useRouter();
   const availability = user?.doctorProfile?.availability ?? [];
 
-  const availabilityMap = Object.fromEntries(availability.map((a) => [a.day, a]));
+  const availabilityMap = availability.reduce<Record<string, typeof availability>>(
+    (acc, a) => {
+      if (!acc[a.day]) acc[a.day] = [];
+      acc[a.day].push(a);
+      return acc;
+    },
+    {},
+  );
 
   return (
     <motion.div
@@ -50,28 +57,30 @@ export default function SchedulePage() {
 
         <div className="divide-y divide-gray-100 dark:divide-gray-800">
           {DAYS_OF_WEEK.map((day) => {
-            const slot = availabilityMap[day];
+            const slots = availabilityMap[day];
             return (
               <div
                 key={day}
-                className={`flex items-center justify-between px-5 py-3.5 ${
-                  slot ? "" : "opacity-50"
+                className={`flex items-center justify-between gap-4 px-5 py-3.5 ${
+                  slots ? "" : "opacity-50"
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 shrink-0">
                   <div
                     className={`h-2.5 w-2.5 rounded-full ${
-                      slot ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"
+                      slots ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"
                     }`}
                   />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{day}</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white w-24">{day}</span>
                 </div>
-                {slot ? (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <Clock className="h-4 w-4 text-emerald-500" />
-                    <span>
-                      {slot.startTime} – {slot.endTime}
-                    </span>
+                {slots ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {slots.map((slot, i) => (
+                      <div key={i} className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
+                        <Clock className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                        <span>{slot.startTime} – {slot.endTime}</span>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <span className="text-xs text-gray-400 dark:text-gray-500">Not available</span>
