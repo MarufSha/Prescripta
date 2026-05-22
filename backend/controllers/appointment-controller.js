@@ -3,7 +3,7 @@ import { User } from "../models/user.js";
 
 export const bookAppointment = async (req, res) => {
   try {
-    const { doctorId, day, timeSlot } = req.body;
+    const { doctorId, day, timeSlot, symptoms } = req.body;
     const patientId = req.userId;
 
     if (!doctorId || !day || !timeSlot?.startTime || !timeSlot?.endTime) {
@@ -35,6 +35,22 @@ export const bookAppointment = async (req, res) => {
         .json({ success: false, message: "Selected time slot is not available" });
     }
 
+    // Prevent double-booking the same slot
+    const clash = await Appointment.findOne({
+      patient: patientId,
+      doctor: doctorId,
+      day,
+      "timeSlot.startTime": timeSlot.startTime,
+      "timeSlot.endTime": timeSlot.endTime,
+      status: { $ne: "cancelled" },
+    });
+    if (clash) {
+      return res.status(409).json({
+        success: false,
+        message: "You already have an active appointment with this doctor for that slot",
+      });
+    }
+
     const existingCount = await Appointment.countDocuments({
       doctor: doctorId,
       day,
@@ -51,6 +67,7 @@ export const bookAppointment = async (req, res) => {
       day,
       timeSlot,
       serialNumber,
+      symptoms: symptoms?.trim() ?? "",
     });
     await appointment.save();
     await appointment.populate("doctor", "name doctorProfile");

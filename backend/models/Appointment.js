@@ -35,6 +35,7 @@ const appointmentSchema = new mongoose.Schema(
     },
     timeSlot: { type: timeSlotSchema, required: true },
     serialNumber: { type: Number, required: true },
+    symptoms: { type: String, default: "", trim: true },
     status: {
       type: String,
       enum: ["pending", "confirmed", "cancelled"],

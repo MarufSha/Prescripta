@@ -11,6 +11,7 @@ import {
   Hash,
   Stethoscope,
   X,
+  FileText,
 } from "lucide-react";
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api`;
@@ -26,6 +27,7 @@ type Appointment = {
   day: string;
   timeSlot: AppointmentTimeSlot;
   serialNumber: number;
+  symptoms?: string;
   status: "pending" | "confirmed" | "cancelled";
   createdAt: string;
 };
@@ -122,6 +124,14 @@ function AppointmentCard({
           </span>
         </div>
       </div>
+
+      {/* Symptoms */}
+      {!!appt.symptoms && (
+        <div className="flex items-start gap-2 border-t border-gray-100 dark:border-gray-800 px-5 py-3">
+          <FileText className="h-3.5 w-3.5 shrink-0 text-gray-400 mt-0.5" />
+          <p className="text-xs text-gray-500 dark:text-gray-400 italic">{appt.symptoms}</p>
+        </div>
+      )}
 
       {/* Cancel area — only for non-cancelled appointments */}
       {appt.status !== "cancelled" && (
