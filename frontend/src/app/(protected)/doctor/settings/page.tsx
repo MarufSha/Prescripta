@@ -9,6 +9,7 @@ import AvailabilityScheduler, {
   toDaySchedules,
   fromDaySchedules,
   initDaySchedules,
+  hasScheduleErrors,
 } from "@/components/AvailabilityScheduler";
 
 // ── Small reusable components ─────────────────────────────────────────────────
@@ -210,6 +211,9 @@ export default function SettingsPage() {
     }));
 
   const handleSave = async () => {
+    if (hasScheduleErrors(form.schedule)) {
+      return;
+    }
     clearError();
     await updateDoctorProfile({
       name: form.name,

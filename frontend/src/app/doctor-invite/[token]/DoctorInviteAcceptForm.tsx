@@ -11,6 +11,7 @@ import AvailabilityScheduler, {
   type DaySchedule,
   fromDaySchedules,
   initDaySchedules,
+  hasScheduleErrors,
 } from "@/components/AvailabilityScheduler";
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api`;
@@ -84,6 +85,12 @@ export default function DoctorInviteAcceptForm({ token }: Props) {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (hasScheduleErrors(schedule)) {
+      toast.error("Please fix the schedule errors before submitting.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
