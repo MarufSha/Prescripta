@@ -10,6 +10,7 @@ import {
   Clock,
   Hash,
   Stethoscope,
+  X,
 } from "lucide-react";
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api`;
@@ -38,7 +39,17 @@ const statusStyle: Record<string, string> = {
     "border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400",
 };
 
-function AppointmentCard({ appt }: { appt: Appointment }) {
+function AppointmentCard({
+  appt,
+  onCancel,
+}: {
+  appt: Appointment;
+  onCancel: (id: string) => Promise<void>;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const initials = appt.doctor.name
     .split(" ")
     .map((n) => n[0])
@@ -46,12 +57,30 @@ function AppointmentCard({ appt }: { appt: Appointment }) {
     .toUpperCase()
     .slice(0, 2);
 
+  const handleConfirmCancel = async () => {
+    setIsCancelling(true);
+    setError(null);
+    try {
+      await onCancel(appt._id);
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message as string ?? "Failed to cancel");
+      } else {
+        setError("Failed to cancel");
+      }
+      setConfirming(false);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/70 shadow-sm overflow-hidden"
     >
+      {/* Header */}
       <div className="flex items-center gap-4 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-blue-500/5 to-indigo-500/5 px-5 py-4">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-bold text-white">
           {initials}
@@ -73,6 +102,7 @@ function AppointmentCard({ appt }: { appt: Appointment }) {
         </span>
       </div>
 
+      {/* Details */}
       <div className="flex flex-wrap items-center gap-4 px-5 py-4">
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
           <CalendarCheck className="h-4 w-4 text-blue-500 shrink-0" />
@@ -80,22 +110,59 @@ function AppointmentCard({ appt }: { appt: Appointment }) {
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
           <Clock className="h-4 w-4 text-blue-500 shrink-0" />
-          <span>
-            {appt.timeSlot.startTime} – {appt.timeSlot.endTime}
-          </span>
+          <span>{appt.timeSlot.startTime} – {appt.timeSlot.endTime}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <Hash className="h-4 w-4 text-indigo-500 shrink-0" />
           <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
             Serial #{appt.serialNumber}
           </span>
           <span className="text-xs text-gray-400 dark:text-gray-500">
-            ({appt.serialNumber === 1
-              ? "first in queue"
-              : `${appt.serialNumber - 1} before you`})
+            ({appt.serialNumber === 1 ? "first in queue" : `${appt.serialNumber - 1} before you`})
           </span>
         </div>
       </div>
+
+      {/* Cancel area — only for non-cancelled appointments */}
+      {appt.status !== "cancelled" && (
+        <div className="border-t border-gray-100 dark:border-gray-800 px-5 py-3">
+          {error && (
+            <p className="mb-2 text-xs font-medium text-red-500 dark:text-red-400">{error}</p>
+          )}
+          {confirming ? (
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-gray-600 dark:text-gray-400 flex-1">
+                Cancel this appointment?
+              </p>
+              <button
+                type="button"
+                onClick={() => setConfirming(false)}
+                disabled={isCancelling}
+                className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300 transition hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 cursor-pointer"
+              >
+                Keep
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleConfirmCancel()}
+                disabled={isCancelling}
+                className="rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 transition hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-50 cursor-pointer"
+              >
+                {isCancelling ? "Cancelling…" : "Yes, cancel"}
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirming(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
+            >
+              <X className="h-3.5 w-3.5" />
+              Cancel appointment
+            </button>
+          )}
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -121,6 +188,39 @@ export default function AppointmentsPage() {
     };
     void load();
   }, []);
+
+  const handleCancel = async (id: string) => {
+    const csrfRes = await axios.get(`${API_BASE_URL}/auth/csrf-token`, {
+      withCredentials: true,
+    });
+    const csrfToken = String(csrfRes.data?.csrfToken ?? "");
+
+    await axios.patch(
+      `${API_BASE_URL}/appointments/${id}/cancel`,
+      {},
+      { withCredentials: true, headers: { "x-csrf-token": csrfToken } },
+    );
+
+    // Update local state: mark as cancelled, and shift serial numbers for same slot
+    setAppointments((prev) => {
+      const cancelled = prev.find((a) => a._id === id);
+      if (!cancelled) return prev;
+      return prev.map((a) => {
+        if (a._id === id) return { ...a, status: "cancelled" as const };
+        if (
+          a.status !== "cancelled" &&
+          a.doctor._id === cancelled.doctor._id &&
+          a.day === cancelled.day &&
+          a.timeSlot.startTime === cancelled.timeSlot.startTime &&
+          a.timeSlot.endTime === cancelled.timeSlot.endTime &&
+          a.serialNumber > cancelled.serialNumber
+        ) {
+          return { ...a, serialNumber: a.serialNumber - 1 };
+        }
+        return a;
+      });
+    });
+  };
 
   return (
     <motion.div
@@ -186,7 +286,7 @@ export default function AppointmentsPage() {
       {!isLoading && appointments.length > 0 && (
         <div className="space-y-3">
           {appointments.map((appt) => (
-            <AppointmentCard key={appt._id} appt={appt} />
+            <AppointmentCard key={appt._id} appt={appt} onCancel={handleCancel} />
           ))}
         </div>
       )}

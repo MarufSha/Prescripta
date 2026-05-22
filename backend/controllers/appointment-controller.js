@@ -64,6 +64,42 @@ export const bookAppointment = async (req, res) => {
   }
 };
 
+export const cancelAppointment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const patientId = req.userId;
+
+    const appointment = await Appointment.findOne({ _id: id, patient: patientId });
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: "Appointment not found" });
+    }
+    if (appointment.status === "cancelled") {
+      return res.status(400).json({ success: false, message: "Appointment already cancelled" });
+    }
+
+    appointment.status = "cancelled";
+    await appointment.save();
+
+    // Shift serial numbers down for everyone behind this patient in the same slot
+    await Appointment.updateMany(
+      {
+        doctor: appointment.doctor,
+        day: appointment.day,
+        "timeSlot.startTime": appointment.timeSlot.startTime,
+        "timeSlot.endTime": appointment.timeSlot.endTime,
+        serialNumber: { $gt: appointment.serialNumber },
+        status: { $ne: "cancelled" },
+      },
+      { $inc: { serialNumber: -1 } },
+    );
+
+    return res.status(200).json({ success: true, message: "Appointment cancelled" });
+  } catch (error) {
+    console.error("cancelAppointment error:", error);
+    return res.status(500).json({ success: false, message: "Failed to cancel appointment" });
+  }
+};
+
 export const getMyAppointments = async (req, res) => {
   try {
     const patientId = req.userId;
