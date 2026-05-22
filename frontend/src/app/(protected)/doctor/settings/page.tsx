@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Save, Plus, X, User, Stethoscope, Building2 } from "lucide-react";
-import { useAuthStore, type DoctorChamber } from "@/store/authStore";
+import { Save, Plus, X, User, Stethoscope, Building2, Clock } from "lucide-react";
+import { useAuthStore, type DoctorChamber, type DoctorAvailability } from "@/store/authStore";
 
 // ── Reusable small components ─────────────────────────────────────────────────
 
@@ -110,6 +110,17 @@ function SectionCard({
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+const DAYS_OF_WEEK = [
+  "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+] as const;
+
+type AvailabilityRow = {
+  day: string;
+  available: boolean;
+  startTime: string;
+  endTime: string;
+};
+
 type FormState = {
   name: string;
   specialties: string[];
@@ -118,6 +129,7 @@ type FormState = {
   designations: string[];
   degrees: string[];
   chambers: DoctorChamber[];
+  availability: AvailabilityRow[];
 };
 
 export default function SettingsPage() {
@@ -131,6 +143,15 @@ export default function SettingsPage() {
     designations: user?.doctorProfile?.designations ?? [],
     degrees: user?.doctorProfile?.degrees ?? [],
     chambers: user?.doctorProfile?.chambers ?? [],
+    availability: DAYS_OF_WEEK.map((day) => {
+      const existing = user?.doctorProfile?.availability?.find((a) => a.day === day);
+      return {
+        day,
+        available: !!existing,
+        startTime: existing?.startTime ?? "09:00",
+        endTime: existing?.endTime ?? "17:00",
+      };
+    }),
   }), [user]);
 
   const [form, setForm] = useState<FormState>(buildForm);
@@ -162,8 +183,19 @@ export default function SettingsPage() {
   const removeChamber = (idx: number) =>
     setForm((prev) => ({ ...prev, chambers: prev.chambers.filter((_, i) => i !== idx) }));
 
+  const setAvailability = (idx: number, field: keyof AvailabilityRow, value: string | boolean) =>
+    setForm((prev) => {
+      const next = [...prev.availability];
+      next[idx] = { ...next[idx], [field]: value };
+      return { ...prev, availability: next };
+    });
+
   const handleSave = async () => {
     clearError();
+    const availability: DoctorAvailability[] = form.availability
+      .filter((a) => a.available)
+      .map((a) => ({ day: a.day, startTime: a.startTime, endTime: a.endTime }));
+
     await updateDoctorProfile({
       name: form.name,
       doctorProfile: {
@@ -173,6 +205,7 @@ export default function SettingsPage() {
         designations: form.designations,
         degrees: form.degrees,
         chambers: form.chambers.filter((c) => c.name.trim() && c.location.trim()),
+        availability,
       },
     });
   };
@@ -292,6 +325,45 @@ export default function SettingsPage() {
           >
             <Plus className="h-4 w-4" /> Add Chamber
           </button>
+        </div>
+      </SectionCard>
+
+      {/* Availability */}
+      <SectionCard icon={Clock} title="Weekly Availability">
+        <div className="space-y-2">
+          {form.availability.map((row, i) => (
+            <div
+              key={row.day}
+              className="grid grid-cols-[120px_1fr] items-center gap-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 px-3 py-2.5"
+            >
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={row.available}
+                  onChange={(e) => setAvailability(i, "available", e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-emerald-500 focus:ring-emerald-500/30 cursor-pointer"
+                />
+                <span className={`text-sm font-medium ${row.available ? "text-gray-900 dark:text-white" : "text-gray-400 dark:text-gray-500"}`}>
+                  {row.day}
+                </span>
+              </label>
+              <div className={`flex items-center gap-2 transition-opacity ${row.available ? "opacity-100" : "opacity-30 pointer-events-none"}`}>
+                <input
+                  type="time"
+                  value={row.startTime}
+                  onChange={(e) => setAvailability(i, "startTime", e.target.value)}
+                  className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
+                />
+                <span className="text-xs text-gray-400">to</span>
+                <input
+                  type="time"
+                  value={row.endTime}
+                  onChange={(e) => setAvailability(i, "endTime", e.target.value)}
+                  className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
+                />
+              </div>
+            </div>
+          ))}
         </div>
       </SectionCard>
 

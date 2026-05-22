@@ -21,6 +21,12 @@ export type DoctorChamber = {
   location: string;
 };
 
+export type DoctorAvailability = {
+  day: string;
+  startTime: string;
+  endTime: string;
+};
+
 export type DoctorProfile = {
   specialties: string[];
   bmdcNo: string;
@@ -28,6 +34,14 @@ export type DoctorProfile = {
   designations: string[];
   degrees: string[];
   chambers: DoctorChamber[];
+  availability: DoctorAvailability[];
+};
+
+export type PublicDoctor = {
+  _id: string;
+  name: string;
+  email: string;
+  doctorProfile?: DoctorProfile;
 };
 
 type User = {
@@ -78,6 +92,7 @@ type PaginationState = {
 type AuthState = {
   user: User | null;
   users: AdminUser[];
+  doctors: PublicDoctor[];
   usersPagination: PaginationState;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -99,6 +114,7 @@ type AuthState = {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
 
+  fetchDoctors: () => Promise<void>;
   fetchUsers: (params?: { page?: number; limit?: number; role?: UserRole }) => Promise<void>;
   updateUserRole: (
     userId: string,
@@ -198,6 +214,7 @@ const withCsrfRetry = async (requestFn: () => Promise<unknown>) => {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   users: [],
+  doctors: [],
   usersPagination: { page: 1, limit: 25, total: 0, totalPages: 1 },
   isAuthenticated: false,
   isLoading: false,
@@ -401,6 +418,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set((state) => ({
         user: null,
         users: [],
+        doctors: [],
   usersPagination: { page: 1, limit: 25, total: 0, totalPages: 1 },
         isAuthenticated: false,
         isLoading: false,
@@ -484,6 +502,20 @@ export const useAuthStore = create<AuthState>((set) => ({
         isLoading: false,
       });
 
+      throw err;
+    }
+  },
+
+  fetchDoctors: async (): Promise<void> => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = (await api.get("/auth/doctors")) as {
+        data: { doctors: PublicDoctor[] };
+      };
+      set({ doctors: res.data.doctors, isLoading: false });
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to fetch doctors");
+      set({ error: msg, isLoading: false });
       throw err;
     }
   },

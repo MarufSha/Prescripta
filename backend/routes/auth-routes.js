@@ -11,6 +11,7 @@ import {
   requestManualVerification,
   getCsrfToken,
   updateProfile,
+  getDoctors,
 } from "../controllers/auth-controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { handleValidationErrors } from "../middleware/handleValidationErrors.js";
@@ -65,5 +66,6 @@ router.post(
 );
 
 router.put("/profile", verifyToken, requireCsrf, updateProfile);
+router.get("/doctors", verifyToken, getDoctors);
 
 export default router;

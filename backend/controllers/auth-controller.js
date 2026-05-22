@@ -381,6 +381,7 @@ export const updateProfile = async (req, res) => {
 
     if (doctorProfile !== undefined && user.role === "doctor") {
       const dp = doctorProfile;
+      const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
       user.doctorProfile = {
         specialties: Array.isArray(dp.specialties) ? dp.specialties.map(String).filter(Boolean) : user.doctorProfile?.specialties ?? [],
         bmdcNo: dp.bmdcNo !== undefined ? String(dp.bmdcNo ?? "").trim() : user.doctorProfile?.bmdcNo ?? "",
@@ -390,6 +391,11 @@ export const updateProfile = async (req, res) => {
         chambers: Array.isArray(dp.chambers)
           ? dp.chambers.filter((c) => c?.name?.trim() && c?.location?.trim()).map((c) => ({ name: String(c.name).trim(), location: String(c.location).trim() }))
           : user.doctorProfile?.chambers ?? [],
+        availability: Array.isArray(dp.availability)
+          ? dp.availability
+              .filter((a) => a?.day && DAYS.includes(a.day) && a?.startTime && a?.endTime)
+              .map((a) => ({ day: a.day, startTime: String(a.startTime).trim(), endTime: String(a.endTime).trim() }))
+          : user.doctorProfile?.availability ?? [],
       };
     }
 
@@ -398,6 +404,27 @@ export const updateProfile = async (req, res) => {
     return res.json({ success: true, message: "Profile updated", user: sanitizeUser(user) });
   } catch (error) {
     console.error("updateProfile error:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+export const getDoctors = async (req, res) => {
+  try {
+    const doctors = await User.find({ role: "doctor", isVerified: true })
+      .select("name email doctorProfile")
+      .sort({ name: 1 });
+
+    return res.status(200).json({
+      success: true,
+      doctors: doctors.map((d) => ({
+        _id: d._id,
+        name: d.name,
+        email: d.email,
+        doctorProfile: d.doctorProfile,
+      })),
+    });
+  } catch (error) {
+    console.error("getDoctors error:", error);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };

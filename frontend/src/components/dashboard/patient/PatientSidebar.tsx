@@ -10,6 +10,7 @@ import {
   Settings,
   Heart,
   Menu,
+  ClipboardList,
 } from "lucide-react";
 
 type Props = {
@@ -20,10 +21,11 @@ type Props = {
 };
 
 const navItems = [
-  { label: "My Profile", href: "/patient", icon: UserCircle },
-  { label: "Book Appointment", href: "/patient/appointments/book", icon: CalendarPlus },
-  { label: "My Appointments", href: "/patient/appointments", icon: CalendarCheck },
-  { label: "Settings", href: "/patient/settings", icon: Settings },
+  { label: "My Profile", href: "/patient", exact: true, icon: UserCircle },
+  { label: "Book Appointment", href: "/patient/appointments/book", exact: false, icon: CalendarPlus },
+  { label: "My Appointments", href: "/patient/appointments", exact: true, icon: CalendarCheck },
+  { label: "Prescriptions", href: "/patient/prescriptions", exact: false, icon: ClipboardList },
+  { label: "Settings", href: "/patient/settings", exact: false, icon: Settings },
 ];
 
 export default function PatientSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Props) {
@@ -75,9 +77,9 @@ export default function PatientSidebar({ collapsed, onToggle, mobileOpen, onMobi
           <nav className="flex flex-col gap-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive =
-                pathname === item.href ||
-                (item.href !== "/patient" && pathname.startsWith(item.href));
+              const isActive = item.exact
+                ? pathname === item.href
+                : pathname === item.href || pathname.startsWith(item.href + "/");
 
               return (
                 <Link
