@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import axios from "axios";
+
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api`;
 import {
   ClipboardList,
   ChevronDown,
@@ -297,14 +300,17 @@ export default function PatientPrescriptionsPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/auth/my-prescriptions", {
-          credentials: "include",
-        });
-        const data = await res.json();
-        if (!data.success) throw new Error(data.message ?? "Failed to load");
-        setPrescriptions(data.prescriptions ?? []);
+        const res = await axios.get<{ success: boolean; message?: string; prescriptions: Prescription[] }>(
+          `${API_BASE_URL}/auth/my-prescriptions`,
+          { withCredentials: true },
+        );
+        if (!res.data.success) throw new Error(res.data.message ?? "Failed to load");
+        setPrescriptions(res.data.prescriptions ?? []);
       } catch (e: unknown) {
-        setError(e instanceof Error ? e.message : "Failed to load prescriptions");
+        const msg = axios.isAxiosError(e)
+          ? ((e.response?.data as { message?: string })?.message ?? e.message)
+          : e instanceof Error ? e.message : "Failed to load prescriptions";
+        setError(msg);
       } finally {
         setLoading(false);
       }

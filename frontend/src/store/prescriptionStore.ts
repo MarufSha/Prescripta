@@ -89,6 +89,9 @@ export type PrescriptionFormData = {
   investigations: string[];
   advice: string[];
   followUpDays: number | null;
+  patientUserId?: string | null;
+  appointmentId?: string | null;
+  appointmentSlot?: { day: string; startTime: string; endTime: string };
 };
 
 type Pagination = { page: number; limit: number; total: number; totalPages: number };
