@@ -1,4 +1,5 @@
 import { Prescription } from "../models/prescription.js";
+import Appointment from "../models/Appointment.js";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -27,6 +28,9 @@ export const createPrescription = async (req, res) => {
       investigations,
       advice,
       followUpDays,
+      patientUserId,
+      appointmentId,
+      appointmentSlot,
     } = req.body;
 
     // Required field validation
@@ -104,7 +108,17 @@ export const createPrescription = async (req, res) => {
       investigations: clean(investigations),
       advice: clean(advice),
       followUpDays: followUpDays ? Number(followUpDays) : null,
+      patientUserId: patientUserId || null,
+      appointmentId: appointmentId || null,
+      appointmentSlot: appointmentSlot
+        ? { day: appointmentSlot.day, startTime: appointmentSlot.startTime, endTime: appointmentSlot.endTime }
+        : { day: "", startTime: "", endTime: "" },
     });
+
+    // Mark the source appointment as completed
+    if (appointmentId) {
+      await Appointment.findByIdAndUpdate(appointmentId, { status: "completed" });
+    }
 
     res.status(201).json({
       success: true,
@@ -252,6 +266,22 @@ export const getPatientHistory = async (req, res) => {
   } catch (err) {
     console.error("getPatientHistory error:", err);
     res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// ── Patient: my prescriptions ─────────────────────────────────────────────────
+
+export const getMyPrescriptions = async (req, res) => {
+  try {
+    const patientUserId = req.userId;
+    const prescriptions = await Prescription.find({ patientUserId })
+      .populate("doctorId", "name doctorProfile")
+      .sort({ createdAt: -1 })
+      .lean();
+    return res.status(200).json({ success: true, prescriptions });
+  } catch (err) {
+    console.error("getMyPrescriptions error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 

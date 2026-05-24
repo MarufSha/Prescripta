@@ -51,6 +51,23 @@ const prescriptionSchema = new mongoose.Schema(
     investigations: [{ type: String, trim: true }],
     advice: [{ type: String, trim: true }],
     followUpDays: { type: Number, default: null, min: 1 },
+
+    // ── Appointment link (set when written from the appointments panel) ──
+    patientUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    appointmentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Appointment",
+      default: null,
+    },
+    appointmentSlot: {
+      day: { type: String, default: "" },
+      startTime: { type: String, default: "" },
+      endTime: { type: String, default: "" },
+    },
   },
   { timestamps: true }
 );

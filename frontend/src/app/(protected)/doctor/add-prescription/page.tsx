@@ -888,6 +888,15 @@ export default function AddPrescriptionPage() {
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
 
+  // Appointment context — set when navigating from /doctor/appointments
+  const fromAppt     = searchParams.get("fromAppt");
+  const apptPatient  = searchParams.get("patientName") ?? "";
+  const apptUserId   = searchParams.get("patientUserId") ?? "";
+  const apptSymptoms = searchParams.get("symptoms") ?? "";
+  const apptDay      = searchParams.get("apptDay") ?? "";
+  const apptStart    = searchParams.get("apptStart") ?? "";
+  const apptEnd      = searchParams.get("apptEnd") ?? "";
+
   const {
     createPrescription,
     updatePrescription,
@@ -900,10 +909,13 @@ export default function AddPrescriptionPage() {
 
   const user = useAuthStore((s) => s.user);
 
-  const [form, setFormState] = useState<FormState>({
+  const [form, setFormState] = useState<FormState>(() => ({
     ...DEFAULT_FORM,
     date: todayStr(),
-  });
+    // Pre-fill from appointment context
+    ...(fromAppt && apptPatient && { patientName: apptPatient }),
+    ...(fromAppt && apptSymptoms && { chiefComplaints: [apptSymptoms] }),
+  }));
   const [errors, setErrors] = useState<Errors>({});
   const [successMsg, setSuccessMsg] = useState("");
   const [savedPuid, setSavedPuid] = useState<string | undefined>();
@@ -1159,6 +1171,11 @@ export default function AddPrescriptionPage() {
       investigations: form.investigations.filter((i) => i.trim()),
       advice: form.advice.filter((a) => a.trim()),
       followUpDays: form.followUpDays ? Number(form.followUpDays) : null,
+      ...(fromAppt && {
+        patientUserId: apptUserId || null,
+        appointmentId: fromAppt,
+        appointmentSlot: { day: apptDay, startTime: apptStart, endTime: apptEnd },
+      }),
     };
 
     try {
@@ -1168,6 +1185,8 @@ export default function AddPrescriptionPage() {
       setSavedPuid(result.patientUid);
       if (editId) {
         router.push("/doctor/add-prescription/previous");
+      } else if (fromAppt) {
+        router.push("/doctor/appointments");
       } else {
         setSuccessMsg("Prescription saved successfully!");
         setFormState({ ...DEFAULT_FORM, date: todayStr() });
@@ -1279,8 +1298,13 @@ export default function AddPrescriptionPage() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-              {editId ? "Edit Prescription" : "Add Prescription"}
+              {editId ? "Edit Prescription" : fromAppt ? "Write Prescription" : "Add Prescription"}
             </h1>
+            {fromAppt && (
+              <p className="mt-0.5 text-xs text-emerald-600 dark:text-emerald-400">
+                From appointment · {apptDay} {apptStart}–{apptEnd}
+              </p>
+            )}
             {savedPuid && (
               <p className="mt-0.5 text-xs text-emerald-600 dark:text-emerald-400">
                 PUID: {savedPuid}

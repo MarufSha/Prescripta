@@ -117,6 +117,26 @@ export const cancelAppointment = async (req, res) => {
   }
 };
 
+export const getDoctorAppointments = async (req, res) => {
+  try {
+    const doctorId = req.userId;
+
+    const appointments = await Appointment.find({
+      doctor: doctorId,
+      status: { $in: ["pending", "confirmed"] },
+    })
+      .populate("patient", "name email")
+      .sort({ day: 1, "timeSlot.startTime": 1, serialNumber: 1 });
+
+    return res.status(200).json({ success: true, appointments });
+  } catch (error) {
+    console.error("getDoctorAppointments error:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch appointments" });
+  }
+};
+
 export const getMyAppointments = async (req, res) => {
   try {
     const patientId = req.userId;
