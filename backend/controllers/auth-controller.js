@@ -17,7 +17,7 @@ const sanitizeUser = (user) => ({
 });
 
 export const signup = async (req, res) => {
-  const { name, email, password } = matchedData(req);
+  const { name, email, password, age, sex, mobileNumber } = matchedData(req);
 
   try {
     const userAlreadyExists = await User.findOne({ email });
@@ -35,6 +35,9 @@ export const signup = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      age,
+      sex,
+      mobileNumber,
       verificationToken,
       verificationTokenExpiresAt: Date.now() + 15 * 60 * 1000,
     });

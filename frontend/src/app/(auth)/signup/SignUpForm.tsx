@@ -24,6 +24,9 @@ export default function SignUpForm() {
 
   const [name, setName] = useState(pendingSignupData?.name ?? "");
   const [email, setEmail] = useState(pendingSignupData?.email ?? "");
+  const [age, setAge] = useState(pendingSignupData?.age ? String(pendingSignupData.age) : "");
+  const [sex, setSex] = useState(pendingSignupData?.sex ?? "");
+  const [mobileNumber, setMobileNumber] = useState(pendingSignupData?.mobileNumber ?? "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -87,7 +90,7 @@ export default function SignUpForm() {
     setCharacterMood("idle");
 
     try {
-      await signUp(email, password, name);
+      await signUp(email, password, name, Number(age), sex, mobileNumber);
       setCharacterMood("happy");
     } catch (err) {
       console.error("Sign up failed:", err);
@@ -127,7 +130,7 @@ export default function SignUpForm() {
           </div>
         </div>
 
-        <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-[#f2f6f3] via-[#eef3ef] to-[#e7efe9] px-8 py-10 sm:px-12 lg:px-14 xl:px-20">
+        <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-[#f2f6f3] via-[#eef3ef] to-[#e7efe9] px-8 py-10 sm:px-12 lg:px-14 xl:px-20 overflow-y-auto">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute right-[10%] top-[14%] h-56 w-56 rounded-full bg-emerald-500/4 blur-3xl" />
             <div className="absolute left-[6%] bottom-[10%] h-64 w-64 rounded-full bg-lime-400/3 blur-3xl" />
@@ -137,9 +140,9 @@ export default function SignUpForm() {
             initial={{ opacity: 0, x: 24 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.45 }}
-            className="relative z-10 w-full max-w-[470px]"
+            className="relative z-10 w-full max-w-[470px] py-8"
           >
-            <div className="mb-12 flex flex-col items-center text-center">
+            <div className="mb-10 flex flex-col items-center text-center">
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#dbe5df] ring-1 ring-[#cad7d0]">
                 <span className="text-3xl font-black text-emerald-700">P</span>
               </div>
@@ -150,6 +153,7 @@ export default function SignUpForm() {
             </div>
 
             <form onSubmit={handleSignUp} className="space-y-6">
+              {/* Full Name */}
               <div className="space-y-3">
                 <label
                   htmlFor="name"
@@ -164,13 +168,9 @@ export default function SignUpForm() {
                     type="text"
                     value={name}
                     autoComplete="name"
-                    onFocus={() => {
-                      setModeAndResetMood("name" as GazeMode);
-                    }}
+                    onFocus={() => setModeAndResetMood("name" as GazeMode)}
                     onBlur={() => {
-                      if (gazeMode === ("name" as GazeMode)) {
-                        setGazeMode("follow");
-                      }
+                      if (gazeMode === ("name" as GazeMode)) setGazeMode("follow");
                     }}
                     onChange={(e) => {
                       clearError();
@@ -187,6 +187,7 @@ export default function SignUpForm() {
                 )}
               </div>
 
+              {/* Email */}
               <div className="space-y-3">
                 <label
                   htmlFor="email"
@@ -201,13 +202,9 @@ export default function SignUpForm() {
                     type="email"
                     value={email}
                     autoComplete="email"
-                    onFocus={() => {
-                      setModeAndResetMood("email");
-                    }}
+                    onFocus={() => setModeAndResetMood("email")}
                     onBlur={() => {
-                      if (gazeMode === "email") {
-                        setGazeMode("follow");
-                      }
+                      if (gazeMode === "email") setGazeMode("follow");
                     }}
                     onChange={(e) => {
                       clearError();
@@ -224,6 +221,106 @@ export default function SignUpForm() {
                 )}
               </div>
 
+              {/* Age + Sex row */}
+              <div className="grid grid-cols-2 gap-5">
+                {/* Age */}
+                <div className="space-y-3">
+                  <label
+                    htmlFor="age"
+                    className="text-[15px] font-semibold text-[#303935]"
+                  >
+                    Age
+                  </label>
+
+                  <input
+                    id="age"
+                    type="number"
+                    min={1}
+                    max={120}
+                    value={age}
+                    onFocus={() => setModeAndResetMood("follow")}
+                    onChange={(e) => {
+                      clearError();
+                      setCharacterMood("idle");
+                      setAge(e.target.value);
+                    }}
+                    className="h-14 w-full border-0 border-b border-[#c3cdc7] bg-transparent px-0 text-base text-[#1b231f] outline-none transition focus:border-emerald-600 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    placeholder=""
+                  />
+
+                  {fieldErrors.age && (
+                    <p className="text-sm text-red-500">{fieldErrors.age}</p>
+                  )}
+                </div>
+
+                {/* Sex */}
+                <div className="space-y-3">
+                  <label
+                    htmlFor="sex"
+                    className="text-[15px] font-semibold text-[#303935]"
+                  >
+                    Sex
+                  </label>
+
+                  <select
+                    id="sex"
+                    value={sex}
+                    onFocus={() => setModeAndResetMood("follow")}
+                    onChange={(e) => {
+                      clearError();
+                      setCharacterMood("idle");
+                      setSex(e.target.value);
+                    }}
+                    className="h-14 w-full border-0 border-b border-[#c3cdc7] bg-transparent px-0 text-base text-[#1b231f] outline-none transition focus:border-emerald-600 cursor-pointer"
+                  >
+                    <option value="" disabled className="text-[#9aab9f]">Select</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+
+                  {fieldErrors.sex && (
+                    <p className="text-sm text-red-500">{fieldErrors.sex}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Mobile Number */}
+              <div className="space-y-3">
+                <label
+                  htmlFor="mobileNumber"
+                  className="text-[15px] font-semibold text-[#303935]"
+                >
+                  Mobile Number
+                </label>
+
+                <div className="relative">
+                  <input
+                    id="mobileNumber"
+                    type="tel"
+                    value={mobileNumber}
+                    autoComplete="tel"
+                    onFocus={() => setModeAndResetMood("follow")}
+                    onBlur={() => {
+                      if (gazeMode === "follow") return;
+                      setGazeMode("follow");
+                    }}
+                    onChange={(e) => {
+                      clearError();
+                      setCharacterMood("idle");
+                      setMobileNumber(e.target.value);
+                    }}
+                    className="h-14 w-full border-0 border-b border-[#c3cdc7] bg-transparent px-0 text-base text-[#1b231f] outline-none transition focus:border-emerald-600"
+                    placeholder=""
+                  />
+                </div>
+
+                {fieldErrors.mobileNumber && (
+                  <p className="text-sm text-red-500">{fieldErrors.mobileNumber}</p>
+                )}
+              </div>
+
+              {/* Password */}
               <div className="space-y-3">
                 <label
                   htmlFor="password"
@@ -274,9 +371,7 @@ export default function SignUpForm() {
                       }
                     }}
                     className="absolute right-1 top-1/2 -translate-y-1/2 text-[#6d7872] transition hover:text-[#222b27] cursor-pointer"
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
                       <EyeOff className="h-5 w-5" />
@@ -306,9 +401,7 @@ export default function SignUpForm() {
                 whileTap={{ scale: 0.985 }}
                 type="submit"
                 disabled={isLoading}
-                onFocus={() => {
-                  setModeAndResetMood("follow");
-                }}
+                onFocus={() => setModeAndResetMood("follow")}
                 className="flex h-14 w-full items-center justify-center rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-base font-semibold text-white shadow-[0_12px_28px_rgba(16,185,129,0.28)] transition hover:from-green-600 hover:to-emerald-700 disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
               >
                 {isLoading ? (
@@ -319,14 +412,12 @@ export default function SignUpForm() {
               </motion.button>
             </form>
 
-            <p className="mt-14 text-center text-sm text-[#727d77]">
+            <p className="mt-10 text-center text-sm text-[#727d77]">
               Already have an account?{" "}
               <Link
                 href="/login"
                 className="font-semibold text-emerald-700 underline underline-offset-4"
-                onFocus={() => {
-                  setModeAndResetMood("follow");
-                }}
+                onFocus={() => setModeAndResetMood("follow")}
               >
                 Login
               </Link>

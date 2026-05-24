@@ -14,6 +14,9 @@ export type UserRole = "superadmin" | "admin" | "doctor" | "patient";
 type PendingSignupData = {
   name: string;
   email: string;
+  age: number;
+  sex: string;
+  mobileNumber: string;
 };
 
 export type DoctorChamber = {
@@ -48,6 +51,9 @@ type User = {
   _id: string;
   email: string;
   name: string;
+  age?: number;
+  sex?: string;
+  mobileNumber?: string;
   role: UserRole;
   isVerified?: boolean;
   createdAt?: string;
@@ -105,7 +111,7 @@ type AuthState = {
 
   csrfToken: string | null;
   fetchCsrfToken: () => Promise<void>;
-  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string, age: number, sex: string, mobileNumber: string) => Promise<void>;
   verifyEmail: (code: string) => Promise<VerifyEmailResponse>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -256,7 +262,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  signUp: async (email, password, name) => {
+  signUp: async (email, password, name, age, sex, mobileNumber) => {
     set({
       isLoading: true,
       error: null,
@@ -265,7 +271,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      const res = await api.post("/auth/signup", { email, password, name });
+      const res = await api.post("/auth/signup", { email, password, name, age, sex, mobileNumber });
 
       set({
         user: res.data.user as User,
@@ -274,7 +280,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         error: null,
         message: null,
         fieldErrors: {},
-        pendingSignupData: { name, email },
+        pendingSignupData: { name, email, age, sex, mobileNumber },
       });
 
       await useAuthStore.getState().fetchCsrfToken();
