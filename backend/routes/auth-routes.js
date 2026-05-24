@@ -13,6 +13,7 @@ import {
   updateProfile,
   getDoctors,
 } from "../controllers/auth-controller.js";
+import { getMyPrescriptions } from "../controllers/prescription-controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { handleValidationErrors } from "../middleware/handleValidationErrors.js";
 import {
@@ -67,5 +68,6 @@ router.post(
 
 router.put("/profile", verifyToken, requireCsrf, updateProfile);
 router.get("/doctors", verifyToken, getDoctors);
+router.get("/my-prescriptions", verifyToken, getMyPrescriptions);
 
 export default router;

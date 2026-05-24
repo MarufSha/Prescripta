@@ -123,7 +123,7 @@ export const getDoctorAppointments = async (req, res) => {
 
     const appointments = await Appointment.find({
       doctor: doctorId,
-      status: { $ne: "cancelled" },
+      status: { $in: ["pending", "confirmed"] },
     })
       .populate("patient", "name email")
       .sort({ day: 1, "timeSlot.startTime": 1, serialNumber: 1 });
