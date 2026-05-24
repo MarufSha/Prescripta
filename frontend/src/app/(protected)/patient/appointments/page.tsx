@@ -28,7 +28,7 @@ type Appointment = {
   timeSlot: AppointmentTimeSlot;
   serialNumber: number;
   symptoms?: string;
-  status: "pending" | "confirmed" | "cancelled";
+  status: "pending" | "confirmed" | "cancelled" | "completed";
   createdAt: string;
 };
 
@@ -39,6 +39,8 @@ const statusStyle: Record<string, string> = {
     "border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   cancelled:
     "border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400",
+  completed:
+    "border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300",
 };
 
 function AppointmentCard({
@@ -133,8 +135,8 @@ function AppointmentCard({
         </div>
       )}
 
-      {/* Cancel area — only for non-cancelled appointments */}
-      {appt.status !== "cancelled" && (
+      {/* Cancel area — only for pending/confirmed appointments */}
+      {(appt.status === "pending" || appt.status === "confirmed") && (
         <div className="border-t border-gray-100 dark:border-gray-800 px-5 py-3">
           {error && (
             <p className="mb-2 text-xs font-medium text-red-500 dark:text-red-400">{error}</p>

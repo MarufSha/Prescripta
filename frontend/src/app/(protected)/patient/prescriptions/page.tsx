@@ -91,6 +91,66 @@ function initials(name: string) {
     .toUpperCase();
 }
 
+// ── Follow-up countdown ────────────────────────────────────────────────────────
+
+function FollowUpBanner({
+  prescriptionDate,
+  followUpDays,
+}: {
+  prescriptionDate: string;
+  followUpDays: number;
+}) {
+  const followUpDate = new Date(prescriptionDate);
+  followUpDate.setDate(followUpDate.getDate() + followUpDays);
+  followUpDate.setHours(0, 0, 0, 0);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const msLeft = followUpDate.getTime() - today.getTime();
+  const daysLeft = Math.round(msLeft / 86_400_000);
+
+  const dateStr = followUpDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  if (daysLeft < 0) {
+    return (
+      <div className="flex items-center gap-2 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-500/20 px-3 py-2.5">
+        <CalendarClock className="h-4 w-4 shrink-0 text-red-500 dark:text-red-400" />
+        <p className="text-sm text-red-700 dark:text-red-300">
+          Follow-up overdue — was due <strong>{dateStr}</strong>
+        </p>
+      </div>
+    );
+  }
+
+  if (daysLeft === 0) {
+    return (
+      <div className="flex items-center gap-2 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-500/20 px-3 py-2.5">
+        <CalendarClock className="h-4 w-4 shrink-0 text-orange-500 dark:text-orange-400" />
+        <p className="text-sm text-orange-700 dark:text-orange-300">
+          Follow-up is <strong>today</strong> — {dateStr}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-500/20 px-3 py-2.5">
+      <CalendarClock className="h-4 w-4 shrink-0 text-green-600 dark:text-green-400" />
+      <p className="text-sm text-green-700 dark:text-green-300">
+        Follow up in <strong>{daysLeft} day{daysLeft !== 1 ? "s" : ""}</strong>
+        <span className="ml-1.5 text-xs font-normal text-green-600/70 dark:text-green-400/70">
+          · {dateStr}
+        </span>
+      </p>
+    </div>
+  );
+}
+
 // ── Section component ──────────────────────────────────────────────────────────
 
 function Section({
@@ -340,17 +400,9 @@ function PrescriptionCard({
                 </Section>
               )}
 
-              {/* Follow-up */}
+              {/* Follow-up countdown */}
               {rx.followUpDays != null && rx.followUpDays > 0 && (
-                <div className="flex items-center gap-2 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-500/20 px-3 py-2.5">
-                  <CalendarClock className="h-4 w-4 shrink-0 text-green-600 dark:text-green-400" />
-                  <p className="text-sm text-green-700 dark:text-green-300">
-                    Follow up in{" "}
-                    <strong>
-                      {rx.followUpDays} day{rx.followUpDays !== 1 ? "s" : ""}
-                    </strong>
-                  </p>
-                </div>
+                <FollowUpBanner prescriptionDate={rx.date} followUpDays={rx.followUpDays} />
               )}
             </div>
           </motion.div>
