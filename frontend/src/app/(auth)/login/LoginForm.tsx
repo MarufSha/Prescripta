@@ -96,8 +96,8 @@ export default function LoginForm() {
   };
 
   return (
-    <section className="min-h-screen w-screen overflow-x-hidden bg-[#eef1ee] lg:h-screen lg:overflow-hidden">
-      <div className="grid min-h-screen w-full grid-cols-1 lg:h-full lg:grid-cols-[1.08fr_0.92fr]">
+    <section className="w-screen overflow-x-hidden bg-[#eef1ee] lg:h-screen lg:overflow-hidden">
+      <div className="grid w-full grid-cols-1 lg:h-full lg:grid-cols-[1.08fr_0.92fr]">
         {/* LEFT PANEL */}
         <div className="relative hidden h-full overflow-hidden bg-gradient-to-br from-[#eef2ef] via-[#edf3ef] to-[#e7eeea] lg:flex">
           <div className="pointer-events-none absolute inset-0">
@@ -129,7 +129,7 @@ export default function LoginForm() {
         </div>
 
         {/* RIGHT PANEL */}
-        <div className="relative flex w-full flex-col items-center justify-start overflow-y-auto bg-gradient-to-br from-[#edf5f1] via-[#e8f1eb] to-[#e1ebe4] px-8 py-12 sm:px-12 lg:h-full lg:justify-center lg:px-14 xl:px-20">
+        <div className="relative flex w-full flex-col items-center justify-center bg-gradient-to-br from-[#edf5f1] via-[#e8f1eb] to-[#e1ebe4] px-8 py-12 sm:px-12 lg:h-full lg:overflow-y-auto lg:px-14 xl:px-20">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute right-[10%] top-[14%] h-56 w-56 rounded-full bg-emerald-500/4 blur-3xl" />
             <div className="absolute left-[6%] bottom-[10%] h-64 w-64 rounded-full bg-lime-400/3 blur-3xl" />
@@ -139,7 +139,7 @@ export default function LoginForm() {
             initial={{ opacity: 0, x: 24 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.45 }}
-            className="relative z-10 w-full max-w-[470px] lg:my-auto"
+            className="relative z-10 w-full max-w-[470px]"
           >
             <div className="mb-12 flex flex-col items-center text-center">
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#dbe5df] ring-1 ring-[#cad7d0]">
