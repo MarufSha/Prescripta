@@ -680,7 +680,151 @@ const AdminTable = ({
           </div>
         )}
 
-        <div className="overflow-x-auto rounded-2xl border border-gray-800 bg-gray-950/40 shadow-lg">
+        {/* Mobile card list */}
+        <div className="lg:hidden space-y-3">
+          {filteredUsers.length === 0 ? (
+            <p className="py-8 text-center text-sm text-gray-400">{meta.empty}</p>
+          ) : (
+            paginatedUsers.map((u) => {
+              const isSelf = u._id === user?._id;
+              const isSuperAdminViewer = user?.role === "superadmin";
+
+              const canSelect = isSelf
+                ? false
+                : isSuperAdminViewer
+                  ? u.role !== "superadmin"
+                  : u.role !== "admin" && u.role !== "superadmin";
+
+              const canEditRole = isSelf
+                ? false
+                : isSuperAdminViewer
+                  ? u.role !== "admin" && u.role !== "superadmin"
+                  : u.role !== "admin" && u.role !== "superadmin";
+
+              const canDelete = isSelf
+                ? false
+                : isSuperAdminViewer
+                  ? u.role !== "superadmin"
+                  : u.role !== "admin" && u.role !== "superadmin";
+
+              const canVerifyManually =
+                !u.isVerified &&
+                Boolean(u.manualVerificationRequested) &&
+                (isSuperAdminViewer
+                  ? u.role !== "superadmin"
+                  : u.role !== "admin" && u.role !== "superadmin");
+
+              const isSelected = effectiveSelectedUserIds.includes(u._id);
+
+              return (
+                <div
+                  key={u._id}
+                  className={`rounded-2xl border p-4 transition-colors ${
+                    isSelected
+                      ? "border-emerald-500/30 bg-emerald-500/5"
+                      : "border-gray-800 bg-gray-900/40"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-start gap-3">
+                      {canSelect ? (
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleRowSelection(u._id)}
+                          aria-label={`Select ${u.name}`}
+                          className="mt-0.5 border-gray-600 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500 cursor-pointer"
+                        />
+                      ) : (
+                        <Checkbox
+                          checked={false}
+                          disabled
+                          className="mt-0.5 border-gray-700 opacity-40"
+                        />
+                      )}
+                      <div className="min-w-0">
+                        <p className="font-medium text-white">{u.name}</p>
+                        <p className="truncate text-sm text-gray-400">{u.email}</p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Joined {u.createdAt ? formatDate(u.createdAt) : "—"} · Last login: {u.lastLogin ? formatDate(u.lastLogin) : "—"}
+                        </p>
+                      </div>
+                    </div>
+                    {!hasMultipleSelectedRows && canDelete && (
+                      <button
+                        type="button"
+                        disabled={isLoading}
+                        onClick={() => handleRowDelete(u)}
+                        className="group inline-flex items-center rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-red-300 transition-all hover:bg-red-500/20 active:scale-95 disabled:opacity-50 cursor-pointer"
+                      >
+                        <Trash2 size={15} className="transition-transform group-hover:rotate-6" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${badgeClassMap[u.role]}`}>
+                      {u.role}
+                    </span>
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      u.isVerified
+                        ? "border border-green-500/30 bg-green-500/10 text-green-300"
+                        : "border border-red-500/30 bg-red-500/10 text-red-300"
+                    }`}>
+                      {u.isVerified ? "Verified" : "Unverified"}
+                    </span>
+                    {!hasMultipleSelectedRows && canVerifyManually && (
+                      <button
+                        type="button"
+                        disabled={isLoading}
+                        onClick={() => handleRowManualVerify(u)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300 transition-all hover:bg-emerald-500/20 active:scale-95 disabled:opacity-50 cursor-pointer"
+                      >
+                        <ShieldCheck size={13} />
+                        Verify
+                      </button>
+                    )}
+                    {u.manualVerificationRequested && !canVerifyManually && (
+                      <span className="inline-flex rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-300">
+                        Verify Requested
+                      </span>
+                    )}
+                  </div>
+
+                  {!hasMultipleSelectedRows && canEditRole && (
+                    <div className="mt-3">
+                      <Select
+                        value={u.role}
+                        disabled={isLoading}
+                        onValueChange={(value) => handleRowRoleChange(u, value as "doctor" | "patient")}
+                      >
+                        <SelectTrigger className="h-9 w-full border-gray-700 bg-gray-800/80 text-white transition-all hover:border-emerald-500/50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 cursor-pointer">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="border border-gray-700 bg-gray-900/95 text-white backdrop-blur-xl shadow-xl">
+                          <SelectItem value="patient" disabled={u.role === "patient"} className="cursor-pointer focus:bg-emerald-500/20 focus:text-white">
+                            <div className="flex items-center gap-2">
+                              {u.role === "patient" ? <Check className="h-4 w-4 text-emerald-300" /> : <span className="h-4 w-4" />}
+                              <span>Patient</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="doctor" disabled={u.role === "doctor"} className="cursor-pointer focus:bg-emerald-500/20 focus:text-white">
+                            <div className="flex items-center gap-2">
+                              {u.role === "doctor" ? <Check className="h-4 w-4 text-emerald-300" /> : <span className="h-4 w-4" />}
+                              <span>Doctor</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden lg:block overflow-x-auto rounded-2xl border border-gray-800 bg-gray-950/40 shadow-lg">
           <table className="w-full min-w-[1320px] text-left border-collapse">
             <thead className="bg-gray-900/70">
               <tr className="border-b border-gray-800 text-sm text-gray-300">

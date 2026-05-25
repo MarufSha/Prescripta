@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Eye, EyeOff, Loader2, ChevronDown } from "lucide-react";
 import Link from "next/link";
 
 import { useAuthStore } from "@/store/authStore";
@@ -11,9 +11,16 @@ import LoginCharacter, {
   GazeMode,
 } from "@/components/UICharacter";
 
+const DEMO_ACCOUNTS = [
+  { role: "Admin", email: "admin@gmail.com", password: "admin1234", color: "from-orange-400 to-amber-500", bg: "bg-orange-50 border-orange-200 hover:border-orange-400", tag: "bg-orange-100 text-orange-700" },
+  { role: "Doctor", email: "doctor@gmail.com", password: "doctor1234", color: "from-cyan-500 to-blue-500", bg: "bg-cyan-50 border-cyan-200 hover:border-cyan-400", tag: "bg-cyan-100 text-cyan-700" },
+  { role: "Patient", email: "user@gmail.com", password: "user1234", color: "from-violet-500 to-purple-500", bg: "bg-violet-50 border-violet-200 hover:border-violet-400", tag: "bg-violet-100 text-violet-700" },
+];
+
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [demoOpen, setDemoOpen] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -89,8 +96,8 @@ export default function LoginForm() {
   };
 
   return (
-    <section className="h-screen w-screen overflow-hidden bg-[#eef1ee]">
-      <div className="grid h-full w-full grid-cols-1 lg:grid-cols-[1.08fr_0.92fr]">
+    <section className="w-screen overflow-x-hidden bg-[#eef1ee] lg:h-screen lg:overflow-hidden">
+      <div className="grid w-full grid-cols-1 lg:h-full lg:grid-cols-[1.08fr_0.92fr]">
         {/* LEFT PANEL */}
         <div className="relative hidden h-full overflow-hidden bg-gradient-to-br from-[#eef2ef] via-[#edf3ef] to-[#e7eeea] lg:flex">
           <div className="pointer-events-none absolute inset-0">
@@ -122,7 +129,7 @@ export default function LoginForm() {
         </div>
 
         {/* RIGHT PANEL */}
-        <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-[#edf5f1] via-[#e8f1eb] to-[#e1ebe4] px-8 py-10 sm:px-12 lg:px-14 xl:px-20">
+        <div className="relative flex w-full flex-col items-center justify-center bg-gradient-to-br from-[#edf5f1] via-[#e8f1eb] to-[#e1ebe4] px-8 py-12 sm:px-12 lg:h-full lg:overflow-y-auto lg:px-14 xl:px-20">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute right-[10%] top-[14%] h-56 w-56 rounded-full bg-emerald-500/4 blur-3xl" />
             <div className="absolute left-[6%] bottom-[10%] h-64 w-64 rounded-full bg-lime-400/3 blur-3xl" />
@@ -309,7 +316,59 @@ export default function LoginForm() {
               </motion.button>
             </form>
 
-            <p className="mt-14 text-center text-sm text-[#727d77]">
+            {/* Demo credentials */}
+            <div className="mt-10">
+              <button
+                type="button"
+                onClick={() => setDemoOpen((o) => !o)}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/60 px-4 py-2.5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100/60 cursor-pointer select-none"
+              >              
+                Demo Access — try it instantly
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform duration-200 ${demoOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              <AnimatePresence>
+                {demoOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.22 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="grid grid-cols-3 gap-2 pt-3">
+                      {DEMO_ACCOUNTS.map((acc) => (
+                        <button
+                          key={acc.role}
+                          type="button"
+                          onClick={() => {
+                            setEmail(acc.email);
+                            setPassword(acc.password);
+                            setDemoOpen(false);
+                            setCharacterMood("idle");
+                            setGazeMode("follow");
+                          }}
+                          className={`flex flex-col items-start gap-1.5 rounded-xl border p-2 sm:p-3 text-left transition cursor-pointer ${acc.bg}`}
+                        >
+                          <span className={`rounded-full px-1.5 py-0.5 text-[10px] sm:text-[11px] font-semibold ${acc.tag}`}>
+                            {acc.role}
+                          </span>
+                          <div className="w-full min-w-0 space-y-0.5">
+                            <p className="truncate text-[10px] sm:text-[11px] text-gray-500">{acc.email}</p>
+                            <p className="truncate text-[10px] sm:text-[11px] font-mono text-gray-400">{acc.password}</p>
+                          </div>
+                          <span className="text-[9px] sm:text-[10px] font-medium text-gray-400">tap to fill ↗</span>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <p className="mt-6 text-center text-sm text-[#727d77]">
               Don&apos;t Have An Account?{" "}
               <Link
                 href="/signup"

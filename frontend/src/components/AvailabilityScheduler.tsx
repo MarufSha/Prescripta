@@ -239,53 +239,54 @@ export default function AvailabilityScheduler({ value, onChange, forceDark }: Pr
                 onChange={() => toggleDay(dayIdx)}
                 forceDark={forceDark}
               />
-              <span className={`w-24 text-sm font-semibold select-none ${labelColor(day.enabled)}`}>
+              <span className={`flex-1 text-sm font-semibold select-none ${labelColor(day.enabled)}`}>
                 {day.day}
               </span>
-
-              {day.enabled ? (
-                <div className="flex flex-1 flex-wrap items-center gap-2">
-                  {day.slots.map((slot, slotIdx) => (
-                    <div key={slotIdx} className="flex items-center gap-1.5">
-                      <TimeInput
-                        value={slot.startTime}
-                        onChange={(v) => updateSlot(dayIdx, slotIdx, "startTime", v)}
-                        forceDark={forceDark}
-                      />
-                      <Clock
-                        className={`h-3.5 w-3.5 shrink-0 ${forceDark ? "text-gray-600" : "text-gray-400 dark:text-gray-600"}`}
-                      />
-                      <TimeInput
-                        value={slot.endTime}
-                        onChange={(v) => updateSlot(dayIdx, slotIdx, "endTime", v)}
-                        forceDark={forceDark}
-                      />
-                      {day.slots.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeSlot(dayIdx, slotIdx)}
-                          className={`transition-colors cursor-pointer ${removeSlotColor}`}
-                          aria-label="Remove slot"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-
-                  <button
-                    type="button"
-                    onClick={() => addSlot(dayIdx)}
-                    className={`inline-flex items-center gap-1 text-xs font-medium transition-colors cursor-pointer ${addSlotColor}`}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Add slot
-                  </button>
-                </div>
-              ) : (
+              {!day.enabled && (
                 <span className={`text-xs ${unavailableText}`}>Unavailable</span>
               )}
             </div>
+
+            {/* Slots section — stacked for mobile friendliness */}
+            {day.enabled && (
+              <div className="space-y-2 px-3 pb-3">
+                {day.slots.map((slot, slotIdx) => (
+                  <div key={slotIdx} className="flex items-center gap-2">
+                    <TimeInput
+                      value={slot.startTime}
+                      onChange={(v) => updateSlot(dayIdx, slotIdx, "startTime", v)}
+                      forceDark={forceDark}
+                    />
+                    <Clock
+                      className={`h-3.5 w-3.5 shrink-0 ${forceDark ? "text-gray-600" : "text-gray-400 dark:text-gray-600"}`}
+                    />
+                    <TimeInput
+                      value={slot.endTime}
+                      onChange={(v) => updateSlot(dayIdx, slotIdx, "endTime", v)}
+                      forceDark={forceDark}
+                    />
+                    {day.slots.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeSlot(dayIdx, slotIdx)}
+                        className={`ml-auto transition-colors cursor-pointer ${removeSlotColor}`}
+                        aria-label="Remove slot"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => addSlot(dayIdx)}
+                  className={`inline-flex items-center gap-1 text-xs font-medium transition-colors cursor-pointer ${addSlotColor}`}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add slot
+                </button>
+              </div>
+            )}
 
             {/* Inline error */}
             {dayError && (
