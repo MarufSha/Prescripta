@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, Loader2, ChevronDown, Zap } from "lucide-react";
+import { Eye, EyeOff, Loader2, ChevronDown } from "lucide-react";
 import Link from "next/link";
 
 import { useAuthStore } from "@/store/authStore";
@@ -322,8 +322,7 @@ export default function LoginForm() {
                 type="button"
                 onClick={() => setDemoOpen((o) => !o)}
                 className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/60 px-4 py-2.5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100/60 cursor-pointer select-none"
-              >
-                <Zap className="h-4 w-4" />
+              >              
                 Demo Access — try it instantly
                 <ChevronDown
                   className={`h-4 w-4 transition-transform duration-200 ${demoOpen ? "rotate-180" : ""}`}
