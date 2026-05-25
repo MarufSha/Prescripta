@@ -116,6 +116,7 @@ const sanitizeUser = (user) => ({
   _id: user._id,
   name: user.name,
   email: user.email,
+  mobileNumber: user.mobileNumber,
   role: user.role,
   isVerified: user.isVerified,
   createdAt: user.createdAt,

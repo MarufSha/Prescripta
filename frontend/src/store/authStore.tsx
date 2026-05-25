@@ -67,6 +67,7 @@ export type AdminUser = {
   _id: string;
   email: string;
   name: string;
+  mobileNumber?: string;
   role: UserRole;
   isVerified?: boolean;
   createdAt?: string;
