@@ -17,14 +17,22 @@ const sanitizeUser = (user) => ({
 });
 
 export const signup = async (req, res) => {
-  const { name, email, password } = matchedData(req);
+  const { name, email, password, age, sex, mobileNumber } = matchedData(req);
 
   try {
     const userAlreadyExists = await User.findOne({ email });
     if (userAlreadyExists) {
       return res.status(409).json({
         success: false,
-        message: "User already exists",
+        message: "An account with this email already exists",
+      });
+    }
+
+    const mobileAlreadyExists = await User.findOne({ mobileNumber });
+    if (mobileAlreadyExists) {
+      return res.status(409).json({
+        success: false,
+        message: "An account with this mobile number already exists",
       });
     }
 
@@ -35,6 +43,9 @@ export const signup = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      age,
+      sex,
+      mobileNumber,
       verificationToken,
       verificationTokenExpiresAt: Date.now() + 15 * 60 * 1000,
     });
@@ -370,13 +381,36 @@ export const updateProfile = async (req, res) => {
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    const { name, doctorProfile } = req.body;
+    const { name, age, sex, mobileNumber, doctorProfile } = req.body;
 
     if (name !== undefined) {
       const trimmed = String(name).trim();
       if (trimmed.length < 2 || trimmed.length > 50)
         return res.status(400).json({ success: false, message: "Name must be 2–50 characters" });
       user.name = trimmed;
+    }
+
+    if (age !== undefined) {
+      const parsed = parseInt(age);
+      if (isNaN(parsed) || parsed < 1 || parsed > 120)
+        return res.status(400).json({ success: false, message: "Age must be between 1 and 120" });
+      user.age = parsed;
+    }
+
+    if (sex !== undefined) {
+      if (!["Male", "Female", "Other"].includes(sex))
+        return res.status(400).json({ success: false, message: "Sex must be Male, Female, or Other" });
+      user.sex = sex;
+    }
+
+    if (mobileNumber !== undefined) {
+      const trimmed = String(mobileNumber).trim();
+      if (trimmed) {
+        const duplicate = await User.findOne({ mobileNumber: trimmed, _id: { $ne: user._id } });
+        if (duplicate)
+          return res.status(409).json({ success: false, message: "An account with this mobile number already exists" });
+        user.mobileNumber = trimmed;
+      }
     }
 
     if (doctorProfile !== undefined && user.role === "doctor") {

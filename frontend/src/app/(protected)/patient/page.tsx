@@ -12,6 +12,7 @@ import {
   CalendarCheck,
   Settings,
   BadgeCheck,
+  Phone,
 } from "lucide-react";
 
 function Card({
@@ -122,6 +123,19 @@ export default function PatientDashboardPage() {
                 <Mail className="h-4 w-4" />
                 {user?.email}
               </span>
+              {user?.mobileNumber && (
+                <span className="flex items-center gap-1.5">
+                  <Phone className="h-4 w-4" />
+                  {user.mobileNumber}
+                </span>
+              )}
+              {(user?.age || user?.sex) && (
+                <span className="flex items-center gap-1.5">
+                  {user.age && <span>{user.age} yrs</span>}
+                  {user.age && user.sex && <span>·</span>}
+                  {user.sex && <span>{user.sex}</span>}
+                </span>
+              )}
               {user?.createdAt && (
                 <span className="flex items-center gap-1.5">
                   <Calendar className="h-4 w-4" />
@@ -170,6 +184,9 @@ export default function PatientDashboardPage() {
       <Card title="Personal Information" icon={UserCircle}>
         <InfoRow label="Full Name" value={user?.name} />
         <InfoRow label="Email Address" value={user?.email} />
+        <InfoRow label="Mobile Number" value={user?.mobileNumber} />
+        <InfoRow label="Age" value={user?.age ? String(user.age) : null} />
+        <InfoRow label="Sex" value={user?.sex} />
         <InfoRow
           label="Member Since"
           value={user?.createdAt ? formatDate(user.createdAt) : null}

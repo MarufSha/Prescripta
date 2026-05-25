@@ -33,6 +33,27 @@ const userSchema = new mongoose.Schema(
       minLength: [2, "Name must be at least 2 characters long"],
       maxLength: [50, "Name must be at most 50 characters long"],
     },
+
+    age: {
+      type: Number,
+      required: [true, "Age is required"],
+      min: [1, "Age must be at least 1"],
+      max: [120, "Age must be at most 120"],
+    },
+
+    sex: {
+      type: String,
+      required: [true, "Sex is required"],
+      enum: ["Male", "Female", "Other"],
+    },
+
+    mobileNumber: {
+      type: String,
+      required: [true, "Mobile number is required"],
+      trim: true,
+      maxLength: [20, "Mobile number is too long"],
+    },
+
     doctorProfile: {
       type: doctorProfileSchema,
       default: undefined,

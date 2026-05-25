@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState, useCallback } from "react";
 import { AdminUser, DoctorProfile, DoctorAvailability, UserRole } from "@/store/authStore";
 import { capitalize, formatDate } from "@/utils/date";
 import { createPortal } from "react-dom";
@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/pagination";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Check, Plus, ShieldCheck, Trash2, X } from "lucide-react";
+import { PhoneField } from "@/components/PhoneField";
 import AvailabilityScheduler, {
   type DaySchedule,
   initDaySchedules,
@@ -72,7 +73,9 @@ type ConfirmActionState = {
   onConfirm: () => Promise<void> | void;
 };
 
-type DoctorFormState = {
+// schedule is kept in its own state to prevent AvailabilityScheduler
+// from re-rendering on every keystroke in the text fields.
+type DoctorFormFields = {
   specialtiesInput: string;
   bmdcNo: string;
   mobileNumber: string;
@@ -82,7 +85,6 @@ type DoctorFormState = {
     name: string;
     location: string;
   }[];
-  schedule: DaySchedule[];
 };
 
 const ROW_OPTIONS = [5, 10, 20, 50, 100] as const;
@@ -126,25 +128,28 @@ const parseCommaSeparated = (value: string) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
-const getInitialDoctorForm = (
-  doctorProfile?: DoctorProfile,
-): DoctorFormState => ({
-  specialtiesInput: doctorProfile?.specialties?.join(", ") || "",
-  bmdcNo: doctorProfile?.bmdcNo || "",
-  mobileNumber: doctorProfile?.mobileNumber || "",
-  designationsInput: doctorProfile?.designations?.join(", ") || "",
-  degreesInput: doctorProfile?.degrees?.join(", ") || "",
+const getInitialDoctorFields = (targetUser?: AdminUser): DoctorFormFields => ({
+  specialtiesInput: targetUser?.doctorProfile?.specialties?.join(", ") || "",
+  bmdcNo: targetUser?.doctorProfile?.bmdcNo || "",
+  // prefer existing doctor-profile mobile, fall back to the user's personal mobile
+  mobileNumber:
+    targetUser?.doctorProfile?.mobileNumber || targetUser?.mobileNumber || "",
+  designationsInput: targetUser?.doctorProfile?.designations?.join(", ") || "",
+  degreesInput: targetUser?.doctorProfile?.degrees?.join(", ") || "",
   chambers:
-    doctorProfile?.chambers?.length && Array.isArray(doctorProfile.chambers)
-      ? doctorProfile.chambers.map((chamber) => ({
-          name: chamber.name || "",
-          location: chamber.location || "",
+    targetUser?.doctorProfile?.chambers?.length &&
+    Array.isArray(targetUser.doctorProfile.chambers)
+      ? targetUser.doctorProfile.chambers.map((c) => ({
+          name: c.name || "",
+          location: c.location || "",
         }))
       : [{ name: "", location: "" }],
-  schedule: doctorProfile?.availability?.length
-    ? toDaySchedules(doctorProfile.availability)
-    : initDaySchedules(),
 });
+
+const getInitialSchedule = (doctorProfile?: DoctorProfile): DaySchedule[] =>
+  doctorProfile?.availability?.length
+    ? toDaySchedules(doctorProfile.availability)
+    : initDaySchedules();
 
 const AdminTable = ({
   role,
@@ -161,12 +166,9 @@ const AdminTable = ({
   const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(
     null,
   );
-  const [doctorModalUser, setDoctorModalUser] = useState<AdminUser | null>(
-    null,
-  );
-  const [doctorForm, setDoctorForm] = useState<DoctorFormState>(
-    getInitialDoctorForm(),
-  );
+  const [doctorModalUser, setDoctorModalUser] = useState<AdminUser | null>(null);
+  const [doctorForm, setDoctorForm] = useState<DoctorFormFields>(getInitialDoctorFields());
+  const [doctorSchedule, setDoctorSchedule] = useState<DaySchedule[]>(initDaySchedules());
   const [doctorModalError, setDoctorModalError] = useState<string | null>(null);
   const isDoctorModalOpen = Boolean(doctorModalUser);
 
@@ -305,62 +307,61 @@ const AdminTable = ({
     }
   };
 
-  const openDoctorModal = (targetUser: AdminUser) => {
+  const openDoctorModal = useCallback((targetUser: AdminUser) => {
     setDoctorModalUser(targetUser);
-    setDoctorForm(getInitialDoctorForm(targetUser.doctorProfile));
+    setDoctorForm(getInitialDoctorFields(targetUser));
+    setDoctorSchedule(getInitialSchedule(targetUser.doctorProfile));
     setDoctorModalError(null);
-  };
+  }, []);
 
-  const closeDoctorModal = () => {
+  const closeDoctorModal = useCallback(() => {
     setDoctorModalUser(null);
-    setDoctorForm(getInitialDoctorForm());
+    setDoctorForm(getInitialDoctorFields());
+    setDoctorSchedule(initDaySchedules());
     setDoctorModalError(null);
-  };
+  }, []);
 
-  const updateDoctorFormField = (
-    field: keyof Omit<DoctorFormState, "chambers" | "schedule">,
+  const updateDoctorFormField = useCallback((
+    field: keyof Omit<DoctorFormFields, "chambers">,
     value: string,
   ) => {
-    setDoctorForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+    setDoctorForm((prev) => ({ ...prev, [field]: value }));
+  }, []);
 
-  const updateChamberField = (
+  const updateChamberField = useCallback((
     index: number,
     field: "name" | "location",
     value: string,
   ) => {
     setDoctorForm((prev) => ({
       ...prev,
-      chambers: prev.chambers.map((chamber, chamberIndex) =>
-        chamberIndex === index ? { ...chamber, [field]: value } : chamber,
+      chambers: prev.chambers.map((chamber, i) =>
+        i === index ? { ...chamber, [field]: value } : chamber,
       ),
     }));
-  };
+  }, []);
 
-  const addChamber = () => {
+  const addChamber = useCallback(() => {
     setDoctorForm((prev) => ({
       ...prev,
       chambers: [...prev.chambers, { name: "", location: "" }],
     }));
-  };
+  }, []);
 
-  const removeChamber = (index: number) => {
+  const removeChamber = useCallback((index: number) => {
     setDoctorForm((prev) => ({
       ...prev,
       chambers:
         prev.chambers.length === 1
           ? [{ name: "", location: "" }]
-          : prev.chambers.filter((_, chamberIndex) => chamberIndex !== index),
+          : prev.chambers.filter((_, i) => i !== index),
     }));
-  };
+  }, []);
 
   const submitDoctorConversion = async () => {
     if (!doctorModalUser) return;
 
-    const availability: DoctorAvailability[] = fromDaySchedules(doctorForm.schedule);
+    const availability: DoctorAvailability[] = fromDaySchedules(doctorSchedule);
 
     const doctorProfile: DoctorProfile = {
       specialties: parseCommaSeparated(doctorForm.specialtiesInput),
@@ -1225,16 +1226,11 @@ const AdminTable = ({
                         <label className="text-sm font-medium text-gray-300">
                           Mobile Number
                         </label>
-                        <input
+                        <PhoneField
                           value={doctorForm.mobileNumber}
-                          onChange={(e) =>
-                            updateDoctorFormField(
-                              "mobileNumber",
-                              e.target.value,
-                            )
-                          }
+                          onChange={(v) => updateDoctorFormField("mobileNumber", v)}
                           placeholder="Enter mobile number"
-                          className="w-full rounded-xl border border-gray-700 bg-gray-900/80 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                          forceDark
                         />
                       </div>
 
@@ -1357,8 +1353,8 @@ const AdminTable = ({
                           Toggle the days available and set time slots. You can add multiple slots per day.
                         </p>
                         <AvailabilityScheduler
-                          value={doctorForm.schedule}
-                          onChange={(v) => setDoctorForm((prev) => ({ ...prev, schedule: v }))}
+                          value={doctorSchedule}
+                          onChange={setDoctorSchedule}
                           forceDark
                         />
                       </div>

@@ -14,6 +14,9 @@ export type UserRole = "superadmin" | "admin" | "doctor" | "patient";
 type PendingSignupData = {
   name: string;
   email: string;
+  age: number;
+  sex: string;
+  mobileNumber: string;
 };
 
 export type DoctorChamber = {
@@ -48,6 +51,9 @@ type User = {
   _id: string;
   email: string;
   name: string;
+  age?: number;
+  sex?: string;
+  mobileNumber?: string;
   role: UserRole;
   isVerified?: boolean;
   createdAt?: string;
@@ -61,6 +67,7 @@ export type AdminUser = {
   _id: string;
   email: string;
   name: string;
+  mobileNumber?: string;
   role: UserRole;
   isVerified?: boolean;
   createdAt?: string;
@@ -89,11 +96,21 @@ type PaginationState = {
   totalPages: number;
 };
 
+export type UserStats = {
+  total: number;
+  superadmin: number;
+  admin: number;
+  doctor: number;
+  patient: number;
+};
+
 type AuthState = {
   user: User | null;
   users: AdminUser[];
   doctors: PublicDoctor[];
   usersPagination: PaginationState;
+  userStats: UserStats | null;
+  fetchUserStats: () => Promise<void>;
   isAuthenticated: boolean;
   isLoading: boolean;
   isCheckingAuth: boolean;
@@ -105,7 +122,7 @@ type AuthState = {
 
   csrfToken: string | null;
   fetchCsrfToken: () => Promise<void>;
-  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string, age: number, sex: string, mobileNumber: string) => Promise<void>;
   verifyEmail: (code: string) => Promise<VerifyEmailResponse>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -121,7 +138,7 @@ type AuthState = {
     role: "doctor" | "patient",
     doctorProfile?: DoctorProfile,
   ) => Promise<void>;
-  updateDoctorProfile: (data: { name?: string; doctorProfile?: DoctorProfile }) => Promise<void>;
+  updateDoctorProfile: (data: { name?: string; age?: number; sex?: string; mobileNumber?: string; doctorProfile?: DoctorProfile }) => Promise<void>;
   createDoctorInvite: (name: string, email: string) => Promise<void>;
   deletePendingSignup: () => Promise<void>;
   requestManualVerification: () => Promise<void>;
@@ -216,6 +233,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   users: [],
   doctors: [],
   usersPagination: { page: 1, limit: 25, total: 0, totalPages: 1 },
+  userStats: null,
   isAuthenticated: false,
   isLoading: false,
   isCheckingAuth: true,
@@ -256,7 +274,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  signUp: async (email, password, name) => {
+  signUp: async (email, password, name, age, sex, mobileNumber) => {
     set({
       isLoading: true,
       error: null,
@@ -265,7 +283,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      const res = await api.post("/auth/signup", { email, password, name });
+      const res = await api.post("/auth/signup", { email, password, name, age, sex, mobileNumber });
 
       set({
         user: res.data.user as User,
@@ -274,7 +292,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         error: null,
         message: null,
         fieldErrors: {},
-        pendingSignupData: { name, email },
+        pendingSignupData: { name, email, age, sex, mobileNumber },
       });
 
       await useAuthStore.getState().fetchCsrfToken();
@@ -419,7 +437,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         user: null,
         users: [],
         doctors: [],
-  usersPagination: { page: 1, limit: 25, total: 0, totalPages: 1 },
+        usersPagination: { page: 1, limit: 25, total: 0, totalPages: 1 },
+        userStats: null,
         isAuthenticated: false,
         isLoading: false,
         error: null,
@@ -516,6 +535,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (err) {
       const msg = getErrorMessage(err, "Failed to fetch doctors");
       set({ error: msg, isLoading: false });
+      throw err;
+    }
+  },
+
+  fetchUserStats: async (): Promise<void> => {
+    try {
+      const res = (await withCsrfRetry(() => api.get("/admin/stats"))) as {
+        data: { stats: UserStats };
+      };
+      set({ userStats: res.data.stats });
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to fetch user stats");
+      set({ error: msg });
       throw err;
     }
   },

@@ -116,6 +116,7 @@ const sanitizeUser = (user) => ({
   _id: user._id,
   name: user.name,
   email: user.email,
+  mobileNumber: user.mobileNumber,
   role: user.role,
   isVerified: user.isVerified,
   createdAt: user.createdAt,
@@ -322,6 +323,33 @@ export const getAllUsers = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Server error fetching users",
+    });
+  }
+};
+
+export const getStats = async (req, res) => {
+  try {
+    const results = await User.aggregate([
+      { $group: { _id: "$role", count: { $sum: 1 } } },
+    ]);
+
+    const byRole = Object.fromEntries(results.map((r) => [r._id, r.count]));
+
+    return res.status(200).json({
+      success: true,
+      stats: {
+        total: results.reduce((sum, r) => sum + r.count, 0),
+        superadmin: byRole.superadmin ?? 0,
+        admin: byRole.admin ?? 0,
+        doctor: byRole.doctor ?? 0,
+        patient: byRole.patient ?? 0,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching stats:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error fetching stats",
     });
   }
 };

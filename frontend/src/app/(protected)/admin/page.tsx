@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/store/authStore";
 import {
@@ -7,39 +8,39 @@ import {
   Users,
   Pill,
   ChartNoAxesColumn,
+  Stethoscope,
 } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminDashboardPage() {
-  const { users } = useAuthStore();
+  const { userStats, fetchUserStats } = useAuthStore();
 
-  const totalUsers = users.length;
-  const totalDoctors = users.filter((u) => u.role === "doctor").length;
-  const totalPatients = users.filter((u) => u.role === "patient").length;
-  const totalAdmins = users.filter((u) => u.role === "admin").length;
+  useEffect(() => {
+    void fetchUserStats();
+  }, [fetchUserStats]);
 
   const cards = [
     {
       title: "Admins",
-      value: totalAdmins,
+      value: userStats?.admin ?? "—",
       icon: ShieldCheck,
       href: "/admin/users",
     },
     {
       title: "Doctors",
-      value: totalDoctors,
-      icon: Users,
+      value: userStats?.doctor ?? "—",
+      icon: Stethoscope,
       href: "/admin/users",
     },
     {
       title: "Patients",
-      value: totalPatients,
+      value: userStats?.patient ?? "—",
       icon: Users,
       href: "/admin/users",
     },
     {
       title: "Total Users",
-      value: totalUsers,
+      value: userStats?.total ?? "—",
       icon: ChartNoAxesColumn,
       href: "/admin/users",
     },

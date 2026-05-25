@@ -222,7 +222,9 @@ export default function DoctorProfilePage() {
         <Card title="Personal Information" icon={UserCircle}>
           <InfoRow label="Full Name" value={user?.name} />
           <InfoRow label="Email Address" value={user?.email} />
-          <InfoRow label="Phone Number" value={profile?.mobileNumber} />
+          <InfoRow label="Mobile Number" value={user?.mobileNumber} />
+          <InfoRow label="Age" value={user?.age ? String(user.age) : null} />
+          <InfoRow label="Sex" value={user?.sex} />
           <InfoRow label="BMDC Number" value={profile?.bmdcNo} />
           <InfoRow
             label="Member Since"
