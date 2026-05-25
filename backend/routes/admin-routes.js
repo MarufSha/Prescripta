@@ -4,6 +4,7 @@ import { requireRole } from "../middleware/requireRole.js";
 import {
   updateUserRole,
   getAllUsers,
+  getStats,
   verifyUserManually,
   deleteUserByAdmin,
 } from "../controllers/admin-controller.js";
@@ -13,6 +14,7 @@ import { handleValidationErrors } from "../middleware/handleValidationErrors.js"
 import { createDoctorInviteValidation } from "../validators/adminValidators.js";
 const router = express.Router();
 router.get("/users", verifyToken, requireRole("admin"), requireCsrf, getAllUsers);
+router.get("/stats", verifyToken, requireRole("admin"), requireCsrf, getStats);
 router.patch(
   "/users/:id/role",
   verifyToken,

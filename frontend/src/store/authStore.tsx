@@ -96,11 +96,21 @@ type PaginationState = {
   totalPages: number;
 };
 
+export type UserStats = {
+  total: number;
+  superadmin: number;
+  admin: number;
+  doctor: number;
+  patient: number;
+};
+
 type AuthState = {
   user: User | null;
   users: AdminUser[];
   doctors: PublicDoctor[];
   usersPagination: PaginationState;
+  userStats: UserStats | null;
+  fetchUserStats: () => Promise<void>;
   isAuthenticated: boolean;
   isLoading: boolean;
   isCheckingAuth: boolean;
@@ -223,6 +233,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   users: [],
   doctors: [],
   usersPagination: { page: 1, limit: 25, total: 0, totalPages: 1 },
+  userStats: null,
   isAuthenticated: false,
   isLoading: false,
   isCheckingAuth: true,
@@ -426,7 +437,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         user: null,
         users: [],
         doctors: [],
-  usersPagination: { page: 1, limit: 25, total: 0, totalPages: 1 },
+        usersPagination: { page: 1, limit: 25, total: 0, totalPages: 1 },
+        userStats: null,
         isAuthenticated: false,
         isLoading: false,
         error: null,
@@ -523,6 +535,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (err) {
       const msg = getErrorMessage(err, "Failed to fetch doctors");
       set({ error: msg, isLoading: false });
+      throw err;
+    }
+  },
+
+  fetchUserStats: async (): Promise<void> => {
+    try {
+      const res = (await withCsrfRetry(() => api.get("/admin/stats"))) as {
+        data: { stats: UserStats };
+      };
+      set({ userStats: res.data.stats });
+    } catch (err) {
+      const msg = getErrorMessage(err, "Failed to fetch user stats");
+      set({ error: msg });
       throw err;
     }
   },
