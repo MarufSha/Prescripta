@@ -351,16 +351,16 @@ export default function LoginForm() {
                             setCharacterMood("idle");
                             setGazeMode("follow");
                           }}
-                          className={`flex flex-col items-start gap-2 rounded-xl border p-3 text-left transition cursor-pointer ${acc.bg}`}
+                          className={`flex flex-col items-start gap-1.5 rounded-xl border p-2 sm:p-3 text-left transition cursor-pointer ${acc.bg}`}
                         >
-                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${acc.tag}`}>
+                          <span className={`rounded-full px-1.5 py-0.5 text-[10px] sm:text-[11px] font-semibold ${acc.tag}`}>
                             {acc.role}
                           </span>
-                          <div className="w-full space-y-0.5">
-                            <p className="truncate text-[11px] text-gray-500">{acc.email}</p>
-                            <p className="text-[11px] font-mono text-gray-400">{acc.password}</p>
+                          <div className="w-full min-w-0 space-y-0.5">
+                            <p className="truncate text-[10px] sm:text-[11px] text-gray-500">{acc.email}</p>
+                            <p className="truncate text-[10px] sm:text-[11px] font-mono text-gray-400">{acc.password}</p>
                           </div>
-                          <span className="text-[10px] font-medium text-gray-400">click to fill ↗</span>
+                          <span className="text-[9px] sm:text-[10px] font-medium text-gray-400">tap to fill ↗</span>
                         </button>
                       ))}
                     </div>

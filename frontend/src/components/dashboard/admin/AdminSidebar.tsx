@@ -127,6 +127,7 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
                 key={item.href}
                 href={item.href}
                 title={collapsed ? item.label : undefined}
+                onClick={onMobileClose}
                 className={[
                   "group flex items-center rounded-2xl text-sm font-medium transition-all duration-200",
                   collapsed ? "justify-center px-3 py-3" : "gap-3 px-4 py-3",

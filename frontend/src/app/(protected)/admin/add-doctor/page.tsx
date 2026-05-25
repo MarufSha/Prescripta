@@ -26,7 +26,7 @@ export default function AddDoctorPage() {
   };
 
   return (
-    <div className="max-w-2xl w-xl mx-auto rounded-3xl border border-gray-800 bg-gray-900/70 p-6 shadow-xl backdrop-blur-xl text-white">
+    <div className="w-full max-w-2xl mx-auto rounded-3xl border border-gray-800 bg-gray-900/70 p-6 shadow-xl backdrop-blur-xl text-white">
       <div className="flex flex-col items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
           Add Doctor
