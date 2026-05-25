@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Eye, EyeOff, Loader2, ChevronDown, Zap } from "lucide-react";
 import Link from "next/link";
 
 import { useAuthStore } from "@/store/authStore";
@@ -11,9 +11,16 @@ import LoginCharacter, {
   GazeMode,
 } from "@/components/UICharacter";
 
+const DEMO_ACCOUNTS = [
+  { role: "Admin", email: "admin@gmail.com", password: "admin1234", color: "from-orange-400 to-amber-500", bg: "bg-orange-50 border-orange-200 hover:border-orange-400", tag: "bg-orange-100 text-orange-700" },
+  { role: "Doctor", email: "doctor@gmail.com", password: "doctor1234", color: "from-cyan-500 to-blue-500", bg: "bg-cyan-50 border-cyan-200 hover:border-cyan-400", tag: "bg-cyan-100 text-cyan-700" },
+  { role: "Patient", email: "user@gmail.com", password: "user1234", color: "from-violet-500 to-purple-500", bg: "bg-violet-50 border-violet-200 hover:border-violet-400", tag: "bg-violet-100 text-violet-700" },
+];
+
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [demoOpen, setDemoOpen] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -309,7 +316,60 @@ export default function LoginForm() {
               </motion.button>
             </form>
 
-            <p className="mt-14 text-center text-sm text-[#727d77]">
+            {/* Demo credentials */}
+            <div className="mt-10">
+              <button
+                type="button"
+                onClick={() => setDemoOpen((o) => !o)}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/60 px-4 py-2.5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100/60 cursor-pointer select-none"
+              >
+                <Zap className="h-4 w-4" />
+                Demo Access — try it instantly
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform duration-200 ${demoOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              <AnimatePresence>
+                {demoOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.22 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="grid grid-cols-3 gap-2 pt-3">
+                      {DEMO_ACCOUNTS.map((acc) => (
+                        <button
+                          key={acc.role}
+                          type="button"
+                          onClick={() => {
+                            setEmail(acc.email);
+                            setPassword(acc.password);
+                            setDemoOpen(false);
+                            setCharacterMood("idle");
+                            setGazeMode("follow");
+                          }}
+                          className={`flex flex-col items-start gap-2 rounded-xl border p-3 text-left transition cursor-pointer ${acc.bg}`}
+                        >
+                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${acc.tag}`}>
+                            {acc.role}
+                          </span>
+                          <div className="w-full space-y-0.5">
+                            <p className="truncate text-[11px] text-gray-500">{acc.email}</p>
+                            <p className="text-[11px] font-mono text-gray-400">{acc.password}</p>
+                          </div>
+                          <span className="text-[10px] font-medium text-gray-400">click to fill ↗</span>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <p className="mt-6 text-center text-sm text-[#727d77]">
               Don&apos;t Have An Account?{" "}
               <Link
                 href="/signup"
