@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Save, Plus, X, User, Stethoscope, Building2, Clock } from "lucide-react";
 import { useAuthStore, type DoctorChamber } from "@/store/authStore";
+import { PhoneField } from "@/components/PhoneField";
 import AvailabilityScheduler, {
   type DaySchedule,
   toDaySchedules,
@@ -141,6 +142,9 @@ function SectionCard({
 
 type FormState = {
   name: string;
+  age: string;
+  sex: string;
+  personalMobile: string;
   specialties: string[];
   bmdcNo: string;
   mobileNumber: string;
@@ -157,6 +161,9 @@ export default function SettingsPage() {
   const buildForm = useCallback(
     (): FormState => ({
       name: user?.name ?? "",
+      age: user?.age ? String(user.age) : "",
+      sex: user?.sex ?? "",
+      personalMobile: user?.mobileNumber ?? "",
       specialties: user?.doctorProfile?.specialties ?? [],
       bmdcNo: user?.doctorProfile?.bmdcNo ?? "",
       mobileNumber: user?.doctorProfile?.mobileNumber ?? "",
@@ -217,6 +224,9 @@ export default function SettingsPage() {
     clearError();
     await updateDoctorProfile({
       name: form.name,
+      age: form.age ? Number(form.age) : undefined,
+      sex: form.sex || undefined,
+      mobileNumber: form.personalMobile || undefined,
       doctorProfile: {
         specialties: form.specialties,
         bmdcNo: form.bmdcNo,
@@ -257,21 +267,58 @@ export default function SettingsPage() {
 
       {/* Personal Information */}
       <SectionCard icon={User} title="Personal Information">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field>
+              <FieldLabel text="Full Name" required />
+              <TextInput
+                value={form.name}
+                onChange={(v) => set("name", v)}
+                placeholder="Dr. John Doe"
+              />
+            </Field>
+            <Field>
+              <FieldLabel text="Email" />
+              <TextInput value={user?.email ?? ""} onChange={() => {}} type="email" />
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                Email cannot be changed here
+              </p>
+            </Field>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field>
+              <FieldLabel text="Age" />
+              <input
+                type="number"
+                min={1}
+                max={120}
+                value={form.age}
+                onChange={(e) => set("age", e.target.value)}
+                placeholder="Your age"
+                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+            </Field>
+            <Field>
+              <FieldLabel text="Sex" />
+              <select
+                value={form.sex}
+                onChange={(e) => set("sex", e.target.value)}
+                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors cursor-pointer"
+              >
+                <option value="">Select</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </Field>
+          </div>
           <Field>
-            <FieldLabel text="Full Name" required />
-            <TextInput
-              value={form.name}
-              onChange={(v) => set("name", v)}
-              placeholder="Dr. John Doe"
+            <FieldLabel text="Personal Mobile" />
+            <PhoneField
+              value={form.personalMobile}
+              onChange={(v) => set("personalMobile", v)}
+              placeholder="Personal mobile number"
             />
-          </Field>
-          <Field>
-            <FieldLabel text="Email" />
-            <TextInput value={user?.email ?? ""} onChange={() => {}} type="email" />
-            <p className="text-xs text-gray-400 dark:text-gray-500">
-              Email cannot be changed here
-            </p>
           </Field>
         </div>
       </SectionCard>
@@ -289,11 +336,11 @@ export default function SettingsPage() {
               />
             </Field>
             <Field>
-              <FieldLabel text="Mobile Number" />
-              <TextInput
+              <FieldLabel text="Professional Mobile" />
+              <PhoneField
                 value={form.mobileNumber}
                 onChange={(v) => set("mobileNumber", v)}
-                placeholder="+880..."
+                placeholder="Clinic / office number"
               />
             </Field>
           </div>

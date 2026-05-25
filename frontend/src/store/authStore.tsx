@@ -127,7 +127,7 @@ type AuthState = {
     role: "doctor" | "patient",
     doctorProfile?: DoctorProfile,
   ) => Promise<void>;
-  updateDoctorProfile: (data: { name?: string; doctorProfile?: DoctorProfile }) => Promise<void>;
+  updateDoctorProfile: (data: { name?: string; age?: number; sex?: string; mobileNumber?: string; doctorProfile?: DoctorProfile }) => Promise<void>;
   createDoctorInvite: (name: string, email: string) => Promise<void>;
   deletePendingSignup: () => Promise<void>;
   requestManualVerification: () => Promise<void>;

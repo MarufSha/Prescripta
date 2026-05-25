@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useAuthStore } from "@/store/authStore";
 import { formatDate } from "@/utils/date";
 import { Save, Settings, UserCircle, ShieldCheck, Mail } from "lucide-react";
+import { PhoneField } from "@/components/PhoneField";
 
 function InfoRow({ label, value }: { label: string; value: string | undefined | null }) {
   return (
@@ -17,15 +18,24 @@ function InfoRow({ label, value }: { label: string; value: string | undefined | 
   );
 }
 
+const inputCls =
+  "w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors";
+
 export default function PatientSettingsPage() {
   const { user, updateDoctorProfile, isLoading, error, message, clearError } = useAuthStore();
 
   const [name, setName] = useState(user?.name ?? "");
+  const [age, setAge] = useState(user?.age ? String(user.age) : "");
+  const [sex, setSex] = useState(user?.sex ?? "");
+  const [mobileNumber, setMobileNumber] = useState(user?.mobileNumber ?? "");
   const [localMsg, setLocalMsg] = useState("");
 
   useEffect(() => {
     setName(user?.name ?? "");
-  }, [user?.name]);
+    setAge(user?.age ? String(user.age) : "");
+    setSex(user?.sex ?? "");
+    setMobileNumber(user?.mobileNumber ?? "");
+  }, [user?.name, user?.age, user?.sex, user?.mobileNumber]);
 
   useEffect(() => {
     if (message) {
@@ -35,9 +45,20 @@ export default function PatientSettingsPage() {
     }
   }, [message, clearError]);
 
+  const isDirty =
+    name.trim() !== (user?.name ?? "") ||
+    age !== (user?.age ? String(user.age) : "") ||
+    sex !== (user?.sex ?? "") ||
+    mobileNumber !== (user?.mobileNumber ?? "");
+
   const handleSave = async () => {
     clearError();
-    await updateDoctorProfile({ name });
+    await updateDoctorProfile({
+      name,
+      age: age ? Number(age) : undefined,
+      sex: sex || undefined,
+      mobileNumber: mobileNumber || undefined,
+    });
   };
 
   return (
@@ -65,7 +86,7 @@ export default function PatientSettingsPage() {
         </div>
       )}
 
-      {/* Change Name */}
+      {/* Personal Information */}
       <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/70 shadow-sm backdrop-blur-xl">
         <div className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 px-5 py-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10">
@@ -74,6 +95,7 @@ export default function PatientSettingsPage() {
           <h2 className="text-sm font-bold text-gray-900 dark:text-white">Personal Information</h2>
         </div>
         <div className="p-5 space-y-4">
+          {/* Name + Email */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1">
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
@@ -84,7 +106,7 @@ export default function PatientSettingsPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your full name"
-                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors"
+                className={inputCls}
               />
             </div>
             <div className="flex flex-col gap-1">
@@ -100,11 +122,57 @@ export default function PatientSettingsPage() {
               <p className="text-xs text-gray-400 dark:text-gray-500">Email cannot be changed</p>
             </div>
           </div>
+
+          {/* Age + Sex */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                Age
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={120}
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+                placeholder="Your age"
+                className={`${inputCls} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                Sex
+              </label>
+              <select
+                value={sex}
+                onChange={(e) => setSex(e.target.value)}
+                className={`${inputCls} cursor-pointer`}
+              >
+                <option value="">Select</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Mobile Number */}
+          <div className="flex flex-col gap-1">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+              Mobile Number
+            </label>
+            <PhoneField
+              value={mobileNumber}
+              onChange={setMobileNumber}
+              placeholder="Enter mobile number"
+            />
+          </div>
+
           <div className="flex justify-end">
             <button
               type="button"
               onClick={() => void handleSave()}
-              disabled={isLoading || name.trim() === user?.name}
+              disabled={isLoading || !isDirty}
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               <Save className="h-4 w-4" />
@@ -163,7 +231,7 @@ export default function PatientSettingsPage() {
         </div>
       </div>
 
-      {/* Coming Soon notice */}
+      {/* Coming Soon */}
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/70 py-10 text-center">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-500/10">
           <Settings className="h-7 w-7 text-purple-500" />
