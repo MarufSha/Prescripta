@@ -3,6 +3,8 @@ import { matchedData } from "express-validator";
 import { User } from "../models/user.js";
 import { DoctorInvite } from "../models/doctorInvite.js";
 import { sendDoctorInviteEmail, sendWelcomeEmail } from "../mail/emails.js";
+import Appointment from "../models/Appointment.js";
+import { Prescription } from "../models/prescription.js";
 
 const DAYS_OF_WEEK = [
   "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
@@ -350,6 +352,101 @@ export const getStats = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Server error fetching stats",
+    });
+  }
+};
+
+export const getDetailedStats = async (req, res) => {
+  try {
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11);
+    twelveMonthsAgo.setDate(1);
+    twelveMonthsAgo.setHours(0, 0, 0, 0);
+
+    const [
+      userResults,
+      appointmentResults,
+      topMedicines,
+      monthlyUsers,
+      monthlyAppointments,
+    ] = await Promise.all([
+      User.aggregate([{ $group: { _id: "$role", count: { $sum: 1 } } }]),
+
+      Appointment.aggregate([
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+      ]),
+
+      Prescription.aggregate([
+        { $unwind: "$medications" },
+        { $group: { _id: "$medications.medicine", count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 10 },
+        { $project: { _id: 0, medicine: "$_id", count: 1 } },
+      ]),
+
+      User.aggregate([
+        { $match: { createdAt: { $gte: twelveMonthsAgo } } },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$createdAt" },
+              month: { $month: "$createdAt" },
+              role: "$role",
+            },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { "_id.year": 1, "_id.month": 1 } },
+      ]),
+
+      Appointment.aggregate([
+        { $match: { createdAt: { $gte: twelveMonthsAgo } } },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$createdAt" },
+              month: { $month: "$createdAt" },
+              status: "$status",
+            },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { "_id.year": 1, "_id.month": 1 } },
+      ]),
+    ]);
+
+    const byRole = Object.fromEntries(userResults.map((r) => [r._id, r.count]));
+    const byStatus = Object.fromEntries(
+      appointmentResults.map((r) => [r._id, r.count])
+    );
+
+    return res.status(200).json({
+      success: true,
+      stats: {
+        users: {
+          total: userResults.reduce((sum, r) => sum + r.count, 0),
+          doctor: byRole.doctor ?? 0,
+          patient: byRole.patient ?? 0,
+          admin: byRole.admin ?? 0,
+          superadmin: byRole.superadmin ?? 0,
+        },
+        appointments: {
+          total: appointmentResults.reduce((sum, r) => sum + r.count, 0),
+          pending: byStatus.pending ?? 0,
+          confirmed: byStatus.confirmed ?? 0,
+          completed: byStatus.completed ?? 0,
+          cancelled: byStatus.cancelled ?? 0,
+        },
+        topMedicines,
+        monthlyUsers,
+        monthlyAppointments,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching detailed stats:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error fetching detailed stats",
     });
   }
 };
