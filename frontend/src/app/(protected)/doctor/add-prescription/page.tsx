@@ -202,14 +202,14 @@ function PhoneInput({
     : ALL_COUNTRIES;
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handler = (e: PointerEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setOpen(false);
         setSearch("");
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("pointerdown", handler);
+    return () => document.removeEventListener("pointerdown", handler);
   }, []);
 
   useEffect(() => {
@@ -269,7 +269,7 @@ function PhoneInput({
                 <li key={c.iso2}>
                   <button
                     type="button"
-                    onMouseDown={() => {
+                    onPointerDown={() => {
                       setCountry(c.iso2);
                       setOpen(false);
                       setSearch("");
@@ -462,9 +462,9 @@ function MedicineSearchInput({
     setSuggestions([]);
   };
 
-  // Close on outside click
+  // Close on outside click/tap
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handler = (e: PointerEvent) => {
       if (
         containerRef.current &&
         !containerRef.current.contains(e.target as Node)
@@ -472,8 +472,8 @@ function MedicineSearchInput({
         setOpen(false);
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("pointerdown", handler);
+    return () => document.removeEventListener("pointerdown", handler);
   }, []);
 
   return (
@@ -499,7 +499,7 @@ function MedicineSearchInput({
             <li key={m._id}>
               <button
                 type="button"
-                onMouseDown={() => pick(m)}
+                onPointerDown={() => pick(m)}
                 className="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
               >
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">

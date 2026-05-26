@@ -99,6 +99,21 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    activeSessionToken: {
+      type: String,
+      default: null,
+    },
+
+    activeSessionExpiresAt: {
+      type: Date,
+      default: null,
+    },
+
+    heartbeatExpiresAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

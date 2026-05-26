@@ -23,5 +23,18 @@ export default function AuthProvider({
     void init();
   }, [fetchCsrfToken, checkAuth]);
 
+  // Heartbeat: keep the server-side session alive while the tab is open.
+  // checkAuth refreshes heartbeatExpiresAt (2-min window) on the server.
+  // When the tab closes, heartbeats stop and the session lock releases after 2 min.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (useAuthStore.getState().isAuthenticated) {
+        void checkAuth();
+      }
+    }, 45_000);
+
+    return () => clearInterval(interval);
+  }, [checkAuth]);
+
   return <>{children}</>;
 }

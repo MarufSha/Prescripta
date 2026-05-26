@@ -58,14 +58,14 @@ export function PhoneField({
     : ALL_COUNTRIES;
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handler = (e: PointerEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setOpen(false);
         setSearch("");
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("pointerdown", handler);
+    return () => document.removeEventListener("pointerdown", handler);
   }, []);
 
   useEffect(() => {
@@ -139,7 +139,7 @@ export function PhoneField({
                 <li key={c.iso2}>
                   <button
                     type="button"
-                    onMouseDown={() => {
+                    onPointerDown={() => {
                       setCountry(c.iso2);
                       setOpen(false);
                       setSearch("");
