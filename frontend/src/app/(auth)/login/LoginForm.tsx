@@ -226,7 +226,7 @@ export default function LoginForm() {
 
                   <button
                     type="button"
-                    onMouseDown={(e) => {
+                    onPointerDown={(e) => {
                       e.preventDefault();
                     }}
                     onClick={() => {
@@ -259,7 +259,7 @@ export default function LoginForm() {
               <div className="flex items-center justify-between gap-4 pt-1 text-sm">
                 <label
                   className="flex cursor-pointer items-center gap-2 text-[#6d7872] select-none"
-                  onMouseDown={() => {
+                  onPointerDown={() => {
                     setModeAndResetMood("remember");
                     setRememberTrigger((n) => n + 1);
                   }}

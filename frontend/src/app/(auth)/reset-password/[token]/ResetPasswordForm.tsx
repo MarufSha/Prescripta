@@ -198,7 +198,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
                   <button
                     type="button"
-                    onMouseDown={(e) => {
+                    onPointerDown={(e) => {
                       e.preventDefault();
                       setFocusedField("reveal");
                     }}
@@ -264,7 +264,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
                   <button
                     type="button"
-                    onMouseDown={(e) => {
+                    onPointerDown={(e) => {
                       e.preventDefault();
                       setFocusedField("reveal");
                     }}

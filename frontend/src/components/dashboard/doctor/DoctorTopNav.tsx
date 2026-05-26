@@ -98,16 +98,16 @@ export default function DoctorTopNav({ onToggle }: Props) {
                 <Settings className="h-4 w-4 text-emerald-500" />
                 Edit your information
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => void logout()}
+                className="gap-2 text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <button
-            onClick={() => void logout()}
-            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/80 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-200 transition-all duration-200 hover:border-emerald-500/30 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white active:scale-95 cursor-pointer"
-          >
-            <LogOut className="h-4 w-4 text-emerald-500" />
-            Logout
-          </button>
         </div>
       </div>
     </header>

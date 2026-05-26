@@ -80,13 +80,13 @@ export default function AdminPrescriptionsPage() {
 
   // Close dropdown on outside click
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handler = (e: PointerEvent) => {
       if (fieldDropdownRef.current && !fieldDropdownRef.current.contains(e.target as Node)) {
         setFieldDropdownOpen(false);
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("pointerdown", handler);
+    return () => document.removeEventListener("pointerdown", handler);
   }, []);
 
   // Initial load

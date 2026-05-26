@@ -69,14 +69,14 @@ function PhoneField({
     : ALL_COUNTRIES;
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handler = (e: PointerEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setOpen(false);
         setSearch("");
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("pointerdown", handler);
+    return () => document.removeEventListener("pointerdown", handler);
   }, []);
 
   useEffect(() => {
@@ -138,7 +138,7 @@ function PhoneField({
                 <li key={c.iso2}>
                   <button
                     type="button"
-                    onMouseDown={() => {
+                    onPointerDown={() => {
                       setCountry(c.iso2);
                       setOpen(false);
                       setSearch("");
@@ -474,7 +474,7 @@ export default function SignUpForm() {
                   />
                   <button
                     type="button"
-                    onMouseDown={(e) => e.preventDefault()}
+                    onPointerDown={(e) => e.preventDefault()}
                     onClick={() => {
                       if (!showPassword) {
                         setShowPassword(true);
