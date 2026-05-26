@@ -48,6 +48,8 @@ export const signup = async (req, res) => {
       mobileNumber,
       verificationToken,
       verificationTokenExpiresAt: Date.now() + 15 * 60 * 1000,
+      activeSessionToken: crypto.randomBytes(32).toString("hex"),
+      activeSessionExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
 
     await user.save();
@@ -132,10 +134,19 @@ export const login = async (req, res) => {
       });
     }
 
+    if (user.activeSessionToken && user.activeSessionExpiresAt > new Date()) {
+      return res.status(409).json({
+        success: false,
+        message: "This account is already logged in on another session. Please log out from that session first.",
+      });
+    }
+
     generateTokenAndSetCookie(res, user);
     const csrfToken = generateCsrfToken();
     setCsrfCookie(res, csrfToken);
     user.lastLogin = new Date();
+    user.activeSessionToken = crypto.randomBytes(32).toString("hex");
+    user.activeSessionExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await user.save();
 
     return res.status(200).json({
@@ -153,6 +164,15 @@ export const login = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.userId, {
+      activeSessionToken: null,
+      activeSessionExpiresAt: null,
+    });
+  } catch (error) {
+    console.error("Error clearing session on logout:", error);
+  }
+
   res.clearCookie("token", { path: "/" });
   res.clearCookie("csrfToken", { path: "/" });
 
