@@ -50,6 +50,7 @@ export const signup = async (req, res) => {
       verificationTokenExpiresAt: Date.now() + 15 * 60 * 1000,
       activeSessionToken: crypto.randomBytes(32).toString("hex"),
       activeSessionExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      heartbeatExpiresAt: new Date(Date.now() + 2 * 60 * 1000),
     });
 
     await user.save();
@@ -134,7 +135,7 @@ export const login = async (req, res) => {
       });
     }
 
-    if (user.activeSessionToken && user.activeSessionExpiresAt > new Date()) {
+    if (user.activeSessionToken && user.heartbeatExpiresAt > new Date()) {
       return res.status(409).json({
         success: false,
         message: "This account is already logged in on another session. Please log out from that session first.",
@@ -147,6 +148,7 @@ export const login = async (req, res) => {
     user.lastLogin = new Date();
     user.activeSessionToken = crypto.randomBytes(32).toString("hex");
     user.activeSessionExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    user.heartbeatExpiresAt = new Date(Date.now() + 2 * 60 * 1000);
     await user.save();
 
     return res.status(200).json({
@@ -168,6 +170,7 @@ export const logout = async (req, res) => {
     await User.findByIdAndUpdate(req.userId, {
       activeSessionToken: null,
       activeSessionExpiresAt: null,
+      heartbeatExpiresAt: null,
     });
   } catch (error) {
     console.error("Error clearing session on logout:", error);
@@ -276,6 +279,11 @@ export const checkAuth = async (req, res) => {
         message: "User not found",
       });
     }
+
+    void User.updateOne(
+      { _id: req.userId },
+      { heartbeatExpiresAt: new Date(Date.now() + 2 * 60 * 1000) },
+    );
 
     res.set("Cache-Control", "private, max-age=30");
 
