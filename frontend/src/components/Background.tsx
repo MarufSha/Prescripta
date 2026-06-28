@@ -1,4 +1,6 @@
-import FloatingShape from "./FloatingShape";
+import dynamic from "next/dynamic";
+
+const FloatingShape = dynamic(() => import("./FloatingShape"), { ssr: false });
 
 type BackgroundProps = {
   children?: React.ReactNode;
