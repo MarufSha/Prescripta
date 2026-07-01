@@ -42,13 +42,14 @@ function formatFollowupDate(baseDate: string, days: number): string {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ marginTop: "8px", marginBottom: "5px", display: "inline-block" }}>
+    <div style={{ marginTop: "8px" }}>
       <div
         style={{
           fontWeight: "bold",
           fontSize: "11pt",
           fontFamily: FONT,
           color: C.text,
+          paddingBottom: "5px",
         }}
       >
         {children}
@@ -57,8 +58,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
         style={{
           height: "1px",
           backgroundColor: C.text,
-          marginTop: "4px",
-          width: "100%",
+          marginBottom: "5px",
         }}
       />
     </div>
@@ -82,29 +82,13 @@ function BulletLine({ text }: { text: string }) {
   );
 }
 
-function InfoPair({ label, value }: { label: string; value: React.ReactNode }) {
+function LabelValue({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div style={{ whiteSpace: "nowrap" }}>
-      <span
-        style={{
-          fontWeight: "bold",
-          fontSize: "11pt",
-          fontFamily: FONT,
-          color: C.text,
-        }}
-      >
-        {label}&nbsp;&nbsp;
-      </span>
-      <span
-        style={{
-          fontSize: "11pt",
-          fontFamily: FONT,
-          color: C.text,
-        }}
-      >
-        {value}
-      </span>
-    </div>
+    <span style={{ whiteSpace: "nowrap", fontSize: "11pt", fontFamily: FONT, color: C.text }}>
+      <span style={{ fontWeight: "bold" }}>{label}</span>
+      <span style={{ display: "inline-block", width: "8px" }} />
+      <span>{value}</span>
+    </span>
   );
 }
 
@@ -253,38 +237,42 @@ export function PrescriptionTemplate({
       <div style={{ borderBottom: `1px solid ${C.line}` }} />
 
       {/* ── PATIENT INFO ────────────────────────────────────────────── */}
-      <div style={{ paddingTop: "8px", paddingBottom: "20px" }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr auto auto auto",
-            columnGap: "20px",
-            rowGap: "8px",
-            alignItems: "baseline",
-          }}
-        >
-          <InfoPair label="Name:" value={data.name || "—"} />
-          <InfoPair label="Sex:" value={sexLabel} />
-          <InfoPair label="PUID:" value={puidText} />
-          <InfoPair label="Mobile:" value={data.mobile || "—"} />
-
-          {/* Row 2 */}
-          <div />
-          <InfoPair label="Age:" value={data.age ?? "—"} />
-          <InfoPair
-            label="Weight:"
-            value={
-              data.weight != null && data.weight !== ""
-                ? String(data.weight)
-                : "—"
-            }
-          />
-          <InfoPair
-            label="Date:"
-            value={data.date ? new Date(data.date).toLocaleDateString() : "—"}
-          />
-        </div>
-      </div>
+      <table style={{ width: "100%", borderCollapse: "collapse", paddingTop: "8px", paddingBottom: "20px" }}>
+        <tbody>
+          <tr>
+            <td style={{ padding: "4px 20px 4px 0", width: "40%" }}>
+              <LabelValue label="Name:" value={data.name || "—"} />
+            </td>
+            <td style={{ padding: "4px 20px 4px 0", whiteSpace: "nowrap" }}>
+              <LabelValue label="Sex:" value={sexLabel} />
+            </td>
+            <td style={{ padding: "4px 20px 4px 0", whiteSpace: "nowrap" }}>
+              <LabelValue label="PUID:" value={puidText} />
+            </td>
+            <td style={{ padding: "4px 0", whiteSpace: "nowrap" }}>
+              <LabelValue label="Mobile:" value={data.mobile || "—"} />
+            </td>
+          </tr>
+          <tr>
+            <td style={{ padding: "4px 20px 4px 0" }} />
+            <td style={{ padding: "4px 20px 4px 0", whiteSpace: "nowrap" }}>
+              <LabelValue label="Age:" value={data.age ?? "—"} />
+            </td>
+            <td style={{ padding: "4px 20px 4px 0", whiteSpace: "nowrap" }}>
+              <LabelValue
+                label="Weight:"
+                value={data.weight != null && data.weight !== "" ? String(data.weight) : "—"}
+              />
+            </td>
+            <td style={{ padding: "4px 0", whiteSpace: "nowrap" }}>
+              <LabelValue
+                label="Date:"
+                value={data.date ? new Date(data.date).toLocaleDateString() : "—"}
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
       {/* Patient info divider */}
       <div
@@ -436,12 +424,13 @@ export function PrescriptionTemplate({
           }}
         >
           {/* Rx header */}
-          <div style={{ marginBottom: "10px", display: "inline-block" }}>
+          <div style={{ marginBottom: "10px" }}>
             <div
               style={{
                 fontWeight: "bold",
                 fontSize: "14pt",
                 fontFamily: FONT,
+                paddingBottom: "5px",
               }}
             >
               Rx.
@@ -450,8 +439,7 @@ export function PrescriptionTemplate({
               style={{
                 height: "1px",
                 backgroundColor: C.text,
-                marginTop: "4px",
-                width: "100%",
+                width: "30px",
               }}
             />
           </div>
