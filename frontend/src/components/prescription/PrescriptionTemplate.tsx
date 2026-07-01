@@ -49,7 +49,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
           fontSize: "11pt",
           fontFamily: FONT,
           color: C.text,
-          paddingBottom: "5px",
+          paddingBottom: "8px",
         }}
       >
         {children}
@@ -79,8 +79,7 @@ function BulletLine({ text }: { text: string }) {
 function LabelValue({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <span style={{ whiteSpace: "nowrap", fontSize: "11pt", fontFamily: FONT, color: C.text }}>
-      <span style={{ fontWeight: "bold" }}>{label}</span>
-      <span style={{ display: "inline-block", width: "8px" }} />
+      <span style={{ fontWeight: "bold", paddingRight: "8px" }}>{label}</span>
       <span>{value}</span>
     </span>
   );
