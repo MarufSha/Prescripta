@@ -221,7 +221,7 @@ export function PrescriptionTemplate({
             <div
               style={{ fontSize: "11pt", fontFamily: FONT, lineHeight: 1.35 }}
             >
-              Phone: {doctor.mobile}
+              Phone : {doctor.mobile}
             </div>
           )}
         </div>
