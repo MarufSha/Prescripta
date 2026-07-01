@@ -42,20 +42,25 @@ function formatFollowupDate(baseDate: string, days: number): string {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ marginTop: "8px", marginBottom: "5px" }}>
-      <span
+    <div style={{ marginTop: "8px", marginBottom: "5px", display: "inline-block" }}>
+      <div
         style={{
           fontWeight: "bold",
           fontSize: "11pt",
           fontFamily: FONT,
           color: C.text,
-          display: "inline-block",
-          borderBottom: `0.8px solid ${C.text}`,
-          paddingBottom: "3px",
         }}
       >
         {children}
-      </span>
+      </div>
+      <div
+        style={{
+          height: "1px",
+          backgroundColor: C.text,
+          marginTop: "4px",
+          width: "100%",
+        }}
+      />
     </div>
   );
 }
@@ -79,25 +84,22 @@ function BulletLine({ text }: { text: string }) {
 
 function InfoPair({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", alignItems: "baseline" }}>
+    <div style={{ whiteSpace: "nowrap" }}>
       <span
         style={{
           fontWeight: "bold",
           fontSize: "11pt",
           fontFamily: FONT,
           color: C.text,
-          whiteSpace: "nowrap",
-          marginRight: "6px",
         }}
       >
-        {label}
+        {label}&nbsp;&nbsp;
       </span>
       <span
         style={{
           fontSize: "11pt",
           fontFamily: FONT,
           color: C.text,
-          whiteSpace: "nowrap",
         }}
       >
         {value}
@@ -434,19 +436,24 @@ export function PrescriptionTemplate({
           }}
         >
           {/* Rx header */}
-          <div style={{ marginBottom: "10px" }}>
-            <span
+          <div style={{ marginBottom: "10px", display: "inline-block" }}>
+            <div
               style={{
                 fontWeight: "bold",
                 fontSize: "14pt",
                 fontFamily: FONT,
-                display: "inline-block",
-                borderBottom: `0.8px solid ${C.text}`,
-                paddingBottom: "3px",
               }}
             >
               Rx.
-            </span>
+            </div>
+            <div
+              style={{
+                height: "1px",
+                backgroundColor: C.text,
+                marginTop: "4px",
+                width: "100%",
+              }}
+            />
           </div>
 
           {rxList.map((r, i) => {
