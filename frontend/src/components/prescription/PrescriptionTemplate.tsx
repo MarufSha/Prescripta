@@ -42,7 +42,7 @@ function formatFollowupDate(baseDate: string, days: number): string {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ marginTop: "8px" }}>
+    <div style={{ marginTop: "8px", marginBottom: "5px", width: "fit-content" }}>
       <div
         style={{
           fontWeight: "bold",
@@ -54,13 +54,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
       >
         {children}
       </div>
-      <div
-        style={{
-          height: "1px",
-          backgroundColor: C.text,
-          marginBottom: "5px",
-        }}
-      />
+      <div style={{ height: "1px", backgroundColor: C.text }} />
     </div>
   );
 }
@@ -237,42 +231,37 @@ export function PrescriptionTemplate({
       <div style={{ borderBottom: `1px solid ${C.line}` }} />
 
       {/* ── PATIENT INFO ────────────────────────────────────────────── */}
-      <table style={{ width: "100%", borderCollapse: "collapse", paddingTop: "8px", paddingBottom: "20px" }}>
-        <tbody>
-          <tr>
-            <td style={{ padding: "4px 20px 4px 0", width: "40%" }}>
-              <LabelValue label="Name:" value={data.name || "—"} />
-            </td>
-            <td style={{ padding: "4px 20px 4px 0", whiteSpace: "nowrap" }}>
-              <LabelValue label="Sex:" value={sexLabel} />
-            </td>
-            <td style={{ padding: "4px 20px 4px 0", whiteSpace: "nowrap" }}>
-              <LabelValue label="PUID:" value={puidText} />
-            </td>
-            <td style={{ padding: "4px 0", whiteSpace: "nowrap" }}>
-              <LabelValue label="Mobile:" value={data.mobile || "—"} />
-            </td>
-          </tr>
-          <tr>
-            <td style={{ padding: "4px 20px 4px 0" }} />
-            <td style={{ padding: "4px 20px 4px 0", whiteSpace: "nowrap" }}>
-              <LabelValue label="Age:" value={data.age ?? "—"} />
-            </td>
-            <td style={{ padding: "4px 20px 4px 0", whiteSpace: "nowrap" }}>
-              <LabelValue
-                label="Weight:"
-                value={data.weight != null && data.weight !== "" ? String(data.weight) : "—"}
-              />
-            </td>
-            <td style={{ padding: "4px 0", whiteSpace: "nowrap" }}>
-              <LabelValue
-                label="Date:"
-                value={data.date ? new Date(data.date).toLocaleDateString() : "—"}
-              />
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div style={{ paddingTop: "8px", paddingBottom: "20px" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr auto auto auto",
+            columnGap: "20px",
+            rowGap: "8px",
+            alignItems: "baseline",
+          }}
+        >
+          <div><LabelValue label="Name:" value={data.name || "—"} /></div>
+          <div><LabelValue label="Sex:" value={sexLabel} /></div>
+          <div><LabelValue label="PUID:" value={puidText} /></div>
+          <div><LabelValue label="Mobile:" value={data.mobile || "—"} /></div>
+
+          <div />
+          <div><LabelValue label="Age:" value={data.age ?? "—"} /></div>
+          <div>
+            <LabelValue
+              label="Weight:"
+              value={data.weight != null && data.weight !== "" ? String(data.weight) : "—"}
+            />
+          </div>
+          <div>
+            <LabelValue
+              label="Date:"
+              value={data.date ? new Date(data.date).toLocaleDateString() : "—"}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Patient info divider */}
       <div
@@ -311,9 +300,9 @@ export function PrescriptionTemplate({
           {/* O/E */}
           <SectionTitle>O/E</SectionTitle>
           {[
-            `BP: ${data.bp || "—"}`,
-            `SPO2: ${data.sp02 || "—"}`,
-            `Pulse: ${data.pulse || "—"}`,
+            `BP: ${data.bp || "—"}`,
+            `SPO2: ${data.sp02 || "—"}`,
+            `Pulse: ${data.pulse || "—"}`,
           ].map((t, i) => (
             <div
               key={i}
