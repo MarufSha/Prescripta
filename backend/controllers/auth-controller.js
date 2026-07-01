@@ -285,7 +285,11 @@ export const checkAuth = async (req, res) => {
       { heartbeatExpiresAt: new Date(Date.now() + 2 * 60 * 1000) },
     );
 
-    res.set("Cache-Control", "private, max-age=30");
+    // Must never be cached by the browser: a page reload right after logout
+    // (or after the session expires) must always hit the server, otherwise a
+    // stale cached "Authenticated" response makes the client look logged in
+    // even though the session cookie was already cleared.
+    res.set("Cache-Control", "no-store");
 
     return res.status(200).json({
       success: true,
