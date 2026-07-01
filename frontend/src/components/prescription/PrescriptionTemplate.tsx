@@ -49,7 +49,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
           fontSize: "11pt",
           fontFamily: FONT,
           color: C.text,
-          paddingBottom: "8px",
+          paddingBottom: "6px",
         }}
       >
         {children}
@@ -79,7 +79,7 @@ function BulletLine({ text }: { text: string }) {
 function LabelValue({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <span style={{ whiteSpace: "nowrap", fontSize: "11pt", fontFamily: FONT, color: C.text }}>
-      <span style={{ fontWeight: "bold", paddingRight: "8px" }}>{label}</span>
+      <span style={{ fontWeight: "bold" }}>{label + "  "}</span>
       <span>{value}</span>
     </span>
   );
@@ -412,24 +412,18 @@ export function PrescriptionTemplate({
           }}
         >
           {/* Rx header */}
-          <div style={{ marginBottom: "10px" }}>
+          <div style={{ marginBottom: "10px", width: "fit-content" }}>
             <div
               style={{
                 fontWeight: "bold",
                 fontSize: "14pt",
                 fontFamily: FONT,
-                paddingBottom: "5px",
+                paddingBottom: "6px",
               }}
             >
               Rx.
             </div>
-            <div
-              style={{
-                height: "1px",
-                backgroundColor: C.text,
-                width: "30px",
-              }}
-            />
+            <div style={{ height: "1px", backgroundColor: C.text }} />
           </div>
 
           {rxList.map((r, i) => {
