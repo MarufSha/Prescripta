@@ -42,20 +42,19 @@ function formatFollowupDate(baseDate: string, days: number): string {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ marginTop: "8px", marginBottom: "5px" }}>
-      <span
+    <div style={{ marginTop: "8px", marginBottom: "5px", width: "fit-content" }}>
+      <div
         style={{
           fontWeight: "bold",
           fontSize: "11pt",
           fontFamily: FONT,
           color: C.text,
-          textDecoration: "underline",
-          textDecorationThickness: "0.6px",
-          textUnderlineOffset: "2px",
+          paddingBottom: "6px",
         }}
       >
         {children}
-      </span>
+      </div>
+      <div style={{ height: "1px", backgroundColor: C.text }} />
     </div>
   );
 }
@@ -77,31 +76,13 @@ function BulletLine({ text }: { text: string }) {
   );
 }
 
-function InfoPair({ label, value }: { label: string; value: React.ReactNode }) {
+function LabelValue({ label, value }: { label: string; value: React.ReactNode }) {
+  const spaced = label.endsWith(":") ? label.slice(0, -1) + " :" : label;
   return (
-    <div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
-      <span
-        style={{
-          fontWeight: "bold",
-          fontSize: "11pt",
-          fontFamily: FONT,
-          color: C.text,
-          whiteSpace: "nowrap",
-        }}
-      >
-        {label}
-      </span>
-      <span
-        style={{
-          fontSize: "11pt",
-          fontFamily: FONT,
-          color: C.text,
-          whiteSpace: "nowrap",
-        }}
-      >
-        {value}
-      </span>
-    </div>
+    <span style={{ whiteSpace: "nowrap", fontSize: "11pt", fontFamily: FONT, color: C.text }}>
+      <span style={{ fontWeight: "bold" }}>{spaced + "  "}</span>
+      <span>{value}</span>
+    </span>
   );
 }
 
@@ -240,7 +221,7 @@ export function PrescriptionTemplate({
             <div
               style={{ fontSize: "11pt", fontFamily: FONT, lineHeight: 1.35 }}
             >
-              Phone: {doctor.mobile}
+              Phone : {doctor.mobile}
             </div>
           )}
         </div>
@@ -260,26 +241,25 @@ export function PrescriptionTemplate({
             alignItems: "baseline",
           }}
         >
-          <InfoPair label="Name:" value={data.name || "—"} />
-          <InfoPair label="Sex:" value={sexLabel} />
-          <InfoPair label="PUID:" value={puidText} />
-          <InfoPair label="Mobile:" value={data.mobile || "—"} />
+          <div><LabelValue label="Name:" value={data.name || "—"} /></div>
+          <div><LabelValue label="Sex:" value={sexLabel} /></div>
+          <div><LabelValue label="PUID:" value={puidText} /></div>
+          <div><LabelValue label="Mobile:" value={data.mobile || "—"} /></div>
 
-          {/* Row 2 */}
           <div />
-          <InfoPair label="Age:" value={data.age ?? "—"} />
-          <InfoPair
-            label="Weight:"
-            value={
-              data.weight != null && data.weight !== ""
-                ? String(data.weight)
-                : "—"
-            }
-          />
-          <InfoPair
-            label="Date:"
-            value={data.date ? new Date(data.date).toLocaleDateString() : "—"}
-          />
+          <div><LabelValue label="Age:" value={data.age ?? "—"} /></div>
+          <div>
+            <LabelValue
+              label="Weight:"
+              value={data.weight != null && data.weight !== "" ? String(data.weight) : "—"}
+            />
+          </div>
+          <div>
+            <LabelValue
+              label="Date:"
+              value={data.date ? new Date(data.date).toLocaleDateString() : "—"}
+            />
+          </div>
         </div>
       </div>
 
@@ -306,7 +286,7 @@ export function PrescriptionTemplate({
             <span
               style={{ fontWeight: "bold", fontSize: "11pt", fontFamily: FONT }}
             >
-              Visit No:
+              Visit No :
             </span>{" "}
             <span style={{ fontSize: "11pt", fontFamily: FONT }}>1</span>
           </div>
@@ -320,32 +300,23 @@ export function PrescriptionTemplate({
           {/* O/E */}
           <SectionTitle>O/E</SectionTitle>
           {[
-            `BP: ${data.bp || "—"}`,
-            `SPO2: ${data.sp02 || "—"}`,
-            `Pulse: ${data.pulse || "—"}`,
-          ].map((t, i) => (
-            <div
-              key={i}
-              style={{
-                paddingLeft: "14px",
-                marginBottom: "2px",
-                fontSize: "11pt",
-                fontFamily: FONT,
-                lineHeight: 1.35,
-              }}
-            >
-              {t}
+            { label: "BP:", value: data.bp || "—" },
+            { label: "SPO2:", value: data.sp02 || "—" },
+            { label: "Pulse:", value: data.pulse || "—" },
+          ].map(({ label, value }, i) => (
+            <div key={i} style={{ paddingLeft: "14px", marginBottom: "2px", lineHeight: 1.35 }}>
+              <LabelValue label={label} value={value} />
             </div>
           ))}
 
           {/* Reports */}
-          <SectionTitle>Reports:</SectionTitle>
+          <SectionTitle>Reports :</SectionTitle>
           {(data.investigations ?? []).filter(Boolean).map((s, i) => (
             <BulletLine key={i} text={s} />
           ))}
 
           {/* Plan */}
-          <SectionTitle>Plan:</SectionTitle>
+          <SectionTitle>Plan :</SectionTitle>
           {(data.advice ?? []).filter(Boolean).map((s, i) => (
             <BulletLine key={i} text={s} />
           ))}
@@ -433,19 +404,18 @@ export function PrescriptionTemplate({
           }}
         >
           {/* Rx header */}
-          <div style={{ marginBottom: "10px" }}>
-            <span
+          <div style={{ marginBottom: "10px", width: "fit-content" }}>
+            <div
               style={{
                 fontWeight: "bold",
                 fontSize: "14pt",
                 fontFamily: FONT,
-                textDecoration: "underline",
-                textDecorationThickness: "0.6px",
-                textUnderlineOffset: "2px",
+                paddingBottom: "6px",
               }}
             >
               Rx.
-            </span>
+            </div>
+            <div style={{ height: "1px", backgroundColor: C.text }} />
           </div>
 
           {rxList.map((r, i) => {

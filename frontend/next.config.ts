@@ -13,6 +13,9 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.join(__dirname),
   },
+  experimental: {
+    optimizePackageImports: ["framer-motion", "recharts", "react-icons", "lucide-react"],
+  },
   async headers() {
     return [
       {
