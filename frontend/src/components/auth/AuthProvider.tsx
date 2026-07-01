@@ -29,7 +29,7 @@ export default function AuthProvider({
   useEffect(() => {
     const interval = setInterval(() => {
       if (useAuthStore.getState().isAuthenticated) {
-        void checkAuth();
+        void checkAuth({ silent: true });
       }
     }, 45_000);
 

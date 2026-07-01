@@ -126,7 +126,7 @@ type AuthState = {
   verifyEmail: (code: string) => Promise<VerifyEmailResponse>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  checkAuth: () => Promise<void>;
+  checkAuth: (opts?: { silent?: boolean }) => Promise<void>;
   clearError: () => void;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
@@ -348,17 +348,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  checkAuth: async (): Promise<void> => {
+  checkAuth: async ({ silent = false } = {}): Promise<void> => {
     const now = Date.now();
 
     if (now - lastCheckAuthAt < 30000 && useAuthStore.getState().hasHydrated) {
       return;
     }
 
-    set({
-      isCheckingAuth: true,
-      error: null,
-    });
+    if (!silent) {
+      set({ isCheckingAuth: true, error: null });
+    }
 
     try {
       const res = await api.get("/auth/check-auth");
@@ -368,7 +367,13 @@ export const useAuthStore = create<AuthState>((set) => ({
         user: res.data.user as User,
         isAuthenticated: true,
       });
-    } catch {
+    } catch (err) {
+      // Silent (heartbeat) calls must not log the user out on transient errors.
+      // Only a 401 from the server means the session is genuinely gone.
+      if (silent && axios.isAxiosError(err) && err.response?.status !== 401) {
+        return;
+      }
+
       clearCsrfFromApi();
 
       set({
@@ -378,10 +383,9 @@ export const useAuthStore = create<AuthState>((set) => ({
         csrfToken: null,
       });
     } finally {
-      set({
-        isCheckingAuth: false,
-        hasHydrated: true,
-      });
+      if (!silent) {
+        set({ isCheckingAuth: false, hasHydrated: true });
+      }
     }
   },
 
