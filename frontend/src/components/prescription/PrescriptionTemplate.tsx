@@ -49,9 +49,9 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
           fontSize: "11pt",
           fontFamily: FONT,
           color: C.text,
-          textDecoration: "underline",
-          textDecorationThickness: "0.6px",
-          textUnderlineOffset: "4px",
+          display: "inline-block",
+          borderBottom: `0.8px solid ${C.text}`,
+          paddingBottom: "3px",
         }}
       >
         {children}
@@ -79,7 +79,7 @@ function BulletLine({ text }: { text: string }) {
 
 function InfoPair({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+    <div style={{ display: "flex", alignItems: "baseline" }}>
       <span
         style={{
           fontWeight: "bold",
@@ -87,6 +87,7 @@ function InfoPair({ label, value }: { label: string; value: React.ReactNode }) {
           fontFamily: FONT,
           color: C.text,
           whiteSpace: "nowrap",
+          marginRight: "6px",
         }}
       >
         {label}
@@ -439,9 +440,9 @@ export function PrescriptionTemplate({
                 fontWeight: "bold",
                 fontSize: "14pt",
                 fontFamily: FONT,
-                textDecoration: "underline",
-                textDecorationThickness: "0.6px",
-                textUnderlineOffset: "4px",
+                display: "inline-block",
+                borderBottom: `0.8px solid ${C.text}`,
+                paddingBottom: "3px",
               }}
             >
               Rx.
