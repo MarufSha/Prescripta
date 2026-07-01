@@ -77,9 +77,10 @@ function BulletLine({ text }: { text: string }) {
 }
 
 function LabelValue({ label, value }: { label: string; value: React.ReactNode }) {
+  const spaced = label.endsWith(":") ? label.slice(0, -1) + " :" : label;
   return (
     <span style={{ whiteSpace: "nowrap", fontSize: "11pt", fontFamily: FONT, color: C.text }}>
-      <span style={{ fontWeight: "bold" }}>{label + "  "}</span>
+      <span style={{ fontWeight: "bold" }}>{spaced + "  "}</span>
       <span>{value}</span>
     </span>
   );
@@ -285,7 +286,7 @@ export function PrescriptionTemplate({
             <span
               style={{ fontWeight: "bold", fontSize: "11pt", fontFamily: FONT }}
             >
-              Visit No:
+              Visit No :
             </span>{" "}
             <span style={{ fontSize: "11pt", fontFamily: FONT }}>1</span>
           </div>
