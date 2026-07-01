@@ -300,32 +300,23 @@ export function PrescriptionTemplate({
           {/* O/E */}
           <SectionTitle>O/E</SectionTitle>
           {[
-            `BP: ${data.bp || "—"}`,
-            `SPO2: ${data.sp02 || "—"}`,
-            `Pulse: ${data.pulse || "—"}`,
-          ].map((t, i) => (
-            <div
-              key={i}
-              style={{
-                paddingLeft: "14px",
-                marginBottom: "2px",
-                fontSize: "11pt",
-                fontFamily: FONT,
-                lineHeight: 1.35,
-              }}
-            >
-              {t}
+            { label: "BP:", value: data.bp || "—" },
+            { label: "SPO2:", value: data.sp02 || "—" },
+            { label: "Pulse:", value: data.pulse || "—" },
+          ].map(({ label, value }, i) => (
+            <div key={i} style={{ paddingLeft: "14px", marginBottom: "2px", lineHeight: 1.35 }}>
+              <LabelValue label={label} value={value} />
             </div>
           ))}
 
           {/* Reports */}
-          <SectionTitle>Reports:</SectionTitle>
+          <SectionTitle>Reports :</SectionTitle>
           {(data.investigations ?? []).filter(Boolean).map((s, i) => (
             <BulletLine key={i} text={s} />
           ))}
 
           {/* Plan */}
-          <SectionTitle>Plan:</SectionTitle>
+          <SectionTitle>Plan :</SectionTitle>
           {(data.advice ?? []).filter(Boolean).map((s, i) => (
             <BulletLine key={i} text={s} />
           ))}
