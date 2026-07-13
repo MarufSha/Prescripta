@@ -176,8 +176,14 @@ export const logout = async (req, res) => {
     console.error("Error clearing session on logout:", error);
   }
 
-  res.clearCookie("token", { path: "/" });
-  res.clearCookie("csrfToken", { path: "/" });
+  const isProduction = process.env.NODE_ENV === "production";
+  const cookieOptions = {
+    path: "/",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+  };
+  res.clearCookie("token", { ...cookieOptions, httpOnly: true });
+  res.clearCookie("csrfToken", { ...cookieOptions, httpOnly: false });
 
   return res.status(200).json({
     success: true,
@@ -333,7 +339,13 @@ export const deletePendingSignup = async (req, res) => {
 
     await User.findByIdAndDelete(user._id);
 
-    res.clearCookie("token");
+    const isProduction = process.env.NODE_ENV === "production";
+    res.clearCookie("token", {
+      path: "/",
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+    });
 
     return res.status(200).json({
       success: true,
