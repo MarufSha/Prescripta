@@ -138,7 +138,8 @@ export const login = async (req, res) => {
     if (user.activeSessionToken && user.heartbeatExpiresAt > new Date()) {
       return res.status(409).json({
         success: false,
-        message: "This account is already logged in on another session. Please log out from that session first.",
+        message:
+          "This account is already logged in on another session. Please log out from that session first.",
       });
     }
 
@@ -147,7 +148,9 @@ export const login = async (req, res) => {
     setCsrfCookie(res, csrfToken);
     user.lastLogin = new Date();
     user.activeSessionToken = crypto.randomBytes(32).toString("hex");
-    user.activeSessionExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    user.activeSessionExpiresAt = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000,
+    );
     user.heartbeatExpiresAt = new Date(Date.now() + 2 * 60 * 1000);
     await user.save();
 
@@ -176,8 +179,14 @@ export const logout = async (req, res) => {
     console.error("Error clearing session on logout:", error);
   }
 
-  res.clearCookie("token", { path: "/" });
-  res.clearCookie("csrfToken", { path: "/" });
+  const isProduction = process.env.NODE_ENV === "production";
+  const cookieOptions = {
+    path: "/",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+  };
+  res.clearCookie("token", { ...cookieOptions, httpOnly: true });
+  res.clearCookie("csrfToken", { ...cookieOptions, httpOnly: false });
 
   return res.status(200).json({
     success: true,
@@ -333,7 +342,13 @@ export const deletePendingSignup = async (req, res) => {
 
     await User.findByIdAndDelete(user._id);
 
-    res.clearCookie("token");
+    const isProduction = process.env.NODE_ENV === "production";
+    res.clearCookie("token", {
+      path: "/",
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+    });
 
     return res.status(200).json({
       success: true,
@@ -411,63 +426,119 @@ export const getCsrfToken = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const user = await User.findById(req.userId);
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
 
     const { name, age, sex, mobileNumber, doctorProfile } = req.body;
 
     if (name !== undefined) {
       const trimmed = String(name).trim();
       if (trimmed.length < 2 || trimmed.length > 50)
-        return res.status(400).json({ success: false, message: "Name must be 2–50 characters" });
+        return res
+          .status(400)
+          .json({ success: false, message: "Name must be 2–50 characters" });
       user.name = trimmed;
     }
 
     if (age !== undefined) {
       const parsed = parseInt(age);
       if (isNaN(parsed) || parsed < 1 || parsed > 120)
-        return res.status(400).json({ success: false, message: "Age must be between 1 and 120" });
+        return res
+          .status(400)
+          .json({ success: false, message: "Age must be between 1 and 120" });
       user.age = parsed;
     }
 
     if (sex !== undefined) {
       if (!["Male", "Female", "Other"].includes(sex))
-        return res.status(400).json({ success: false, message: "Sex must be Male, Female, or Other" });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "Sex must be Male, Female, or Other",
+          });
       user.sex = sex;
     }
 
     if (mobileNumber !== undefined) {
       const trimmed = String(mobileNumber).trim();
       if (trimmed) {
-        const duplicate = await User.findOne({ mobileNumber: trimmed, _id: { $ne: user._id } });
+        const duplicate = await User.findOne({
+          mobileNumber: trimmed,
+          _id: { $ne: user._id },
+        });
         if (duplicate)
-          return res.status(409).json({ success: false, message: "An account with this mobile number already exists" });
+          return res
+            .status(409)
+            .json({
+              success: false,
+              message: "An account with this mobile number already exists",
+            });
         user.mobileNumber = trimmed;
       }
     }
 
     if (doctorProfile !== undefined && user.role === "doctor") {
       const dp = doctorProfile;
-      const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+      const DAYS = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+      ];
       user.doctorProfile = {
-        specialties: Array.isArray(dp.specialties) ? dp.specialties.map(String).filter(Boolean) : user.doctorProfile?.specialties ?? [],
-        bmdcNo: dp.bmdcNo !== undefined ? String(dp.bmdcNo ?? "").trim() : user.doctorProfile?.bmdcNo ?? "",
-        mobileNumber: dp.mobileNumber !== undefined ? String(dp.mobileNumber ?? "").trim() : user.doctorProfile?.mobileNumber ?? "",
-        designations: Array.isArray(dp.designations) ? dp.designations.map(String).filter(Boolean) : user.doctorProfile?.designations ?? [],
-        degrees: Array.isArray(dp.degrees) ? dp.degrees.map(String).filter(Boolean) : user.doctorProfile?.degrees ?? [],
+        specialties: Array.isArray(dp.specialties)
+          ? dp.specialties.map(String).filter(Boolean)
+          : (user.doctorProfile?.specialties ?? []),
+        bmdcNo:
+          dp.bmdcNo !== undefined
+            ? String(dp.bmdcNo ?? "").trim()
+            : (user.doctorProfile?.bmdcNo ?? ""),
+        mobileNumber:
+          dp.mobileNumber !== undefined
+            ? String(dp.mobileNumber ?? "").trim()
+            : (user.doctorProfile?.mobileNumber ?? ""),
+        designations: Array.isArray(dp.designations)
+          ? dp.designations.map(String).filter(Boolean)
+          : (user.doctorProfile?.designations ?? []),
+        degrees: Array.isArray(dp.degrees)
+          ? dp.degrees.map(String).filter(Boolean)
+          : (user.doctorProfile?.degrees ?? []),
         chambers: Array.isArray(dp.chambers)
-          ? dp.chambers.filter((c) => c?.name?.trim() && c?.location?.trim()).map((c) => ({ name: String(c.name).trim(), location: String(c.location).trim() }))
-          : user.doctorProfile?.chambers ?? [],
+          ? dp.chambers
+              .filter((c) => c?.name?.trim() && c?.location?.trim())
+              .map((c) => ({
+                name: String(c.name).trim(),
+                location: String(c.location).trim(),
+              }))
+          : (user.doctorProfile?.chambers ?? []),
         availability: Array.isArray(dp.availability)
           ? dp.availability
-              .filter((a) => a?.day && DAYS.includes(a.day) && a?.startTime && a?.endTime)
-              .map((a) => ({ day: a.day, startTime: String(a.startTime).trim(), endTime: String(a.endTime).trim() }))
-          : user.doctorProfile?.availability ?? [],
+              .filter(
+                (a) =>
+                  a?.day && DAYS.includes(a.day) && a?.startTime && a?.endTime,
+              )
+              .map((a) => ({
+                day: a.day,
+                startTime: String(a.startTime).trim(),
+                endTime: String(a.endTime).trim(),
+              }))
+          : (user.doctorProfile?.availability ?? []),
       };
     }
 
     await user.save();
 
-    return res.json({ success: true, message: "Profile updated", user: sanitizeUser(user) });
+    return res.json({
+      success: true,
+      message: "Profile updated",
+      user: sanitizeUser(user),
+    });
   } catch (error) {
     console.error("updateProfile error:", error);
     return res.status(500).json({ success: false, message: "Server error" });
@@ -494,4 +565,3 @@ export const getDoctors = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
