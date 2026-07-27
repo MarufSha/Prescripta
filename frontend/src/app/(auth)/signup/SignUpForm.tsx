@@ -171,7 +171,7 @@ function PhoneField({
 
 // ── Main sign-up form ─────────────────────────────────────────────────────────
 
-const REGISTRATION_DISABLED = true;
+const REGISTRATION_DISABLED = process.env.NEXT_PUBLIC_REGISTRATION_DISABLED === "true";
 
 export default function SignUpForm() {
   const { signUp, error, isLoading, clearError, fieldErrors, pendingSignupData } =
