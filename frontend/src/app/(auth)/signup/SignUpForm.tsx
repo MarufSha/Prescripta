@@ -171,6 +171,8 @@ function PhoneField({
 
 // ── Main sign-up form ─────────────────────────────────────────────────────────
 
+const REGISTRATION_DISABLED = process.env.NEXT_PUBLIC_REGISTRATION_DISABLED === "true";
+
 export default function SignUpForm() {
   const { signUp, error, isLoading, clearError, fieldErrors, pendingSignupData } =
     useAuthStore();
@@ -308,7 +310,21 @@ export default function SignUpForm() {
               </h1>
             </div>
 
+            {REGISTRATION_DISABLED && (
+              <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm font-medium text-amber-800">
+                Registration is temporarily offline. This project isn&apos;t
+                currently hosted with a working email service, so new
+                sign-ups and other actions that require sending email
+                (email verification, password reset) cannot be completed
+                right now.
+              </p>
+            )}
+
             <form onSubmit={handleSignUp} className="space-y-[18px]">
+            <fieldset
+              disabled={REGISTRATION_DISABLED}
+              className="space-y-[18px] disabled:opacity-60"
+            >
               {/* Full Name */}
               <div className="space-y-1.5">
                 <label
@@ -513,16 +529,19 @@ export default function SignUpForm() {
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.985 }}
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || REGISTRATION_DISABLED}
                 onFocus={() => setModeAndResetMood("follow")}
                 className="flex h-12 w-full cursor-pointer items-center justify-center rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-base font-semibold text-white shadow-[0_10px_24px_rgba(16,185,129,0.26)] transition hover:from-green-600 hover:to-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {isLoading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
+                ) : REGISTRATION_DISABLED ? (
+                  "Registration Unavailable"
                 ) : (
                   "Sign Up"
                 )}
               </motion.button>
+            </fieldset>
             </form>
 
             <p className="mt-6 text-center text-sm text-[#727d77]">

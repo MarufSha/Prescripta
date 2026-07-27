@@ -1,5 +1,13 @@
 # 🩺 Prescripta
 
+## ⚠️ ⚠️ ⚠️ REGISTRATION CURRENTLY OFFLINE ⚠️ ⚠️ ⚠️
+
+# THIS PROJECT IS NOT CURRENTLY HOSTED WITH A WORKING EMAIL SERVICE.
+
+## New user sign-up, email verification, and password reset all depend on outbound email and are **DISABLED** until this is resolved.
+
+---
+
 A modern, role-based healthcare management platform designed to connect **patients**, **doctors**, and **administrators** in a secure, scalable system.
 
 Built with a focus on **clean UI**, **strict role control**, and **real-world workflow simulation**, Prescripta provides a foundation for digital healthcare platforms.

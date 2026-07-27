@@ -58,7 +58,12 @@ export const signup = async (req, res) => {
     generateTokenAndSetCookie(res, user);
     const csrfToken = generateCsrfToken();
     setCsrfCookie(res, csrfToken);
-    await sendVerificationEmail(user.email, verificationToken);
+
+    try {
+      await sendVerificationEmail(user.email, verificationToken);
+    } catch (emailError) {
+      console.error("Failed to send verification email:", emailError);
+    }
 
     return res.status(201).json({
       success: true,
@@ -95,7 +100,12 @@ export const verifyEmail = async (req, res) => {
     user.verificationTokenExpiresAt = undefined;
 
     await user.save();
-    await sendWelcomeEmail(user.email, user.name);
+
+    try {
+      await sendWelcomeEmail(user.email, user.name);
+    } catch (emailError) {
+      console.error("Failed to send welcome email:", emailError);
+    }
 
     return res.status(200).json({
       success: true,
