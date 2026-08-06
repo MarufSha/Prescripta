@@ -104,11 +104,20 @@ export type UserStats = {
   patient: number;
 };
 
+type UsersCacheEntry = {
+  users: AdminUser[];
+  pagination: PaginationState;
+  page: number;
+  limit: number;
+  fetchedAt: number;
+};
+
 type AuthState = {
   user: User | null;
   users: AdminUser[];
   doctors: PublicDoctor[];
   usersPagination: PaginationState;
+  usersByRole: Partial<Record<UserRole | "all", UsersCacheEntry>>;
   userStats: UserStats | null;
   fetchUserStats: () => Promise<void>;
   isAuthenticated: boolean;
@@ -132,7 +141,12 @@ type AuthState = {
   resetPassword: (token: string, newPassword: string) => Promise<void>;
 
   fetchDoctors: () => Promise<void>;
-  fetchUsers: (params?: { page?: number; limit?: number; role?: UserRole }) => Promise<void>;
+  fetchUsers: (params?: {
+    page?: number;
+    limit?: number;
+    role?: UserRole;
+    force?: boolean;
+  }) => Promise<void>;
   updateUserRole: (
     userId: string,
     role: "doctor" | "patient",
@@ -228,11 +242,14 @@ const withCsrfRetry = async (requestFn: () => Promise<unknown>) => {
   }
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
+const USERS_CACHE_TTL_MS = 60000;
+
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   users: [],
   doctors: [],
   usersPagination: { page: 1, limit: 25, total: 0, totalPages: 1 },
+  usersByRole: {},
   userStats: null,
   isAuthenticated: false,
   isLoading: false,
@@ -442,6 +459,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         users: [],
         doctors: [],
         usersPagination: { page: 1, limit: 25, total: 0, totalPages: 1 },
+        usersByRole: {},
         userStats: null,
         isAuthenticated: false,
         isLoading: false,
@@ -557,6 +575,28 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   fetchUsers: async (params = {}): Promise<void> => {
+    const page = Math.max(params.page || 1, 1);
+    const limit = Math.max(params.limit || 25, 1);
+    const cacheKey = params.role || "all";
+
+    const cached = get().usersByRole[cacheKey];
+    const isCacheFresh =
+      cached &&
+      cached.page === page &&
+      cached.limit === limit &&
+      Date.now() - cached.fetchedAt < USERS_CACHE_TTL_MS;
+
+    if (!params.force && isCacheFresh) {
+      set({
+        users: cached.users,
+        usersPagination: cached.pagination,
+        isLoading: false,
+        error: null,
+        message: null,
+      });
+      return;
+    }
+
     set({
       isLoading: true,
       error: null,
@@ -565,9 +605,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     try {
-      const page = Math.max(params.page || 1, 1);
-      const limit = Math.max(params.limit || 25, 1);
-
       const res = (await withCsrfRetry(() =>
         api.get("/admin/users", {
           params: {
@@ -583,20 +620,27 @@ export const useAuthStore = create<AuthState>((set) => ({
         };
       };
 
-      set({
-        users: res.data.users as AdminUser[],
-        usersPagination:
-          res.data.pagination ||
-          ({
-            page,
-            limit,
-            total: (res.data.users || []).length,
-            totalPages: 1,
-          } as PaginationState),
+      const users = res.data.users as AdminUser[];
+      const pagination =
+        res.data.pagination ||
+        ({
+          page,
+          limit,
+          total: (res.data.users || []).length,
+          totalPages: 1,
+        } as PaginationState);
+
+      set((state) => ({
+        users,
+        usersPagination: pagination,
+        usersByRole: {
+          ...state.usersByRole,
+          [cacheKey]: { users, pagination, page, limit, fetchedAt: Date.now() },
+        },
         isLoading: false,
         error: null,
         message: null,
-      });
+      }));
     } catch (err) {
       const msg = getErrorMessage(err, "Failed to fetch users");
 
@@ -639,6 +683,7 @@ export const useAuthStore = create<AuthState>((set) => ({
               }
             : u,
         ),
+        usersByRole: {},
         isLoading: false,
         error: null,
         message: res.data.message || "Role updated successfully",
@@ -799,6 +844,7 @@ export const useAuthStore = create<AuthState>((set) => ({
               }
             : u,
         ),
+        usersByRole: {},
         isLoading: false,
         error: null,
         message: null,
@@ -829,6 +875,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       set((state) => ({
         users: state.users.filter((u) => u._id !== userId),
+        usersByRole: {},
         isLoading: false,
         error: null,
         message: null,
